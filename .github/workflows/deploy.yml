@@ -1,0 +1,45 @@
+name: Déployer sur GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          # URL et clé « anon » Supabase : publiques par conception (la sécurité repose sur les règles RLS)
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://enycxafzvcgprfsfkvvc.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVueWN4YWZ6dmNncHJmc2ZrdnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NjYyNzcsImV4cCI6MjEwOTA0MjI3N30.8xX21a9UEUeF2_S66zes0zZmQ9HLInJZCaCVxzfIzPU' }}
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

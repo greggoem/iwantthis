@@ -1,0 +1,33 @@
+import { createClient } from '@supabase/supabase-js'
+
+const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+
+export const isConfigured = Boolean(url && key)
+
+// PKCE : le retour de Google / des e-mails arrive avec ?code=… (compatible avec le routage par #)
+export const supabase = createClient(url ?? 'http://localhost', key ?? 'missing', {
+  auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true },
+})
+
+export const APP_NAME = (import.meta.env.VITE_APP_NAME as string | undefined) || 'Nos cadeaux'
+
+/** Adresse du site sans le #, ex. https://greg.github.io/cadeaux/ */
+export function siteUrl(): string {
+  return window.location.origin + window.location.pathname
+}
+
+export const listShareUrl = (token: string) => `${siteUrl()}#/l/${token}`
+export const eventInviteUrl = (code: string) => `${siteUrl()}#/e/${code}`
+
+export function errMsg(e: unknown): string {
+  const m = (e as { message?: string })?.message ?? String(e)
+  const map: Record<string, string> = {
+    'Invalid login credentials': 'E-mail ou mot de passe incorrect.',
+    'User already registered': 'Un compte existe déjà avec cet e-mail.',
+    'Email not confirmed': 'Confirmez d\'abord votre e-mail (lien reçu par courrier).',
+    'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.',
+  }
+  for (const k of Object.keys(map)) if (m.includes(k)) return map[k]
+  return m
+}

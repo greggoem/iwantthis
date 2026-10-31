@@ -46,6 +46,16 @@ npm run dev              # http://localhost:5173
 
 Vercel ou Netlify fonctionnent aussi : commande `npm run build`, dossier `dist`, mêmes variables d'environnement.
 
+## 3 bis. E-mails envoyés depuis *votre* adresse (confirmation, mot de passe oublié)
+
+Par défaut, Supabase envoie ces e-mails depuis sa propre adresse, en anglais, et en nombre très limité. Pour qu'ils partent de votre site :
+
+1. **Expéditeur** : Supabase → *Authentication → Emails → SMTP Settings* → *Enable custom SMTP*, avec un service d'envoi (Resend, Brevo… offres gratuites) et une adresse d'un domaine que vous possédez (ex. `noreply@votredomaine.be`, après vérification DNS chez le service d'envoi).
+2. **Textes** : Supabase → *Authentication → Emails → Templates* : collez le contenu de `supabase/emails/confirmation-inscription.html` (« Confirm sign up ») et `supabase/emails/mot-de-passe-oublie.html` (« Reset password »), avec l'objet indiqué en commentaire en haut de chaque fichier.
+3. **Site URL** : dans *Authentication → URL Configuration*, mettez l'adresse du site **avec la barre finale** (ex. `https://greggoem.github.io/liste-cadeaux/`). Les liens des e-mails pointent alors directement vers votre site (page `#/confirm`) et non vers supabase.co.
+
+Option la plus simple : désactiver *Confirm email* (*Authentication → Providers → Email*). L'inscription est alors immédiate, sans e-mail (seul « mot de passe oublié » en envoie encore un).
+
 ## 4. Comment ça se passe pour les utilisateurs
 
 | Étape | Action |

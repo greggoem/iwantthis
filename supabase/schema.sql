@@ -334,10 +334,9 @@ returns public.wishlists language plpgsql security definer set search_path = pub
 declare v_list wishlists;
 begin
   if auth.uid() is null then raise exception 'Non connecté'; end if;
+  -- insertion idempotente : deux appels simultanés (ex. double chargement de la page) ne se heurtent plus
+  insert into wishlists (owner_id) values (auth.uid()) on conflict (owner_id) do nothing;
   select * into v_list from wishlists where owner_id = auth.uid();
-  if not found then
-    insert into wishlists (owner_id) values (auth.uid()) returning * into v_list;
-  end if;
   return v_list;
 end $$;
 

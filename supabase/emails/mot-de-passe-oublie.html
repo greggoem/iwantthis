@@ -1,0 +1,14 @@
+<!-- Supabase > Authentication > Emails > Templates > « Reset password »
+     Objet : Réinitialisez votre mot de passe – Nos cadeaux -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1f2a24">
+  <h1 style="font-family:Georgia,serif;color:#14532d;font-size:24px;margin:0 0 16px">🎁 Nos cadeaux</h1>
+  <p>Bonjour,</p>
+  <p>Vous avez demandé à réinitialiser votre mot de passe. Cliquez ci-dessous pour en choisir un nouveau :</p>
+  <p style="margin:24px 0">
+    <a href="{{ .SiteURL }}/#/confirm?token_hash={{ .TokenHash }}&type=recovery"
+       style="background:#14532d;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:9px;font-weight:bold;display:inline-block">
+      Choisir un nouveau mot de passe
+    </a>
+  </p>
+  <p style="font-size:13px;color:#667069">Vous n'avez rien demandé ? Ignorez ce message : votre mot de passe reste inchangé.</p>
+</div>

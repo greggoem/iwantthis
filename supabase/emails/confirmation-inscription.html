@@ -1,0 +1,14 @@
+<!-- Supabase > Authentication > Emails > Templates > « Confirm sign up »
+     Objet : Confirmez votre inscription à Nos cadeaux 🎁 -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1f2a24">
+  <h1 style="font-family:Georgia,serif;color:#14532d;font-size:24px;margin:0 0 16px">🎁 Nos cadeaux</h1>
+  <p>Bonjour,</p>
+  <p>Merci de vous être inscrit(e). Confirmez votre adresse e-mail pour accéder à votre liste de cadeaux :</p>
+  <p style="margin:24px 0">
+    <a href="{{ .SiteURL }}/#/confirm?token_hash={{ .TokenHash }}&type=signup"
+       style="background:#14532d;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:9px;font-weight:bold;display:inline-block">
+      Confirmer mon adresse
+    </a>
+  </p>
+  <p style="font-size:13px;color:#667069">Si vous n'êtes pas à l'origine de cette inscription, ignorez simplement ce message.</p>
+</div>

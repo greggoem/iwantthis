@@ -13,6 +13,7 @@ import Events from './pages/Events'
 import EventDetail from './pages/EventDetail'
 import JoinEvent from './pages/JoinEvent'
 import Profile from './pages/Profile'
+import Confirm from './pages/Confirm'
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { session, loading } = useAuth()
@@ -86,6 +87,7 @@ export default function App() {
       <PostLogin />
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/confirm" element={<Confirm />} />
         <Route element={<RequireAuth><Layout /></RequireAuth>}>
           <Route index element={<MyList />} />
           <Route path="listes" element={<SharedLists />} />

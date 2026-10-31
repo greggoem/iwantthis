@@ -121,15 +121,38 @@ function absoluteHttp(u: string | undefined, base: string): string | undefined {
   } catch { return undefined }
 }
 
+/** Pages Amazon : balises propres au site, utilisées seulement si les métadonnées standard manquent */
+function amazonFallback(html: string, finalUrl: string): { title?: string; image?: string; price?: number; currency?: string } {
+  if (!/(^|\.)amazon\./i.test(new URL(finalUrl).hostname)) return {}
+  const rawTitle = html.match(/id=["']productTitle["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]
+  const title = rawTitle ? decodeEntities(rawTitle.replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim() : undefined
+  let image = html.match(/id=["']landingImage["'][^>]*data-old-hires=["']([^"']+)["']/i)?.[1]
+  if (!image) {
+    const dyn = html.match(/data-a-dynamic-image=["']([^"']+)["']/i)?.[1]
+    if (dyn) { try { image = Object.keys(JSON.parse(decodeEntities(dyn)))[0] } catch { /* ignoré */ } }
+  }
+  const priceText = [...html.matchAll(/class=["']a-offscreen["'][^>]*>\s*([^<]+?)\s*</gi)].map((m) => m[1]).find((t) => /\d/.test(t) && /[€$£]|EUR/.test(t))
+  return { title, image, price: parsePrice(priceText), currency: priceText ? (/€|EUR/.test(priceText) ? 'EUR' : undefined) : undefined }
+}
+
+/** Page « êtes-vous un robot ? » renvoyée à la place de la fiche */
+export function looksBlocked(html: string): boolean {
+  return /captchacharacters|Type the characters you see|Saisissez les caract[eè]res|are you a robot|Access Denied|Just a moment\.\.\./i.test(html.slice(0, 60000))
+}
+
 export function parseProductPage(html: string, finalUrl: string): Preview {
+  if (looksBlocked(html)) {
+    return { found: false, site: new URL(finalUrl).hostname.replace(/^www\./, ''), reason: 'Le magasin bloque la lecture automatique (vérification anti-robot)' }
+  }
   const meta = metaMap(html)
   const ld = jsonLd(html)
+  const amz = amazonFallback(html, finalUrl)
 
   const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
-  const title = (meta['og:title'] || ld.name || meta['twitter:title'] || (titleTag ? decodeEntities(titleTag) : '')).replace(/\s+/g, ' ').trim().slice(0, 200) || undefined
+  const title = (meta['og:title'] || ld.name || amz.title || meta['twitter:title'] || (titleTag ? decodeEntities(titleTag) : '')).replace(/\s+/g, ' ').trim().slice(0, 200) || undefined
 
   const image = absoluteHttp(
-    meta['og:image:secure_url'] || meta['og:image'] || meta['twitter:image'] || meta['twitter:image:src'] || ld.image,
+    meta['og:image:secure_url'] || meta['og:image'] || meta['twitter:image'] || meta['twitter:image:src'] || ld.image || amz.image,
     finalUrl,
   )
 
@@ -137,6 +160,7 @@ export function parseProductPage(html: string, finalUrl: string): Preview {
   let currency = (meta['product:price:currency'] ?? meta['og:price:currency'] ?? meta['pricecurrency'])?.toUpperCase()
   if (price === undefined && ld.price !== undefined) { price = ld.price; currency = currency ?? ld.currency }
   if (price === undefined) price = microdataPrice(html)
+  if (price === undefined && amz.price !== undefined) { price = amz.price; currency = currency ?? amz.currency }
   if (price !== undefined && !currency) currency = ld.currency
 
   const found = Boolean(image || price !== undefined || title)

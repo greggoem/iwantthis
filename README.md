@@ -87,6 +87,12 @@ Deux lignes Amazon (BE et FR) sont déjà là, **désactivées** avec `VOTRE-TAG
 - Les liens raccourcis (`amzn.to`, `bit.ly`…) ne peuvent pas être transformés : demandez à vos proches de coller l'adresse complète du produit.
 - Les programmes ont leurs propres règles (ex. Amazon interdit les liens d'affiliation dans les e-mails). Relisez-les.
 
+## 5 bis. Image et prix automatiques (fonction `link-preview`)
+
+Quand on colle un lien, la fonction Supabase `supabase/functions/link-preview` lit la fiche produit (métadonnées Open Graph, JSON-LD, balises Amazon) et renvoie titre, image et prix. Elle est réservée aux utilisateurs connectés et refuse les adresses internes. Pour la redéployer : Supabase → *Edge Functions*, ou `supabase functions deploy link-preview`.
+
+Certains magasins (Amazon, Fnac, Zalando, Coolblue, Bol.com…) bloquent souvent les serveurs. Dans ce cas, l'écran *Ma liste* propose un **raccourci à glisser dans la barre de favoris** : il lit la page dans le navigateur de la personne (donc jamais bloqué) et pré-remplit le formulaire.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).

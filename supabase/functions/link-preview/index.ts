@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
     const start = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`)
     const { html, finalUrl } = await fetchHtml(start)
     const preview = parseProductPage(html, finalUrl)
-    if (!preview.found) preview.reason = 'Aucune information produit lisible sur cette page'
+    if (!preview.found && !preview.reason) preview.reason = 'Aucune information produit lisible sur cette page'
     return json(preview)
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Lecture impossible'

@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { supabase, errMsg, listShareUrl } from '../lib/supabase'
+import { useSearchParams } from 'react-router-dom'
+import { supabase, errMsg, listShareUrl, siteUrl, APP_NAME } from '../lib/supabase'
+import { bookmarkletHref } from '../lib/bookmarklet'
+import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
 import { fetchPreview, euroPrice } from '../lib/preview'
 import { formatDateShort, formatPrice } from '../lib/format'
@@ -29,7 +32,7 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
     setReading(true); setHint('')
     const p = await fetchPreview(u.toString())
     setReading(false)
-    if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Vous pouvez saisir le prix à la main.`); return }
+    if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Saisissez le prix à la main, ou utilisez le raccourci en bas de page.`); return }
     const price = euroPrice(p)
     setD(prev => ({
       ...prev,
@@ -89,7 +92,35 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
   )
 }
 
+function BookmarkletBox() {
+  const ref = useRef<HTMLAnchorElement>(null)
+  // le href « javascript: » est posé après coup (React refuse ce type de lien dans le JSX)
+  useEffect(() => { ref.current?.setAttribute('href', bookmarkletHref(siteUrl())) }, [])
+  return (
+    <details className="card bm">
+      <summary>Le magasin ne donne ni image ni prix ? (Amazon, Zalando, Fnac…)</summary>
+      <p className="small">
+        Certains magasins interdisent la lecture automatique. Ce raccourci passe par <strong>votre</strong> navigateur, donc il fonctionne partout :
+        sur ordinateur, <strong>glissez le bouton ci-dessous dans votre barre de favoris</strong> (affichez-la avec Ctrl+Maj+B).
+        Ensuite, sur la page d'un produit, cliquez sur ce favori : le cadeau arrive ici, déjà rempli (titre, image, prix).
+      </p>
+      <a ref={ref} className="btn btn-primary" draggable onClick={e => e.preventDefault()}>🎁 Ajouter à {APP_NAME}</a>
+      <p className="small muted">Sur téléphone : collez le lien du produit ci-dessus et saisissez le prix à la main si besoin.</p>
+    </details>
+  )
+}
+
 export default function MyList() {
+  const [params, setParams] = useSearchParams()
+  const prefill: Draft | null = params.get('add') === '1' ? (() => {
+    const u = safeUrl(params.get('u')), img = safeUrl(params.get('i'))
+    const cur = (params.get('c') ?? '').toUpperCase()
+    const price = !cur || cur === 'EUR' ? parsePrice(params.get('p')) : undefined
+    return {
+      title: (params.get('t') ?? '').slice(0, 200), url: u ? u.toString() : '', details: '',
+      price: price !== undefined ? String(price) : '', image: img ? img.toString() : '',
+    }
+  })() : null
   const [list, setList] = useState<Wishlist | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
@@ -116,6 +147,10 @@ export default function MyList() {
   }, [])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    if (prefill && !loading) document.getElementById('ajouter')?.scrollIntoView({ behavior: 'smooth' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, params.get('add')])
 
   const toRow = (d: Draft) => ({
     title: d.title.trim(),
@@ -128,6 +163,7 @@ export default function MyList() {
   const add = async (d: Draft) => {
     const { error } = await supabase.from('items').insert({ ...toRow(d), list_id: list!.id })
     if (error) return errMsg(error)
+    if (prefill) setParams({}, { replace: true })
     await load(); return null
   }
   const update = async (id: string, d: Draft) => {
@@ -240,8 +276,12 @@ export default function MyList() {
         </GiftTable>
       )}
 
-      <h2 className="mt">Ajouter un cadeau</h2>
-      <div className="narrow-left"><ItemForm initial={empty} submitLabel="Ajouter à ma liste" onSubmit={add} /></div>
+      <h2 className="mt" id="ajouter">Ajouter un cadeau</h2>
+      <div className="narrow-left stack">
+        {prefill && <Notice kind="ok">Cadeau récupéré depuis la page du magasin : vérifiez et enregistrez.</Notice>}
+        <ItemForm key={prefill ? params.toString() : 'new'} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onSubmit={add} />
+        <BookmarkletBox />
+      </div>
     </div>
   )
 }

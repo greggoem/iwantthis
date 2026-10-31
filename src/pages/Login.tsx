@@ -1,11 +1,15 @@
 import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
 import { Notice } from '../components/ui'
 
 type Mode = 'in' | 'up' | 'forgot'
 
 export default function Login() {
-  const [mode, setMode] = useState<Mode>('in')
+  const [params] = useSearchParams()
+  const pending = sessionStorage.getItem('postLoginPath') ?? ''
+  const invite = pending.startsWith('/l/') ? 'list' : pending.startsWith('/e/') ? 'event' : null
+  const [mode, setMode] = useState<Mode>(params.get('mode') === 'up' || invite ? 'up' : 'in')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
@@ -59,6 +63,12 @@ export default function Login() {
         )}
         {mode === 'forgot' && <h2>Mot de passe oublié</h2>}
 
+        {invite && (
+          <Notice kind="info">
+            {invite === 'list' ? 'On vous a partagé une liste de cadeaux. ' : 'On vous invite à un événement. '}
+            Créez votre compte gratuit (ou connectez-vous) pour {invite === 'list' ? 'la voir' : 'le rejoindre'}.
+          </Notice>
+        )}
         <Notice>{err}</Notice>
         <Notice kind="ok">{info}</Notice>
 

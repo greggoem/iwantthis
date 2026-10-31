@@ -1,21 +1,47 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { supabase, errMsg, listShareUrl } from '../lib/supabase'
 import { safeUrl } from '../lib/affiliate'
+import { fetchPreview, euroPrice } from '../lib/preview'
 import { formatDateShort, formatPrice } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, Notice, Spinner } from '../components/ui'
-import ItemLink from '../components/ItemLink'
+import { GiftRow, GiftTable, Thumb } from '../components/GiftTable'
 
-interface Draft { title: string; url: string; details: string; price: string }
-const empty: Draft = { title: '', url: '', details: '', price: '' }
+interface Draft { title: string; url: string; details: string; price: string; image: string }
+const empty: Draft = { title: '', url: '', details: '', price: '', image: '' }
 
 function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
   initial: Draft; onSubmit: (d: Draft) => Promise<string | null>; onCancel?: () => void; submitLabel: string
 }) {
   const [d, setD] = useState<Draft>(initial)
   const [err, setErr] = useState('')
+  const [hint, setHint] = useState('')
   const [busy, setBusy] = useState(false)
+  const [reading, setReading] = useState(false)
+  const lastUrl = useRef(initial.url.trim())
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD(prev => ({ ...prev, [k]: e.target.value }))
+
+  // Dès que le lien est saisi : on va lire la fiche produit (image, prix, titre)
+  const readLink = async () => {
+    const u = safeUrl(d.url)
+    if (!u || d.url.trim() === lastUrl.current) return
+    lastUrl.current = d.url.trim()
+    setReading(true); setHint('')
+    const p = await fetchPreview(u.toString())
+    setReading(false)
+    if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Vous pouvez saisir le prix à la main.`); return }
+    const price = euroPrice(p)
+    setD(prev => ({
+      ...prev,
+      image: p.image ?? '',
+      title: prev.title.trim() ? prev.title : (p.title ?? ''),
+      price: prev.price === '' && price !== undefined ? String(price) : prev.price,
+    }))
+    const bits = [p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
+    setHint(bits.length
+      ? `✓ Trouvé sur ${p.site} : ${bits.join(' et ')}. Vérifiez, c'est modifiable.`
+      : `Rien de plus trouvé sur ${p.site} : renseignez le prix si vous le connaissez.`)
+  }
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -24,26 +50,39 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
     setBusy(true)
     const msg = await onSubmit(d)
     setBusy(false)
-    if (msg) setErr(msg); else if (!onCancel) setD(empty)
+    if (msg) setErr(msg)
+    else if (!onCancel) { setD(empty); setHint(''); lastUrl.current = '' }
   }
 
   return (
     <form className="card stack" onSubmit={submit}>
       <Notice>{err}</Notice>
-      <label>Cadeau
-        <input required maxLength={200} value={d.title} onChange={set('title')} placeholder="Ex. Pull en laine mérinos" />
+      <label><span>Lien vers le site <span className="muted">(l'image et le prix sont récupérés automatiquement)</span></span>
+        <input value={d.url} onChange={set('url')} onBlur={readLink} placeholder="https://…" inputMode="url" />
       </label>
-      <label><span>Lien vers le site <span className="muted">(facultatif)</span></span>
-        <input value={d.url} onChange={set('url')} placeholder="https://…" inputMode="url" />
-      </label>
-      <label><span>Détails <span className="muted">(taille, couleur, modèle…)</span></span>
-        <textarea maxLength={1000} rows={2} value={d.details} onChange={set('details')} placeholder="Ex. Taille L, bleu marine" />
-      </label>
-      <label><span>Prix indicatif <span className="muted">(facultatif, en €)</span></span>
-        <input type="number" min="0" step="0.01" value={d.price} onChange={set('price')} />
-      </label>
+      {reading && <p className="small muted">Lecture de la fiche produit…</p>}
+      {hint && <p className="small muted">{hint}</p>}
+      <div className="formrow">
+        {d.image && (
+          <div className="formthumb">
+            <Thumb src={d.image} alt="Aperçu" />
+            <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer l'image</button>
+          </div>
+        )}
+        <div className="stack grow">
+          <label>Cadeau
+            <input required maxLength={200} value={d.title} onChange={set('title')} placeholder="Ex. Pull en laine mérinos" />
+          </label>
+          <label><span>Détails <span className="muted">(taille, couleur, modèle…)</span></span>
+            <textarea maxLength={1000} rows={2} value={d.details} onChange={set('details')} placeholder="Ex. Taille L, bleu marine" />
+          </label>
+          <label><span>Prix <span className="muted">(en €, facultatif)</span></span>
+            <input type="number" min="0" step="0.01" value={d.price} onChange={set('price')} />
+          </label>
+        </div>
+      </div>
       <div className="row">
-        <button className="btn btn-primary" disabled={busy}>{submitLabel}</button>
+        <button className="btn btn-primary" disabled={busy || reading}>{submitLabel}</button>
         {onCancel && <button type="button" className="btn btn-ghost" onClick={onCancel}>Annuler</button>}
       </div>
     </form>
@@ -57,6 +96,9 @@ export default function MyList() {
   const [editId, setEditId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [err, setErr] = useState('')
+  const [msg, setMsg] = useState('')
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [bulk, setBulk] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
@@ -80,6 +122,7 @@ export default function MyList() {
     url: d.url.trim() ? safeUrl(d.url)!.toString() : null,
     details: d.details.trim() || null,
     price: d.price === '' ? null : Number(d.price),
+    image_url: d.image && safeUrl(d.image) ? d.image : null,
   })
 
   const add = async (d: Draft) => {
@@ -97,6 +140,37 @@ export default function MyList() {
     const { error } = await supabase.from('items').delete().eq('id', it.id)
     if (error) setErr(errMsg(error)); else load()
   }
+
+  /** Relit le lien d'un cadeau : met à jour l'image et le prix si le site les donne */
+  const refreshOne = async (it: Item, quiet = false): Promise<boolean> => {
+    if (!it.url) return false
+    const p = await fetchPreview(it.url)
+    if (!p.found) { if (!quiet) setErr(`« ${it.title} » : ${p.reason ?? 'lecture impossible'}`); return false }
+    const price = euroPrice(p)
+    const patch: { image_url?: string; price?: number } = {}
+    if (p.image) patch.image_url = p.image
+    if (price !== undefined) patch.price = price
+    if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : le site ne donne ni image ni prix.`); return false }
+    const { error } = await supabase.from('items').update(patch).eq('id', it.id)
+    if (error) { setErr(errMsg(error)); return false }
+    if (!quiet) setMsg(`« ${it.title} » mis à jour${price !== undefined ? ` (${formatPrice(price)})` : ''}.`)
+    return true
+  }
+  const refresh = async (it: Item) => {
+    setErr(''); setMsg(''); setBusyId(it.id)
+    await refreshOne(it)
+    setBusyId(null); load()
+  }
+  const missing = items.filter(i => i.url && !i.image_url)
+  const refreshMissing = async () => {
+    setErr(''); setMsg(''); setBulk(true)
+    let ok = 0
+    for (const it of missing) if (await refreshOne(it, true)) ok++
+    setBulk(false)
+    setMsg(`${ok} cadeau(x) complété(s) sur ${missing.length}. Les autres sites ne permettent pas la lecture automatique.`)
+    load()
+  }
+
   const saveTitle = async () => {
     if (!list || title.trim() === list.title || !title.trim()) return
     const { error } = await supabase.from('wishlists').update({ title: title.trim() }).eq('id', list.id)
@@ -106,9 +180,9 @@ export default function MyList() {
   if (loading) return <Spinner />
 
   return (
-    <div className="narrow">
+    <div>
       <input className="h1-input" value={title} maxLength={100} onChange={e => setTitle(e.target.value)} onBlur={saveTitle} aria-label="Titre de la liste" />
-      <Notice>{err}</Notice>
+      <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
       {list && (
         <section className="card stack">
@@ -121,44 +195,53 @@ export default function MyList() {
         </section>
       )}
 
-      <h2 className="mt">Mes envies ({items.length})</h2>
-      {items.length === 0 && <p className="muted">Votre liste est vide : ajoutez votre premier cadeau ci-dessous.</p>}
+      <div className="row between wrap gap mt">
+        <h2 style={{ margin: 0 }}>Mes envies ({items.length})</h2>
+        {missing.length > 0 && (
+          <button className="btn btn-sm" disabled={bulk} onClick={refreshMissing}>
+            {bulk ? 'Lecture des liens…' : `↻ Récupérer images et prix (${missing.length})`}
+          </button>
+        )}
+      </div>
 
-      <ul className="items">
-        {items.map(it => (
-          <li key={it.id}>
-            {editId === it.id ? (
+      {items.length === 0 ? (
+        <div className="card steps">
+          <h3>Pour démarrer</h3>
+          <ol>
+            <li><strong>Ajoutez vos envies</strong> ci-dessous : collez simplement le lien du produit, l'image et le prix sont récupérés pour vous.</li>
+            <li><strong>Partagez le lien</strong> de votre liste avec vos proches (WhatsApp, e-mail…).</li>
+            <li><strong>Créez un événement</strong> (Noël, anniversaire) pour inviter la famille, voir toutes les listes et organiser un tirage au sort.</li>
+          </ol>
+        </div>
+      ) : (
+        <GiftTable statusLabel="Statut">
+          {items.map(it => editId === it.id ? (
+            <div key={it.id} className="gtable-edit">
               <ItemForm
-                initial={{ title: it.title, url: it.url ?? '', details: it.details ?? '', price: it.price?.toString() ?? '' }}
+                initial={{ title: it.title, url: it.url ?? '', details: it.details ?? '', price: it.price?.toString() ?? '', image: it.image_url ?? '' }}
                 submitLabel="Enregistrer" onCancel={() => setEditId(null)} onSubmit={d => update(it.id, d)}
               />
-            ) : (
-              <div className="card item">
-                <div className="item-main">
-                  <strong>{it.title}</strong>
-                  {it.details && <p className="small">{it.details}</p>}
-                  <div className="row wrap gap">
-                    {it.price !== null && <span className="small muted">{formatPrice(it.price)}</span>}
-                    <ItemLink url={it.url} />
-                  </div>
-                  {claims[it.id] && (
-                    <p className="badge badge-ok">
-                      🎁 Offert par {claims[it.id].claimed_by_name} (remise le {formatDateShort(claims[it.id].reveal_on)})
-                    </p>
-                  )}
-                </div>
-                <div className="item-actions">
-                  <button className="btn btn-ghost btn-sm" onClick={() => setEditId(it.id)}>Modifier</button>
-                  <button className="btn btn-ghost btn-sm danger" onClick={() => remove(it)}>Supprimer</button>
-                </div>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+            </div>
+          ) : (
+            <GiftRow
+              key={it.id}
+              item={it}
+              highlight={Boolean(claims[it.id])}
+              status={claims[it.id]
+                ? <span className="badge badge-ok">🎁 Offert par {claims[it.id].claimed_by_name}<br /><span className="small">remise le {formatDateShort(claims[it.id].reveal_on)}</span></span>
+                : <span className="small muted">🤫 Surprise</span>}
+              actions={<>
+                <button className="btn btn-ghost btn-sm" onClick={() => setEditId(it.id)}>Modifier</button>
+                {it.url && <button className="btn btn-ghost btn-sm" disabled={busyId === it.id} onClick={() => refresh(it)}>{busyId === it.id ? '…' : '↻ Actualiser'}</button>}
+                <button className="btn btn-ghost btn-sm danger" onClick={() => remove(it)}>Supprimer</button>
+              </>}
+            />
+          ))}
+        </GiftTable>
+      )}
 
       <h2 className="mt">Ajouter un cadeau</h2>
-      <ItemForm initial={empty} submitLabel="Ajouter à ma liste" onSubmit={add} />
+      <div className="narrow-left"><ItemForm initial={empty} submitLabel="Ajouter à ma liste" onSubmit={add} /></div>
     </div>
   )
 }

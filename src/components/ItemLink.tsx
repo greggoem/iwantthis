@@ -8,7 +8,7 @@ export default function ItemLink({ url }: { url: string | null }) {
   if (!link) return null
   return (
     <a className="itemlink" href={link.href} target="_blank" rel="noopener noreferrer sponsored nofollow">
-      Voir sur {link.host} ↗
+      {link.host} ↗
       {link.affiliated && <span className="tag" title="Lien partenaire">partenaire</span>}
     </a>
   )

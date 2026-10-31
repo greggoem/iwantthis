@@ -65,6 +65,7 @@ create table public.items (
   url        text check (url is null or char_length(url) <= 2000),
   details    text check (details is null or char_length(details) <= 1000),
   price      numeric(10,2),
+  image_url  text check (image_url is null or char_length(image_url) <= 2000),
   created_at timestamptz not null default now()
 );
 create index items_list_idx on public.items(list_id);

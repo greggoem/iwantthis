@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
-import { formatDateShort, formatPrice, todayISO } from '../lib/format'
+import { formatDateShort, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { Notice, Spinner } from '../components/ui'
-import ItemLink from '../components/ItemLink'
+import { GiftRow, GiftTable } from '../components/GiftTable'
 
 interface CommonEvent { id: string; name: string; event_date: string }
 
@@ -80,70 +80,60 @@ export default function ListView() {
   const revealDate = choice === 'custom' ? customDate : events.find(e => e.id === choice)?.event_date
 
   return (
-    <div className="narrow">
+    <div>
       <h1>{list.title}</h1>
       <p className="muted">Liste de <strong>{owner}</strong>. {owner} ne voit pas ce que vous marquez comme acheté, avant la date de remise.</p>
       <Notice>{err}</Notice>
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
 
-      <ul className="items">
-        {items.map(it => {
-          const c = claims[it.id]
-          const mine = c?.claimed_by === me
-          return (
-            <li key={it.id}>
-              <div className={`card item ${c ? 'claimed' : ''}`}>
-                <div className="item-main">
-                  <strong>{it.title}</strong>
-                  {it.details && <p className="small">{it.details}</p>}
-                  <div className="row wrap gap">
-                    {it.price !== null && <span className="small muted">{formatPrice(it.price)}</span>}
-                    <ItemLink url={it.url} />
-                  </div>
-
-                  {c && (
-                    <p className="badge badge-ok">
-                      ✓ Déjà acheté par {mine ? 'vous' : c.claimed_by_name} · remise le {formatDateShort(c.reveal_on)}
-                    </p>
-                  )}
-
-                  {claimingId === it.id && (
-                    <div className="claimbox stack">
-                      <strong className="small">Pour quelle occasion ?</strong>
-                      {events.map(e => (
-                        <label key={e.id} className="radio">
-                          <input type="radio" name="occ" checked={choice === e.id} onChange={() => setChoice(e.id)} />
-                          {e.name} <span className="muted">· {formatDateShort(e.event_date)}</span>
-                        </label>
-                      ))}
-                      <label className="radio">
-                        <input type="radio" name="occ" checked={choice === 'custom'} onChange={() => setChoice('custom')} />
-                        Autre date de remise
-                      </label>
-                      {choice === 'custom' && (
-                        <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
-                      )}
-                      <p className="small muted">
-                        {owner} ne verra l'achat qu'à partir du {revealDate ? formatDateShort(revealDate) : '…'}. Les autres invités le voient tout de suite.
-                      </p>
-                      <div className="row">
-                        <button className="btn btn-primary btn-sm" disabled={busy || (choice === 'custom' && !customDate)} onClick={confirmClaim}>Confirmer</button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => setClaimingId(null)}>Annuler</button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                <div className="item-actions">
-                  {!c && claimingId !== it.id && (
-                    <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté ce cadeau</button>
-                  )}
+      {items.length > 0 && (
+        <GiftTable statusLabel="Achat">
+          {items.map(it => {
+            const c = claims[it.id]
+            const mine = c?.claimed_by === me
+            return (
+              <GiftRow
+                key={it.id}
+                item={it}
+                highlight={Boolean(c)}
+                status={c
+                  ? <span className="badge badge-ok">✓ Déjà acheté par {mine ? 'vous' : c.claimed_by_name}<br /><span className="small">remise le {formatDateShort(c.reveal_on)}</span></span>
+                  : <span className="small muted">À offrir</span>}
+                actions={<>
+                  {!c && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté ce cadeau</button>}
                   {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler mon achat</button>}
-                </div>
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+                </>}
+              >
+                {claimingId === it.id && (
+                  <div className="claimbox stack">
+                    <strong className="small">Pour quelle occasion ?</strong>
+                    {events.map(e => (
+                      <label key={e.id} className="radio">
+                        <input type="radio" name="occ" checked={choice === e.id} onChange={() => setChoice(e.id)} />
+                        {e.name} <span className="muted">· {formatDateShort(e.event_date)}</span>
+                      </label>
+                    ))}
+                    <label className="radio">
+                      <input type="radio" name="occ" checked={choice === 'custom'} onChange={() => setChoice('custom')} />
+                      Autre date de remise
+                    </label>
+                    {choice === 'custom' && (
+                      <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
+                    )}
+                    <p className="small muted">
+                      {owner} ne verra l'achat qu'à partir du {revealDate ? formatDateShort(revealDate) : '…'}. Les autres invités le voient tout de suite.
+                    </p>
+                    <div className="row">
+                      <button className="btn btn-primary btn-sm" disabled={busy || (choice === 'custom' && !customDate)} onClick={confirmClaim}>Confirmer</button>
+                      <button className="btn btn-ghost btn-sm" onClick={() => setClaimingId(null)}>Annuler</button>
+                    </div>
+                  </div>
+                )}
+              </GiftRow>
+            )
+          })}
+        </GiftTable>
+      )}
     </div>
   )
 }

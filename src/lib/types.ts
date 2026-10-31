@@ -14,6 +14,7 @@ export interface Item {
   url: string | null
   details: string | null
   price: number | null
+  image_url: string | null
   created_at: string
 }
 

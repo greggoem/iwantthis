@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './lib/auth'
 import { isConfigured, supabase, errMsg, APP_NAME } from './lib/supabase'
@@ -14,16 +14,17 @@ import EventDetail from './pages/EventDetail'
 import JoinEvent from './pages/JoinEvent'
 import Profile from './pages/Profile'
 import Confirm from './pages/Confirm'
+import Landing from './pages/Landing'
 
-function RequireAuth({ children }: { children: ReactNode }) {
+/** Connecté : l'application. Non connecté : page d'accueil sur « / », sinon connexion (en gardant la page voulue) */
+function Gate() {
   const { session, loading } = useAuth()
   const loc = useLocation()
   if (loading) return <Spinner />
-  if (!session) {
-    sessionStorage.setItem('postLoginPath', loc.pathname + loc.search)
-    return <Navigate to="/login" replace />
-  }
-  return <>{children}</>
+  if (session) return <Layout />
+  if (loc.pathname === '/') return <Landing />
+  sessionStorage.setItem('postLoginPath', loc.pathname + loc.search)
+  return <Navigate to="/login" replace />
 }
 
 /** Après connexion (e-mail ou retour de Google) : retourner là où l'on allait (ex. un lien de partage) */
@@ -88,7 +89,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/confirm" element={<Confirm />} />
-        <Route element={<RequireAuth><Layout /></RequireAuth>}>
+        <Route element={<Gate />}>
           <Route index element={<MyList />} />
           <Route path="listes" element={<SharedLists />} />
           <Route path="listes/:id" element={<ListView />} />

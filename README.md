@@ -146,6 +146,14 @@ Au-dessus de chaque liste (la vôtre comme celles de vos proches), deux boutons 
 
 Les deux passent par des fonctions SQL contrôlées (`supabase/edit_invites_claims.sql`, à exécuter une fois) : seul l'organisateur modifie ses invitations, seul l'acheteur modifie son achat, et l'événement choisi doit réunir l'acheteur et le propriétaire.
 
+## 5 nonies. Image d'événement et partage
+
+L'organisateur ajoute une **image** à son événement (bandeau en haut de la page, miniature dans la liste des événements). Elle est réduite dans le navigateur (≈ 1600 px) puis stockée dans le bucket public `event-images` de Supabase, dans un dossier au nom de l'événement : seul l'organisateur peut y écrire (`supabase/event_images.sql`, à exécuter une fois).
+
+Le bouton **Partager** (événement ou liste) prépare une **carte image** 1200×630 (l'image de l'événement avec le nom et la date ; pour une liste, l'image du prochain événement qui en a une ; sinon une carte sobre), un **message sympa** modifiable (emoji selon l'occasion : Noël, anniversaire, mariage…) et les boutons : *Partager…* (téléphone : joint l'image et le message), WhatsApp, e-mail, copier le message, enregistrer l'image.
+
+Limite : un lien collé dans WhatsApp ou un e-mail n'affiche pas d'aperçu avec l'image de l'événement (l'aperçu d'un lien est lu sur la page elle-même, qui est la même pour tous). L'image est donc **jointe** au message plutôt qu'affichée en aperçu.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -159,6 +167,7 @@ supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
 supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/event_invites.sql   invitations par nom + e-mail
+supabase/event_images.sql    image d'un événement (bucket + droits)
 supabase/edit_invites_claims.sql  modifier une invitation / la date d'un achat
 supabase/item_groups.sql     groupes de cadeaux (plusieurs liens, « un seul à choisir »)
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)

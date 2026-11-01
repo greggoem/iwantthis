@@ -5,7 +5,7 @@ import { bookmarkletHref } from '../lib/bookmarklet'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
 import { fetchPreview, euroPrice } from '../lib/preview'
-import { formatDateShort, formatPrice } from '../lib/format'
+import { formatDateShort, formatPrice, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
 import { GiftCard, GiftCollection, GiftRow, Thumb, ViewBar } from '../components/GiftTable'
@@ -14,6 +14,8 @@ import { sortItems, useViewPrefs } from '../lib/view'
 import { cleanTitle, groupTree, nameFromUrl, parseLinks } from '../lib/groups'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
+import ShareSheet from '../components/ShareSheet'
+import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
 
 interface Draft { title: string; url: string; details: string; price: string; image: string }
@@ -226,19 +228,25 @@ function BookmarkletBox() {
 /* ---------- Fenêtre « Partager ma liste » ---------- */
 function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) {
   const url = listShareUrl(list.share_token)
-  const msg = `Voici ma liste de cadeaux : ${url}`
+  // l'image du prochain événement qui en a une est reprise sur la carte de partage
+  const [ev, setEv] = useState<{ name: string; event_date: string; image_url: string } | null | undefined>(undefined)
+  useEffect(() => {
+    supabase.from('events').select('name,event_date,image_url').not('image_url', 'is', null).gte('event_date', todayISO()).order('event_date').limit(1)
+      .then(({ data }) => setEv(((data as { name: string; event_date: string; image_url: string }[]) ?? [])[0] ?? null))
+  }, [])
+  if (ev === undefined) return <Modal title="Partager ma liste" onClose={onClose}><Spinner /></Modal>
   return (
-    <Modal title="Partager ma liste" onClose={onClose}>
-      <div className="stack">
-        <p className="muted">Envoyez ce lien à vos proches : ils se connectent, voient vos envies et indiquent ce qu'ils achètent.
-          Vous ne verrez pas ce qui est acheté avant la date de remise du cadeau.</p>
-        <CopyField value={url} />
-        <div className="row wrap gap">
-          <a className="btn" href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" rel="noopener noreferrer"><Icon name="chat" size={16} /> WhatsApp</a>
-          <a className="btn" href={`mailto:?subject=${encodeURIComponent('Ma liste de cadeaux')}&body=${encodeURIComponent(msg)}`}><Icon name="mail" size={16} /> E-mail</a>
-        </div>
-      </div>
-    </Modal>
+    <ShareSheet
+      title="Partager ma liste"
+      intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant la date de remise."
+      message={listMessage(list.title, url, APP_NAME)}
+      subject={list.title}
+      heading={list.title} sub={ev ? `${ev.name} · ${formatDateShort(ev.event_date)}` : undefined} imageUrl={ev?.image_url}
+      fileName="ma-liste-de-cadeaux"
+      onClose={onClose}
+    >
+      <CopyField value={url} />
+    </ShareSheet>
   )
 }
 

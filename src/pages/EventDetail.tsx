@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg, eventInviteUrl, APP_NAME } from '../lib/supabase'
@@ -8,6 +8,9 @@ import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
+import ShareSheet from '../components/ShareSheet'
+import { eventMessage, occasionEmoji } from '../lib/shareCard'
+import { removeEventImage, setEventImage } from '../lib/eventImage'
 
 interface Excl { giver_id: string; receiver_id: string }
 interface Invite { id: string; name: string; email: string }
@@ -25,6 +28,9 @@ export default function EventDetail() {
   const [excl, setExcl] = useState<Excl[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [editInv, setEditInv] = useState<Invite | null>(null)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [imgBusy, setImgBusy] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [eiName, setEiName] = useState('')
   const [eiEmail, setEiEmail] = useState('')
   const [eiErr, setEiErr] = useState('')
@@ -115,7 +121,24 @@ export default function EventDetail() {
     await run(() => supabase.from('event_invites').delete().eq('id', i.id))
   }
   const inviteText = (i: Invite) =>
-    `Bonjour ${i.name},\n\nJe t'invite à « ${ev!.name} » le ${formatDate(ev!.event_date)} sur ${APP_NAME} : on y partage nos listes de cadeaux, sans doublon.\n\nRejoins l'événement ici : ${eventInviteUrl(ev!.invite_code)}\n(Connecte-toi ou crée ton compte avec cette adresse e-mail : ${i.email})\n\nÀ bientôt !`
+    `Bonjour ${i.name} 👋\n\n${occasionEmoji(ev!.name)} Je t'invite à « ${ev!.name} » le ${formatDate(ev!.event_date)} sur ${APP_NAME} : chacun y met ses envies de cadeaux, on voit les listes des uns et des autres et on évite les doublons 😉\n\n👉 Rejoins l'événement ici : ${eventInviteUrl(ev!.invite_code)}\n(Connecte-toi ou crée ton compte avec cette adresse e-mail : ${i.email})\n\nÀ bientôt !`
+  const onPickImage = async (file: File | undefined) => {
+    if (!file || !ev) return
+    setErr(''); setMsg(''); setImgBusy(true)
+    const m = await setEventImage(ev.id, file, ev.image_url)
+    setImgBusy(false)
+    if (fileRef.current) fileRef.current.value = ''
+    if (m) setErr(m); else setMsg('Image enregistrée.')
+    await load()
+  }
+  const dropImage = async () => {
+    if (!ev || !(await confirm({ title: 'Retirer l\'image ?', message: 'L\'événement n\'aura plus d\'image.', confirmLabel: 'Retirer', danger: true }))) return
+    setErr(''); setImgBusy(true)
+    const m = await removeEventImage(ev.id, ev.image_url)
+    setImgBusy(false)
+    if (m) setErr(m)
+    await load()
+  }
   const mailtoFor = (i: Invite) => `mailto:${encodeURIComponent(i.email)}?subject=${encodeURIComponent(`Invitation : ${ev!.name}`)}&body=${encodeURIComponent(inviteText(i))}`
   const copyInvite = async (i: Invite) => { if (await copyText(inviteText(i))) { setErr(''); setMsg(`Message pour ${i.name} copié.`) } }
   const addExcl = async () => {
@@ -172,6 +195,20 @@ export default function EventDetail() {
   return (
     <div className="narrow">
       <p><Link to="/evenements" className="small">← Tous les événements</Link></p>
+      {(ev.image_url || isOrg) && !editing && (
+        <div className={`event-cover ${ev.image_url ? '' : 'is-empty'}`}>
+          {ev.image_url
+            ? <img src={ev.image_url} alt="" referrerPolicy="no-referrer" />
+            : <button type="button" className="cover-add" disabled={imgBusy} onClick={() => fileRef.current?.click()}><Icon name="image" size={22} /> {imgBusy ? 'Envoi…' : 'Ajouter une image à l\'événement'}</button>}
+          {isOrg && ev.image_url && (
+            <div className="cover-actions">
+              <button type="button" className="btn btn-sm" disabled={imgBusy} onClick={() => fileRef.current?.click()}>{imgBusy ? 'Envoi…' : 'Changer'}</button>
+              <button type="button" className="btn btn-sm" disabled={imgBusy} onClick={dropImage}>Retirer</button>
+            </div>
+          )}
+        </div>
+      )}
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" hidden onChange={e => onPickImage(e.target.files?.[0])} />
       {editing ? (
         <form className="card stack" onSubmit={saveEvent}>
           <label>Nom<input required value={eName} maxLength={120} onChange={e => setEName(e.target.value)} /></label>
@@ -191,7 +228,10 @@ export default function EventDetail() {
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
       <section className="card stack mt">
-        <h2>Inviter des proches</h2>
+        <div className="row between wrap gap">
+          <h2>Inviter des proches</h2>
+          <button className="btn btn-sm" onClick={() => setShareOpen(true)}><Icon name="share" size={15} /> Partager</button>
+        </div>
         <p className="small muted">Ils ouvrent ce lien, se connectent, et rejoignent l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
         <CopyField value={eventInviteUrl(ev.invite_code)} />
         {isOrg && (
@@ -230,6 +270,17 @@ export default function EventDetail() {
         </>
       )}
 
+      {shareOpen && (
+        <ShareSheet
+          title="Partager l'événement"
+          intro="Envoyez l'invitation avec un message sympa et l'image de l'événement."
+          message={eventMessage(ev.name, formatDate(ev.event_date), eventInviteUrl(ev.invite_code), APP_NAME)}
+          subject={`Invitation : ${ev.name}`}
+          heading={ev.name} sub={formatDate(ev.event_date)} imageUrl={ev.image_url}
+          fileName={`invitation-${ev.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'evenement'}`}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
       {editInv && (
         <Modal title="Modifier l'invitation" onClose={() => setEditInv(null)}>
           <form className="stack" onSubmit={saveInvite}>

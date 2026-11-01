@@ -54,6 +54,7 @@ export default function Events() {
   const Card = ({ r }: { r: Row }) => (
     <li>
       <Link className="card item linkcard" to={`/evenements/${r.id}`}>
+        <div className="evthumb">{r.image_url ? <img src={r.image_url} alt="" loading="lazy" referrerPolicy="no-referrer" /> : <Icon name="gift" size={20} />}</div>
         <div className="item-main">
           <strong>{r.name}</strong>
           <p className="small muted">{formatDate(r.event_date)} · {r.event_members[0]?.count ?? 0} invité(s)

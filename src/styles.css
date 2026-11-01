@@ -367,9 +367,9 @@ select { width: auto; max-width: 100%; }
 .gcard.is-claimed { background: #fbfefc; }
 .gcard.dim { opacity: .55; }
 .gcard-img { display: block; }
-.pic { aspect-ratio: 1 / 1; background: #fff; display: grid; place-items: center; color: #b4b4bb; border-bottom: 1px solid var(--line-soft); }
+.pic { position: relative; aspect-ratio: 1 / 1; min-height: 0; overflow: hidden; background: #fff; display: grid; place-items: center; color: #b4b4bb; border-bottom: 1px solid var(--line-soft); }
 .pic:has(svg) { background: var(--fill); }
-.pic img { width: 100%; height: 100%; object-fit: contain; padding: .6rem; box-sizing: border-box; display: block; }
+.pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: .6rem; box-sizing: border-box; display: block; }
 .gcard-body { padding: .8rem .9rem .9rem; display: flex; flex-direction: column; gap: .3rem; flex: 1; }
 .gcard .title-link strong, .gcard .g-details { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; }
 .gcard .title-link { min-height: 2.9em; }
@@ -395,3 +395,16 @@ select { width: auto; max-width: 100%; }
 }
 .purchase-actions { display: flex; gap: .1rem; flex: none; }
 .gcard .title-link { display: block; }
+
+/* ---------- Image d'événement, partage ---------- */
+.event-cover { position: relative; aspect-ratio: 16 / 6; border-radius: 18px; overflow: hidden; background: var(--fill); margin-bottom: 1rem; }
+.event-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.event-cover.is-empty { aspect-ratio: auto; border: 1px dashed var(--line); background: transparent; }
+.cover-add { width: 100%; padding: 1.1rem; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 550; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: .5rem; }
+.cover-add:hover { color: var(--ink); background: var(--fill); }
+.cover-actions { position: absolute; right: .7rem; bottom: .7rem; display: flex; gap: .4rem; }
+.evthumb { width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--fill); display: grid; place-items: center; flex: none; color: #b4b4bb; }
+.evthumb img { width: 100%; height: 100%; object-fit: cover; }
+.sharecard { width: 100%; aspect-ratio: 1200 / 630; border-radius: 14px; border: 1px solid var(--line-soft); object-fit: cover; display: block; }
+.sharecard-wait { background: var(--fill); animation: fade .4s ease; }
+@media (max-width: 560px) { .event-cover { aspect-ratio: 16 / 9; } }

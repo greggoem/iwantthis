@@ -7,8 +7,9 @@ import type { Claim, Item, Wishlist } from '../lib/types'
 import { IconButton, Notice, Spinner } from '../components/ui'
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
-import { GiftRow, GiftTable } from '../components/GiftTable'
-import GroupRow from '../components/GroupRow'
+import { GiftCard, GiftCollection, GiftRow, ViewBar } from '../components/GiftTable'
+import GroupRow, { GroupSection } from '../components/GroupRow'
+import { sortItems, useViewPrefs } from '../lib/view'
 import { groupTree } from '../lib/groups'
 
 interface CommonEvent { id: string; name: string; event_date: string }
@@ -31,6 +32,7 @@ export default function ListView() {
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
+  const [prefs, setPrefs, cycleSort] = useViewPrefs()
 
   const load = useCallback(async () => {
     const { data: l } = await supabase.from('wishlists').select('*').eq('id', id!).maybeSingle()
@@ -128,13 +130,24 @@ export default function ListView() {
   if (list.owner_id === me) return <Navigate to="/" replace />
 
   const { tops, kids } = groupTree(items)
+  const gallery = prefs.view === 'gallery'
+  const Row = gallery ? GiftCard : GiftRow
+  const Group = gallery ? GroupSection : GroupRow
+  // statut pour le tri : 0 = à offrir, 1 = pris ; un groupe vaut la part de ses éléments pris
+  const statusOf = (it: Item): number => {
+    if (!it.is_group) return claims[it.id] ? 1 : 0
+    const ks = kids[it.id] ?? []
+    return ks.length ? ks.filter(k => claims[k.id]).length / ks.length : 0
+  }
+  const sortedTops = sortItems(tops, prefs, g => kids[g.id] ?? [], statusOf)
+  const sortedKids = (g: Item) => sortItems(kids[g.id] ?? [], prefs, () => [], statusOf)
   const row = (it: Item, group?: Item) => {
     const c = claims[it.id]
     const mine = c?.claimed_by === me
     const groupTaken = Boolean(group?.pick_one && (kids[group.id] ?? []).some(k => claims[k.id]))
     const obsolete = groupTaken && !c          // un autre élément du groupe a déjà été pris
     return (
-      <GiftRow
+      <Row
         key={it.id}
         item={it}
         kid={Boolean(group)}
@@ -175,7 +188,7 @@ export default function ListView() {
             </div>
           </div>
         )}
-      </GiftRow>
+      </Row>
     )
   }
   const revealDate = choice === 'custom' ? customDate : events.find(e => e.id === choice)?.event_date
@@ -188,14 +201,15 @@ export default function ListView() {
       {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
 
+      {items.length > 0 && <ViewBar prefs={prefs} onChange={setPrefs} left={<span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}</span>} />}
       {items.length > 0 && (
-        <GiftTable statusLabel="Achat">
-          {tops.map(it => {
+        <GiftCollection view={prefs.view} prefs={prefs} onSort={cycleSort} statusLabel="Achat">
+          {sortedTops.map(it => {
             if (it.is_group) {
-              const ks = kids[it.id] ?? []
+              const ks = sortedKids(it)
               const taken = ks.filter(k => claims[k.id]).length
               return (
-                <GroupRow
+                <Group
                   key={it.id}
                   group={it}
                   kids={ks}
@@ -211,7 +225,7 @@ export default function ListView() {
             }
             return row(it)
           })}
-        </GiftTable>
+        </GiftCollection>
       )}
     </div>
   )

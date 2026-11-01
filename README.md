@@ -135,6 +135,10 @@ Bouton **Groupe** au-dessus de la liste (`supabase/item_groups.sql`, à exécute
 
 Un groupe ne s'achète pas lui-même. Un proche peut copier un élément ou tout le groupe dans sa propre liste. Les achats restent cachés au propriétaire jusqu'à la date de remise.
 
+## 5 septies. Liste, galerie et tri
+
+Au-dessus de chaque liste (la vôtre comme celles de vos proches), deux boutons permettent de passer de la **liste** à la **galerie** (grandes images en cartes ; un groupe devient une section pleine largeur). En mode liste, **survoler la miniature avec la souris affiche la grande image**. On trie en cliquant sur les titres de colonnes (Cadeau, Prix, Où l'acheter, Statut) : un clic croissant, un deuxième décroissant, un troisième revient à l'ordre d'ajout ; en galerie et sur téléphone, un menu « Trier par » fait la même chose. Les envies sans prix ou sans lien restent en bas. Un groupe est trié d'après son élément le moins cher (ou son premier magasin), et ses éléments suivent le même tri. Le choix est mémorisé sur l'appareil (aucune donnée côté serveur).
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).

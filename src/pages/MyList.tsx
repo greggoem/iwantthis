@@ -8,8 +8,9 @@ import { fetchPreview, euroPrice } from '../lib/preview'
 import { formatDateShort, formatPrice } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
-import { GiftRow, GiftTable, Thumb } from '../components/GiftTable'
-import GroupRow from '../components/GroupRow'
+import { GiftCard, GiftCollection, GiftRow, Thumb, ViewBar } from '../components/GiftTable'
+import GroupRow, { GroupSection } from '../components/GroupRow'
+import { sortItems, useViewPrefs } from '../lib/view'
 import { cleanTitle, groupTree, nameFromUrl, parseLinks } from '../lib/groups'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
@@ -258,6 +259,7 @@ export default function MyList() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [bulk, setBulk] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [prefs, setPrefs, cycleSort] = useViewPrefs()
 
   // données envoyées par le raccourci navigateur (#/?add=1&u=…&t=…&i=…&p=…)
   const prefill: Draft | null = params.get('add') === '1' ? (() => {
@@ -288,6 +290,17 @@ export default function MyList() {
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
   const { tops, kids } = groupTree(items)
+  const gallery = prefs.view === 'gallery'
+  const Row = gallery ? GiftCard : GiftRow
+  const Group = gallery ? GroupSection : GroupRow
+  // statut pour le tri : 0 = surprise, 1 = déjà offert (révélé) ; un groupe vaut la part de ses éléments offerts
+  const statusOf = (it: Item): number => {
+    if (!it.is_group) return claims[it.id] ? 1 : 0
+    const ks = kids[it.id] ?? []
+    return ks.length ? ks.filter(k => claims[k.id]).length / ks.length : 0
+  }
+  const sortedTops = sortItems(tops, prefs, g => kids[g.id] ?? [], statusOf)
+  const sortedKids = (g: Item) => sortItems(kids[g.id] ?? [], prefs, () => [], statusOf)
 
   /** Lit chaque lien (3 à la fois) et crée un élément nommé d'après l'objet */
   const importLinks = async (parent: Item, text: string, progress: (done: number, total: number) => void): Promise<string | null> => {
@@ -401,7 +414,7 @@ export default function MyList() {
   }
 
   const itemRow = (it: Item, kid: boolean) => (
-    <GiftRow
+    <Row
       key={it.id}
       item={it}
       kid={kid}
@@ -433,14 +446,14 @@ export default function MyList() {
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
       {items.length > 0 && (
-        <div className="row between wrap gap sub-head">
+        <ViewBar prefs={prefs} onChange={setPrefs} left={<>
           <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${items.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
           {missing.length > 0 && (
             <button className="btn btn-sm" disabled={bulk} onClick={refreshMissing}>
               <Icon name="refresh" size={15} /> {bulk ? 'Lecture des liens…' : `Récupérer images et prix (${missing.length})`}
             </button>
           )}
-        </div>
+        </>} />
       )}
 
       {items.length === 0 ? (
@@ -456,13 +469,13 @@ export default function MyList() {
           </ol>
         </div>
       ) : (
-        <GiftTable statusLabel="Statut">
-          {tops.map(it => {
+        <GiftCollection view={prefs.view} prefs={prefs} onSort={cycleSort} statusLabel="Statut">
+          {sortedTops.map(it => {
             if (it.is_group) {
-              const ks = kids[it.id] ?? []
+              const ks = sortedKids(it)
               const given = ks.filter(k => claims[k.id]).length
               return (
-                <GroupRow
+                <Group
                   key={it.id}
                   group={it}
                   kids={ks}
@@ -481,7 +494,7 @@ export default function MyList() {
             }
             return itemRow(it, false)
           })}
-        </GiftTable>
+        </GiftCollection>
       )}
 
       {modal?.kind === 'share' && list && <ShareModal list={list} onClose={closeModal} />}

@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice } from '../components/ui'
 import ApiAccess from '../components/ApiAccess'
+import DeleteAccount from '../components/DeleteAccount'
 
 export default function Profile() {
   const { profile, session, refreshProfile } = useAuth()
@@ -32,6 +33,7 @@ export default function Profile() {
       <p className="small muted">Les achats déjà réservés gardent l'ancien nom affiché.</p>
 
       <ApiAccess />
+      <DeleteAccount />
     </div>
   )
 }

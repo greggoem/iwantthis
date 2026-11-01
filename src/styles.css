@@ -270,3 +270,11 @@ select { width: auto; max-width: 100%; }
   .land-hero h1 { font-size: 2.2rem; }
   .title-input { min-width: 100%; }
 }
+
+/* ---------- Suppression de compte ---------- */
+.danger-zone { border-color: #f3d3d0; }
+.danger-btn { color: var(--danger); border-color: #f0c4c0; }
+.danger-btn:hover { background: #fdf1f0; border-color: #e8a8a2; }
+.danger-btn-solid { background: var(--danger); border-color: var(--danger); color: #fff; }
+.danger-btn-solid:hover { background: #a51f17; border-color: #a51f17; }
+.consequences { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; color: var(--ink-2); }

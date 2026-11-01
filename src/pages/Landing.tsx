@@ -22,6 +22,7 @@ const FAQ = [
   { q: 'Mes proches doivent-ils créer un compte ?', a: 'Oui, c\'est rapide et gratuit. C\'est ce qui permet de savoir qui a acheté quoi, tout en le cachant au propriétaire de la liste.' },
   { q: 'Puis-je savoir ce qu\'on m\'offre ?', a: 'Non, volontairement. Les achats ne deviennent visibles pour vous qu\'à la date de remise du cadeau, choisie par la personne qui achète (par exemple la date de l\'événement).' },
   { q: 'Comment fonctionne le tirage au sort ?', a: 'L\'organisateur ajoute d\'éventuelles exclusions, puis lance le tirage. Chacun découvre uniquement la personne à qui il doit offrir un cadeau, organisateur compris.' },
+  { q: 'Puis-je me désinscrire ?', a: 'Oui, à tout moment : dans Mon profil, « Supprimer mon compte » efface votre compte, votre liste et vos achats. Vos événements sont transmis à un autre invité.' },
   { q: 'Pourquoi des liens « partenaires » ?', a: 'Certains liens vers des magasins peuvent rapporter une petite commission au site. Le prix pour vous ne change pas.' },
 ]
 

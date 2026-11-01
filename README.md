@@ -118,6 +118,10 @@ Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
 
 **Tests** : `cd supabase/functions/api && deno test --no-prompt api.test.ts` (client Supabase simulé). **Déploiement** : `supabase functions deploy api --no-verify-jwt` et `supabase functions deploy link-preview` (ou via le tableau de bord / l'outil MCP Supabase).
 
+## 5 quater. Se désinscrire
+
+*Mon profil → Se désinscrire → Supprimer mon compte* (confirmation en tapant SUPPRIMER) appelle la fonction SQL `delete_my_account()` (`supabase/delete_account.sql`) : le compte, le profil, la liste, les cadeaux, les jetons API et les achats de la personne sont supprimés ; ses achats sont annulés (les cadeaux redeviennent disponibles) ; un événement qu'elle organisait est transmis au plus ancien autre invité, ou supprimé s'il est seul.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -129,6 +133,7 @@ Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
 ```
 supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
+supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)
 src/lib/                 connexion Supabase, liens de parrainage, authentification
 src/pages/               Ma liste, liste d'un proche, événements, tirage, connexion

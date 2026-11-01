@@ -385,3 +385,4 @@ select { width: auto; max-width: 100%; }
   .gcard-body { padding: .65rem .7rem .75rem; }
   .gsection-head { padding: .8rem .9rem; }
 }
+.purchase-actions { display: flex; gap: .1rem; flex: none; }

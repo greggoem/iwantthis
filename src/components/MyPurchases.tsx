@@ -8,6 +8,7 @@ import { IconButton, Notice } from './ui'
 import { Thumb } from './GiftTable'
 import ItemLink, { ItemAnchor } from './ItemLink'
 import { useConfirm } from './Confirm'
+import ClaimDateModal from './ClaimDateModal'
 
 interface ClaimRow {
   item_id: string
@@ -18,7 +19,7 @@ interface ClaimRow {
 }
 interface Purchase {
   id: string; title: string; url: string | null; price: number | null; image: string | null
-  owner: string; revealOn: string; event: string | null
+  owner: string; ownerId: string; revealOn: string; event: string | null; eventId: string | null
 }
 
 /** Profil : les cadeaux que j'ai indiqué offrir (à venir), avec possibilité d'annuler en cas de changement d'avis */
@@ -29,6 +30,7 @@ export default function MyPurchases() {
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Purchase | null>(null)
 
   const load = useCallback(async () => {
     if (!session) return
@@ -46,8 +48,8 @@ export default function MyPurchases() {
     setRows(claims.map(c => ({
       id: c.item_id, title: c.items!.title, url: c.items!.url,
       price: c.items!.price === null ? null : Number(c.items!.price), image: c.items!.image_url,
-      owner: names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche',
-      revealOn: c.reveal_on, event: c.events?.name ?? null,
+      owner: names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche', ownerId: c.items!.wishlists?.owner_id ?? '',
+      revealOn: c.reveal_on, event: c.events?.name ?? null, eventId: c.event_id,
     })))
   }, [session])
 
@@ -80,7 +82,10 @@ export default function MyPurchases() {
           <ItemLink url={p.url} />
         </div>
       </div>
-      {canCancel && <IconButton icon="trash" label="Annuler mon achat" danger disabled={busy === p.id} onClick={() => cancel(p)} />}
+      {canCancel && <div className="purchase-actions">
+        <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditing(p)} />
+        <IconButton icon="trash" label="Annuler mon achat" danger disabled={busy === p.id} onClick={() => cancel(p)} />
+      </div>}
     </li>
   )
 
@@ -94,6 +99,12 @@ export default function MyPurchases() {
       {upcoming.length === 0
         ? <div className="empty"><div className="empty-ico"><Icon name="bag" size={26} /></div><h2>Rien à offrir pour l'instant</h2><p className="muted">Sur la liste d'un proche, cliquez « J'ai acheté » après votre achat : il apparaîtra ici.</p><Link className="btn btn-primary" to="/listes">Voir les listes de mes proches</Link></div>
         : <ul className="purchases card">{upcoming.map(p => <Row key={p.id} p={p} canCancel />)}</ul>}
+
+      {editing && (
+        <ClaimDateModal itemId={editing.id} title={editing.title} ownerId={editing.ownerId} ownerName={editing.owner}
+          eventId={editing.eventId} revealOn={editing.revealOn} onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); setMsg(`Date de remise de « ${editing.title} » mise à jour.`); load() }} />
+      )}
 
       {past.length > 0 && (
         <details className="bm">

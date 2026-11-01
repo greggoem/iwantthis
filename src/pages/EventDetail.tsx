@@ -7,6 +7,7 @@ import type { EventRow, MemberRow } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/ui'
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
+import Modal from '../components/Modal'
 
 interface Excl { giver_id: string; receiver_id: string }
 interface Invite { id: string; name: string; email: string }
@@ -23,6 +24,10 @@ export default function EventDetail() {
   const [lists, setLists] = useState<Record<string, string>>({})
   const [excl, setExcl] = useState<Excl[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
+  const [editInv, setEditInv] = useState<Invite | null>(null)
+  const [eiName, setEiName] = useState('')
+  const [eiEmail, setEiEmail] = useState('')
+  const [eiErr, setEiErr] = useState('')
   const [invName, setInvName] = useState('')
   const [invEmail, setInvEmail] = useState('')
   const [myTarget, setMyTarget] = useState<string | null>(null)
@@ -93,6 +98,16 @@ export default function EventDetail() {
     if (error) { setErr(errMsg(error)); return }
     setMsg(`${invName.trim()} est ajouté(e). Envoyez-lui l'invitation avec le bouton « E-mail ».`)
     setInvName(''); setInvEmail('')
+    await load()
+  }
+  const openEditInvite = (i: Invite) => { setEditInv(i); setEiName(i.name); setEiEmail(i.email); setEiErr('') }
+  const saveInvite = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!editInv) return
+    setEiErr('')
+    const { error } = await supabase.rpc('update_event_invite', { p_invite: editInv.id, p_name: eiName, p_email: eiEmail })
+    if (error) { setEiErr(errMsg(error)); return }
+    setEditInv(null); setErr(''); setMsg(`Invitation de ${eiName.trim()} mise à jour. Si l'adresse a changé, renvoyez-lui l'invitation avec le bouton « E-mail ».`)
     await load()
   }
   const removeInvite = async (i: Invite) => {
@@ -206,12 +221,32 @@ export default function EventDetail() {
                 <div className="item-actions">
                   <a className="btn btn-sm" href={mailtoFor(i)}><Icon name="mail" size={15} /> E-mail</a>
                   <IconButton icon="copy" label="Copier le message d'invitation" onClick={() => copyInvite(i)} />
+                  <IconButton icon="pencil" label="Modifier le nom ou l'e-mail" onClick={() => openEditInvite(i)} />
                   <IconButton icon="trash" label="Retirer l'invitation" danger onClick={() => removeInvite(i)} />
                 </div>
               </li>
             ))}
           </ul>
         </>
+      )}
+
+      {editInv && (
+        <Modal title="Modifier l'invitation" onClose={() => setEditInv(null)}>
+          <form className="stack" onSubmit={saveInvite}>
+            <Notice>{eiErr}</Notice>
+            <label>Nom
+              <input required maxLength={80} value={eiName} autoFocus onChange={e => setEiName(e.target.value)} />
+            </label>
+            <label>E-mail
+              <input required type="email" maxLength={200} value={eiEmail} onChange={e => setEiEmail(e.target.value)} />
+            </label>
+            <p className="small muted">La personne verra l'événement en attente dès qu'elle se connecte avec cette adresse.</p>
+            <div className="modal-foot">
+              <button type="button" className="btn btn-ghost" onClick={() => setEditInv(null)}>Annuler</button>
+              <button className="btn btn-primary">Enregistrer</button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       <h2 className="mt">Invités ({members.length})</h2>

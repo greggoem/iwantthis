@@ -11,6 +11,7 @@ import { GiftCard, GiftCollection, GiftRow, ViewBar } from '../components/GiftTa
 import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
 import { groupTree } from '../lib/groups'
+import ClaimDateModal from '../components/ClaimDateModal'
 
 interface CommonEvent { id: string; name: string; event_date: string }
 
@@ -32,6 +33,7 @@ export default function ListView() {
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
+  const [editClaim, setEditClaim] = useState<Item | null>(null)
   const [prefs, setPrefs, cycleSort] = useViewPrefs()
 
   const load = useCallback(async () => {
@@ -158,6 +160,7 @@ export default function ListView() {
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}
+          {mine && <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditClaim(it)} />}
           {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler</button>}
           {!obsolete && <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />}
         </>}
@@ -200,6 +203,11 @@ export default function ListView() {
       <Notice>{err}</Notice>
       {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
+      {editClaim && claims[editClaim.id] && (
+        <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}
+          eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on}
+          onClose={() => setEditClaim(null)} onSaved={() => { setEditClaim(null); load() }} />
+      )}
 
       {items.length > 0 && <ViewBar prefs={prefs} onChange={setPrefs} left={<span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}</span>} />}
       {items.length > 0 && (

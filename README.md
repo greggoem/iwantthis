@@ -139,6 +139,13 @@ Un groupe ne s'achète pas lui-même. Un proche peut copier un élément ou tout
 
 Au-dessus de chaque liste (la vôtre comme celles de vos proches), deux boutons permettent de passer de la **liste** à la **galerie** (grandes images en cartes ; un groupe devient une section pleine largeur). En mode liste, **survoler la miniature avec la souris affiche la grande image**. On trie en cliquant sur les titres de colonnes (Cadeau, Prix, Où l'acheter, Statut) : un clic croissant, un deuxième décroissant, un troisième revient à l'ordre d'ajout ; en galerie et sur téléphone, un menu « Trier par » fait la même chose. Les envies sans prix ou sans lien restent en bas. Un groupe est trié d'après son élément le moins cher (ou son premier magasin), et ses éléments suivent le même tri. Le choix est mémorisé sur l'appareil (aucune donnée côté serveur).
 
+## 5 octies. Modifier une invitation ou la date d'un cadeau à offrir
+
+- **Invitation en attente** (événement → « En attente ») : le crayon permet à l'organisateur de corriger le **nom** ou l'**e-mail**. Si l'adresse change, renvoyez l'invitation avec le bouton « E-mail ». Les personnes qui ont déjà rejoint l'événement ne sont pas modifiables : leur nom est celui de leur propre profil.
+- **Cadeau à offrir** (page « À offrir », ou sur la liste du proche) : le crayon permet de changer l'**occasion ou la date de remise**. Le propriétaire de la liste ne verra l'achat qu'à la nouvelle date.
+
+Les deux passent par des fonctions SQL contrôlées (`supabase/edit_invites_claims.sql`, à exécuter une fois) : seul l'organisateur modifie ses invitations, seul l'acheteur modifie son achat, et l'événement choisi doit réunir l'acheteur et le propriétaire.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -152,6 +159,7 @@ supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
 supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/event_invites.sql   invitations par nom + e-mail
+supabase/edit_invites_claims.sql  modifier une invitation / la date d'un achat
 supabase/item_groups.sql     groupes de cadeaux (plusieurs liens, « un seul à choisir »)
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)
 src/lib/                 connexion Supabase, liens de parrainage, authentification

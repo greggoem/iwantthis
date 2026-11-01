@@ -15,6 +15,9 @@ export interface Item {
   details: string | null
   price: number | null
   image_url: string | null
+  parent_id: string | null
+  is_group: boolean
+  pick_one: boolean
   created_at: string
 }
 

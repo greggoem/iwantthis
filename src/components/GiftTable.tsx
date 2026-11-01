@@ -33,15 +33,17 @@ export function GiftTable({ children, statusLabel = 'Statut' }: { children: Reac
   )
 }
 
-export function GiftRow({ item, status, actions, children, highlight }: {
+export function GiftRow({ item, status, actions, children, highlight, kid, dim }: {
   item: Item
+  kid?: boolean                 // élément à l'intérieur d'un groupe : ligne plus compacte
+  dim?: boolean                 // grisé (ex. « plus nécessaire »)
   status?: ReactNode
   actions?: ReactNode
   children?: ReactNode          // zone dépliée sous la ligne (ex. choix de l'occasion)
   highlight?: boolean
 }) {
   return (
-    <div className={`gtable-row ${highlight ? 'is-claimed' : ''}`} role="row">
+    <div className={`gtable-row ${highlight ? 'is-claimed' : ''} ${kid ? 'kid' : ''} ${dim ? 'dim' : ''}`} role="row">
       <ItemAnchor url={item.url} className="thumb-link"><Thumb src={item.image_url} alt={item.title} /></ItemAnchor>
       <div className="g-main" role="cell">
         <ItemAnchor url={item.url} className="title-link"><strong>{item.title}</strong></ItemAnchor>

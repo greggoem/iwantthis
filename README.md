@@ -126,6 +126,15 @@ Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
 
 Dans un événement, l'organisateur peut **ajouter un invité avec son nom et son e-mail** (`supabase/event_invites.sql`). Le site n'envoie pas d'e-mail lui-même : le bouton « E-mail » ouvre votre messagerie avec un message prêt (lien d'invitation inclus), et « Copier » met ce message dans le presse-papiers (WhatsApp, SMS…). Dès que la personne se connecte avec cette adresse, l'événement lui apparaît dans **Événements → Invitations** et elle choisit de le rejoindre ou de refuser. Si elle rejoint par le lien d'invitation, elle disparaît toute seule des « En attente ». Seuls les invités qui ont rejoint participent au tirage au sort.
 
+## 5 sexies. Groupes de cadeaux (plusieurs liens pour une même envie)
+
+Bouton **Groupe** au-dessus de la liste (`supabase/item_groups.sql`, à exécuter une fois dans le SQL Editor). Un groupe est une seule ligne dépliable ; à l'intérieur, **un élément par objet**, nommé d'après le produit (et non le magasin). Collez les liens, un par ligne (ou « Nom — lien » pour imposer un nom) : le nom, l'image et le prix sont lus sur chaque page, avec repli sur le nom lu dans l'adresse.
+
+- **Plusieurs possibles** : une collection ; chaque élément s'achète séparément, le groupe affiche « 2 sur 12 achetés ».
+- **Un seul à choisir** : plusieurs options pour la même envie ; dès qu'une est achetée (vérifié côté serveur, même si deux personnes cliquent en même temps), les autres passent en « Plus nécessaire ».
+
+Un groupe ne s'achète pas lui-même. Un proche peut copier un élément ou tout le groupe dans sa propre liste. Les achats restent cachés au propriétaire jusqu'à la date de remise.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -139,6 +148,7 @@ supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
 supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/event_invites.sql   invitations par nom + e-mail
+supabase/item_groups.sql     groupes de cadeaux (plusieurs liens, « un seul à choisir »)
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)
 src/lib/                 connexion Supabase, liens de parrainage, authentification
 src/pages/               Ma liste, liste d'un proche, événements, tirage, connexion

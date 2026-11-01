@@ -9,6 +9,8 @@ import { formatDateShort, formatPrice } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
 import { GiftRow, GiftTable, Thumb } from '../components/GiftTable'
+import GroupRow from '../components/GroupRow'
+import { cleanTitle, groupTree, nameFromUrl, parseLinks } from '../lib/groups'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
 import { useConfirm } from '../components/Confirm'
@@ -93,6 +95,114 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
   )
 }
 
+/* ---------- Groupe : création / modification ---------- */
+interface GroupDraft { title: string; pickOne: boolean; details: string }
+
+function ModeChoice({ pickOne, onChange }: { pickOne: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="mode-choice" role="radiogroup" aria-label="Type de groupe">
+      <label className={`mode-card ${!pickOne ? 'on' : ''}`}>
+        <input type="radio" name="mode" checked={!pickOne} onChange={() => onChange(false)} />
+        <strong>Plusieurs possibles</strong>
+        <span>Une collection : chaque élément peut être offert séparément.</span>
+      </label>
+      <label className={`mode-card ${pickOne ? 'on' : ''}`}>
+        <input type="radio" name="mode" checked={pickOne} onChange={() => onChange(true)} />
+        <strong>Un seul à choisir</strong>
+        <span>Plusieurs options pour la même envie : une fois l'une offerte, les autres sont grisées.</span>
+      </label>
+    </div>
+  )
+}
+
+function LinksField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const n = parseLinks(value).length
+  return (
+    <label><span>Liens <span className="muted">· un par ligne{n > 0 ? ` · ${n} lien${n > 1 ? 's' : ''} reconnu${n > 1 ? 's' : ''}` : ''}</span></span>
+      <textarea rows={6} value={value} onChange={e => onChange(e.target.value)} spellCheck={false}
+        placeholder={'https://www.amazon.com.be/…\nBeaubourg — https://www.fnac.com/…'} />
+      <span className="small muted">Le nom de chaque objet, son image et son prix sont lus sur la page du produit. Pour imposer un nom : « Nom — lien ».</span>
+    </label>
+  )
+}
+
+function GroupForm({ initial, withLinks, submitLabel, onCancel, onSubmit }: {
+  initial: GroupDraft; withLinks: boolean; submitLabel: string; onCancel: () => void
+  onSubmit: (g: GroupDraft, links: string, progress: (done: number, total: number) => void) => Promise<string | null>
+}) {
+  const [g, setG] = useState(initial)
+  const [links, setLinks] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [prog, setProg] = useState<[number, number] | null>(null)
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setErr('')
+    setBusy(true)
+    const msg = await onSubmit(g, links, (d, t) => setProg([d, t]))
+    setBusy(false)
+    if (msg) setErr(msg)
+  }
+  return (
+    <form className="stack" onSubmit={submit}>
+      <Notice>{err}</Notice>
+      <label>Nom du groupe
+        <input required maxLength={200} value={g.title} autoFocus onChange={e => setG({ ...g, title: e.target.value })} placeholder="Ex. Livres d'architecture" />
+      </label>
+      <ModeChoice pickOne={g.pickOne} onChange={v => setG({ ...g, pickOne: v })} />
+      <label><span>Détails <span className="muted">· facultatif</span></span>
+        <textarea maxLength={1000} rows={2} value={g.details} onChange={e => setG({ ...g, details: e.target.value })} placeholder="Ex. Neufs ou d'occasion, en français ou en anglais" />
+      </label>
+      {withLinks && <LinksField value={links} onChange={setLinks} />}
+      {prog && (
+        <div className="stack">
+          <div className="progress"><div style={{ width: `${(prog[0] / Math.max(1, prog[1])) * 100}%` }} /></div>
+          <p className="small muted">Lecture des liens : {prog[0]} sur {prog[1]}…</p>
+        </div>
+      )}
+      <div className="modal-foot">
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>Annuler</button>
+        <button className="btn btn-primary" disabled={busy}>{busy ? 'Un instant…' : submitLabel}</button>
+      </div>
+    </form>
+  )
+}
+
+function KidsForm({ group, onCancel, onSubmit }: {
+  group: Item; onCancel: () => void
+  onSubmit: (links: string, progress: (done: number, total: number) => void) => Promise<string | null>
+}) {
+  const [links, setLinks] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [prog, setProg] = useState<[number, number] | null>(null)
+  const submit = async (e: FormEvent) => {
+    e.preventDefault(); setErr('')
+    if (!parseLinks(links).length) { setErr('Collez au moins un lien commençant par http:// ou https://.'); return }
+    setBusy(true)
+    const msg = await onSubmit(links, (d, t) => setProg([d, t]))
+    setBusy(false)
+    if (msg) setErr(msg)
+  }
+  return (
+    <form className="stack" onSubmit={submit}>
+      <Notice>{err}</Notice>
+      <p className="muted">Les éléments seront ajoutés au groupe « {group.title} ».</p>
+      <LinksField value={links} onChange={setLinks} />
+      {prog && (
+        <div className="stack">
+          <div className="progress"><div style={{ width: `${(prog[0] / Math.max(1, prog[1])) * 100}%` }} /></div>
+          <p className="small muted">Lecture des liens : {prog[0]} sur {prog[1]}…</p>
+        </div>
+      )}
+      <div className="modal-foot">
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>Annuler</button>
+        <button className="btn btn-primary" disabled={busy}>{busy ? 'Un instant…' : 'Ajouter au groupe'}</button>
+      </div>
+    </form>
+  )
+}
+
 /* ---------- Raccourci navigateur (magasins qui bloquent la lecture automatique) ---------- */
 function BookmarkletBox() {
   const ref = useRef<HTMLAnchorElement>(null)
@@ -133,6 +243,7 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
 
 /* ---------- Page ---------- */
 type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; item: Item }
+  | { kind: 'group' } | { kind: 'editGroup'; item: Item } | { kind: 'kids'; item: Item }
 
 export default function MyList() {
   const [params, setParams] = useSearchParams()
@@ -176,6 +287,57 @@ export default function MyList() {
   useEffect(() => { load() }, [load])
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
+  const { tops, kids } = groupTree(items)
+
+  /** Lit chaque lien (3 à la fois) et crée un élément nommé d'après l'objet */
+  const importLinks = async (parent: Item, text: string, progress: (done: number, total: number) => void): Promise<string | null> => {
+    const links = parseLinks(text)
+    if (!links.length) return null
+    let done = 0, next = 0
+    const rows: ({ title: string; url: string; price: number | null; image_url: string | null } | null)[] = new Array(links.length).fill(null)
+    progress(0, links.length)
+    const worker = async () => {
+      while (next < links.length) {
+        const i = next++
+        const l = links[i]
+        const u = safeUrl(l.url)
+        if (u) {
+          const p = await fetchPreview(u.toString())
+          const price = p.found ? euroPrice(p) : undefined
+          const title = l.label || (p.found && p.title ? cleanTitle(p.title) : '') || nameFromUrl(l.url)
+          rows[i] = { title: title.slice(0, 200), url: u.toString(), price: price ?? null, image_url: p.found && p.image && safeUrl(p.image) ? p.image : null }
+        }
+        progress(++done, links.length)
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(3, links.length) }, worker))
+    const toInsert = rows.filter((r): r is NonNullable<typeof r> => r !== null).map(r => ({ ...r, list_id: parent.list_id, parent_id: parent.id }))
+    if (!toInsert.length) return 'Aucun lien valide trouvé.'
+    const { error } = await supabase.from('items').insert(toInsert)
+    return error ? errMsg(error) : null
+  }
+
+  const addGroup = async (g: GroupDraft, links: string, progress: (d: number, t: number) => void) => {
+    const { data, error } = await supabase.from('items').insert({
+      list_id: list!.id, title: g.title.trim(), details: g.details.trim() || null, is_group: true, pick_one: g.pickOne,
+    }).select('*').single()
+    if (error) return errMsg(error)
+    const msg = await importLinks(data as Item, links, progress)
+    closeModal(); await load()
+    if (msg) setErr(`Groupe créé, mais : ${msg}`)
+    return null
+  }
+  const editGroup = async (it: Item, g: GroupDraft) => {
+    const { error } = await supabase.from('items').update({ title: g.title.trim(), details: g.details.trim() || null, pick_one: g.pickOne }).eq('id', it.id)
+    if (error) return errMsg(error)
+    closeModal(); await load(); return null
+  }
+  const addKids = async (it: Item, links: string, progress: (d: number, t: number) => void) => {
+    const msg = await importLinks(it, links, progress)
+    if (msg) return msg
+    closeModal(); await load(); return null
+  }
+
   const closeModal = () => { setModal(null); if (params.get('add')) setParams({}, { replace: true }) }
 
   const toRow = (d: Draft) => ({
@@ -197,7 +359,11 @@ export default function MyList() {
     closeModal(); await load(); return null
   }
   const remove = async (it: Item) => {
-    if (!(await confirm({ title: 'Supprimer cette envie ?', message: `« ${it.title} » sera retiré de votre liste.`, confirmLabel: 'Supprimer', danger: true }))) return
+    const n = kids[it.id]?.length ?? 0
+    const message = it.is_group
+      ? `Le groupe « ${it.title} » sera retiré de votre liste${n ? `, avec ses ${n} élément${n > 1 ? 's' : ''}` : ''}.`
+      : `« ${it.title} » sera retiré de votre liste.`
+    if (!(await confirm({ title: it.is_group ? 'Supprimer ce groupe ?' : 'Supprimer cette envie ?', message, confirmLabel: 'Supprimer', danger: true }))) return
     const { error } = await supabase.from('items').delete().eq('id', it.id)
     if (error) setErr(errMsg(error)); else load()
   }
@@ -218,7 +384,7 @@ export default function MyList() {
     return true
   }
   const refresh = async (it: Item) => { setErr(''); setMsg(''); setBusyId(it.id); await refreshOne(it); setBusyId(null); load() }
-  const missing = items.filter(i => i.url && !i.image_url)
+  const missing = items.filter(i => !i.is_group && i.url && !i.image_url)
   const refreshMissing = async () => {
     setErr(''); setMsg(''); setBulk(true)
     let ok = 0
@@ -234,6 +400,23 @@ export default function MyList() {
     if (error) setErr(errMsg(error)); else setList({ ...list, title: title.trim() })
   }
 
+  const itemRow = (it: Item, kid: boolean) => (
+    <GiftRow
+      key={it.id}
+      item={it}
+      kid={kid}
+      highlight={Boolean(claims[it.id])}
+      status={claims[it.id]
+        ? <span className="chip chip-ok" title={`Remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /> Offert par {claims[it.id].claimed_by_name}</span>
+        : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
+      actions={<>
+        <IconButton icon="pencil" label="Modifier" onClick={() => setModal({ kind: 'edit', item: it })} />
+        {it.url && <IconButton icon="refresh" label="Actualiser image et prix" disabled={busyId === it.id} onClick={() => refresh(it)} />}
+        <IconButton icon="trash" label="Supprimer" danger onClick={() => remove(it)} />
+      </>}
+    />
+  )
+
   if (loading) return <Spinner />
 
   return (
@@ -242,6 +425,7 @@ export default function MyList() {
         <input className="title-input" value={title} maxLength={100} onChange={e => setTitle(e.target.value)} onBlur={saveTitle} aria-label="Titre de la liste" />
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
+          <button className="btn" onClick={() => setModal({ kind: 'group' })}><Icon name="plus" size={17} /> <span>Groupe</span></button>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> <span>Ajouter</span></button>
         </div>
       </div>
@@ -250,7 +434,7 @@ export default function MyList() {
 
       {items.length > 0 && (
         <div className="row between wrap gap sub-head">
-          <span className="muted small">{items.length} envie{items.length > 1 ? 's' : ''}</span>
+          <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${items.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
           {missing.length > 0 && (
             <button className="btn btn-sm" disabled={bulk} onClick={refreshMissing}>
               <Icon name="refresh" size={15} /> {bulk ? 'Lecture des liens…' : `Récupérer images et prix (${missing.length})`}
@@ -273,21 +457,30 @@ export default function MyList() {
         </div>
       ) : (
         <GiftTable statusLabel="Statut">
-          {items.map(it => (
-            <GiftRow
-              key={it.id}
-              item={it}
-              highlight={Boolean(claims[it.id])}
-              status={claims[it.id]
-                ? <span className="chip chip-ok" title={`Remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /> Offert par {claims[it.id].claimed_by_name}</span>
-                : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
-              actions={<>
-                <IconButton icon="pencil" label="Modifier" onClick={() => setModal({ kind: 'edit', item: it })} />
-                {it.url && <IconButton icon="refresh" label="Actualiser image et prix" disabled={busyId === it.id} onClick={() => refresh(it)} />}
-                <IconButton icon="trash" label="Supprimer" danger onClick={() => remove(it)} />
-              </>}
-            />
-          ))}
+          {tops.map(it => {
+            if (it.is_group) {
+              const ks = kids[it.id] ?? []
+              const given = ks.filter(k => claims[k.id]).length
+              return (
+                <GroupRow
+                  key={it.id}
+                  group={it}
+                  kids={ks}
+                  image={it.image_url ?? ks.find(k => k.image_url)?.image_url ?? null}
+                  status={given > 0
+                    ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} offert{given > 1 ? 's' : ''}</span>
+                    : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
+                  actions={<>
+                    <IconButton icon="plus" label="Ajouter des éléments" onClick={() => setModal({ kind: 'kids', item: it })} />
+                    <IconButton icon="pencil" label="Modifier le groupe" onClick={() => setModal({ kind: 'editGroup', item: it })} />
+                    <IconButton icon="trash" label="Supprimer le groupe" danger onClick={() => remove(it)} />
+                  </>}
+                  renderKid={k => itemRow(k, true)}
+                />
+              )
+            }
+            return itemRow(it, false)
+          })}
         </GiftTable>
       )}
 
@@ -296,6 +489,23 @@ export default function MyList() {
         <Modal title="Ajouter une envie" onClose={closeModal}>
           <ItemForm key={prefill ? params.toString() : 'new'} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add} />
           <BookmarkletBox />
+        </Modal>
+      )}
+      {modal?.kind === 'group' && (
+        <Modal title="Nouveau groupe" onClose={closeModal}>
+          <p className="muted">Pour une même envie avec plusieurs liens : une collection de livres, plusieurs modèles au choix…</p>
+          <GroupForm initial={{ title: '', pickOne: false, details: '' }} withLinks submitLabel="Créer le groupe" onCancel={closeModal} onSubmit={addGroup} />
+        </Modal>
+      )}
+      {modal?.kind === 'editGroup' && (
+        <Modal title="Modifier le groupe" onClose={closeModal}>
+          <GroupForm initial={{ title: modal.item.title, pickOne: modal.item.pick_one, details: modal.item.details ?? '' }} withLinks={false}
+            submitLabel="Enregistrer" onCancel={closeModal} onSubmit={g => editGroup(modal.item, g)} />
+        </Modal>
+      )}
+      {modal?.kind === 'kids' && (
+        <Modal title="Ajouter des éléments" onClose={closeModal}>
+          <KidsForm group={modal.item} onCancel={closeModal} onSubmit={(l, pr) => addKids(modal.item, l, pr)} />
         </Modal>
       )}
       {modal?.kind === 'edit' && (

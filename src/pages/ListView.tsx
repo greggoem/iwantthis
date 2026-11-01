@@ -8,6 +8,8 @@ import { IconButton, Notice, Spinner } from '../components/ui'
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
 import { GiftRow, GiftTable } from '../components/GiftTable'
+import GroupRow from '../components/GroupRow'
+import { groupTree } from '../lib/groups'
 
 interface CommonEvent { id: string; name: string; event_date: string }
 
@@ -92,6 +94,30 @@ export default function ListView() {
     setCopyMsg(`« ${it.title} » a été ajouté à votre liste.`)
   }
 
+  /** Copie un groupe entier (et ses éléments) dans MA liste */
+  const copyGroup = async (g: Item, ks: Item[]) => {
+    setErr(''); setCopyMsg('')
+    const { data, error } = await supabase.rpc('ensure_my_list')
+    if (error) { setErr(errMsg(error)); return }
+    const mine = (Array.isArray(data) ? data[0] : data) as Wishlist
+    const { data: existing } = await supabase.from('items').select('title,is_group').eq('list_id', mine.id)
+    const norm = (t: string) => t.trim().toLowerCase()
+    const dup = ((existing as { title: string; is_group: boolean }[]) ?? []).some(x => x.is_group && norm(x.title) === norm(g.title))
+    if (dup && !(await confirm({ title: 'Déjà dans votre liste', message: 'Un groupe du même nom figure déjà dans votre liste. L\'ajouter quand même ?', confirmLabel: 'Ajouter quand même' }))) return
+    const { data: ng, error: ge } = await supabase.from('items').insert({
+      list_id: mine.id, title: g.title, details: g.details, is_group: true, pick_one: g.pick_one,
+    }).select('id').single()
+    if (ge) { setErr(errMsg(ge)); return }
+    if (ks.length) {
+      const { error: ke } = await supabase.from('items').insert(ks.map(k => ({
+        list_id: mine.id, parent_id: (ng as { id: string }).id, title: k.title, url: k.url, details: k.details, price: k.price, image_url: k.image_url,
+      })))
+      if (ke) { setErr(errMsg(ke)); return }
+    }
+    setCopied(prev => new Set(prev).add(g.id))
+    setCopyMsg(`Le groupe « ${g.title} » (${ks.length} élément${ks.length > 1 ? 's' : ''}) a été ajouté à votre liste.`)
+  }
+
   const unclaim = async (itemId: string) => {
     const { error } = await supabase.from('item_claims').delete().eq('item_id', itemId)
     if (error) setErr(errMsg(error)); else load()
@@ -101,6 +127,57 @@ export default function ListView() {
   if (!list) return <Notice>Liste introuvable, ou vous n'y avez pas accès. Demandez le lien de partage à la personne.</Notice>
   if (list.owner_id === me) return <Navigate to="/" replace />
 
+  const { tops, kids } = groupTree(items)
+  const row = (it: Item, group?: Item) => {
+    const c = claims[it.id]
+    const mine = c?.claimed_by === me
+    const groupTaken = Boolean(group?.pick_one && (kids[group.id] ?? []).some(k => claims[k.id]))
+    const obsolete = groupTaken && !c          // un autre élément du groupe a déjà été pris
+    return (
+      <GiftRow
+        key={it.id}
+        item={it}
+        kid={Boolean(group)}
+        dim={obsolete}
+        highlight={Boolean(c)}
+        status={c
+          ? <span className="chip chip-ok"><Icon name="check" size={13} /> Acheté par {mine ? 'vous' : c.claimed_by_name}</span>
+          : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
+        actions={<>
+          {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}
+          {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler</button>}
+          {!obsolete && <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />}
+        </>}
+      >
+        {claimingId === it.id && (
+          <div className="claimbox stack">
+            <strong className="small">Pour quelle occasion ?</strong>
+            {events.map(e => (
+              <label key={e.id} className="radio">
+                <input type="radio" name="occ" checked={choice === e.id} onChange={() => setChoice(e.id)} />
+                {e.name} <span className="muted">· {formatDateShort(e.event_date)}</span>
+              </label>
+            ))}
+            <label className="radio">
+              <input type="radio" name="occ" checked={choice === 'custom'} onChange={() => setChoice('custom')} />
+              Autre date de remise
+            </label>
+            {choice === 'custom' && (
+              <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
+            )}
+            <p className="small muted">
+              {owner} ne verra l'achat qu'à partir du {revealDate ? formatDateShort(revealDate) : '…'}. Les autres invités le voient tout de suite.
+              {group?.pick_one && ' Les autres options du groupe seront alors marquées « plus nécessaire ».'}
+            </p>
+            <div className="row">
+              <button className="btn btn-primary btn-sm" disabled={busy || (choice === 'custom' && !customDate)} onClick={confirmClaim}>Confirmer</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setClaimingId(null)}>Annuler</button>
+            </div>
+          </div>
+        )}
+      </GiftRow>
+    )
+  }
   const revealDate = choice === 'custom' ? customDate : events.find(e => e.id === choice)?.event_date
 
   return (
@@ -113,50 +190,26 @@ export default function ListView() {
 
       {items.length > 0 && (
         <GiftTable statusLabel="Achat">
-          {items.map(it => {
-            const c = claims[it.id]
-            const mine = c?.claimed_by === me
-            return (
-              <GiftRow
-                key={it.id}
-                item={it}
-                highlight={Boolean(c)}
-                status={c
-                  ? <span className="chip chip-ok"><Icon name="check" size={13} /> Acheté par {mine ? 'vous' : c.claimed_by_name}</span>
-                  : <span className="chip">À offrir</span>}
-                actions={<>
-                  {!c && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}
-                  {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler</button>}
-                  <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />
-                </>}
-              >
-                {claimingId === it.id && (
-                  <div className="claimbox stack">
-                    <strong className="small">Pour quelle occasion ?</strong>
-                    {events.map(e => (
-                      <label key={e.id} className="radio">
-                        <input type="radio" name="occ" checked={choice === e.id} onChange={() => setChoice(e.id)} />
-                        {e.name} <span className="muted">· {formatDateShort(e.event_date)}</span>
-                      </label>
-                    ))}
-                    <label className="radio">
-                      <input type="radio" name="occ" checked={choice === 'custom'} onChange={() => setChoice('custom')} />
-                      Autre date de remise
-                    </label>
-                    {choice === 'custom' && (
-                      <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
-                    )}
-                    <p className="small muted">
-                      {owner} ne verra l'achat qu'à partir du {revealDate ? formatDateShort(revealDate) : '…'}. Les autres invités le voient tout de suite.
-                    </p>
-                    <div className="row">
-                      <button className="btn btn-primary btn-sm" disabled={busy || (choice === 'custom' && !customDate)} onClick={confirmClaim}>Confirmer</button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => setClaimingId(null)}>Annuler</button>
-                    </div>
-                  </div>
-                )}
-              </GiftRow>
-            )
+          {tops.map(it => {
+            if (it.is_group) {
+              const ks = kids[it.id] ?? []
+              const taken = ks.filter(k => claims[k.id]).length
+              return (
+                <GroupRow
+                  key={it.id}
+                  group={it}
+                  kids={ks}
+                  image={it.image_url ?? ks.find(k => k.image_url)?.image_url ?? null}
+                  defaultOpen={ks.some(k => k.id === claimingId)}
+                  status={it.pick_one
+                    ? (taken > 0 ? <span className="chip chip-ok"><Icon name="check" size={13} /> Choix fait</span> : <span className="chip">À choisir</span>)
+                    : <span className={`chip ${taken === ks.length && ks.length > 0 ? 'chip-ok' : ''}`}>{taken} sur {ks.length} achetés</span>}
+                  actions={<IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Groupe ajouté à votre liste' : 'Copier ce groupe dans ma liste'} onClick={() => copyGroup(it, ks)} />}
+                  renderKid={k => row(k, it)}
+                />
+              )
+            }
+            return row(it)
           })}
         </GiftTable>
       )}

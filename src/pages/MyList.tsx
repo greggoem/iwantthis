@@ -420,7 +420,7 @@ export default function MyList() {
       kid={kid}
       highlight={Boolean(claims[it.id])}
       status={claims[it.id]
-        ? <span className="chip chip-ok" title={`Remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /> Offert par {claims[it.id].claimed_by_name}</span>
+        ? <span className="chip chip-ok" title={`Offert par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">Offert par {claims[it.id].claimed_by_name}</span></span>
         : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
       actions={<>
         <IconButton icon="pencil" label="Modifier" onClick={() => setModal({ kind: 'edit', item: it })} />

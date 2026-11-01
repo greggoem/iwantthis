@@ -156,7 +156,7 @@ export default function ListView() {
         dim={obsolete}
         highlight={Boolean(c)}
         status={c
-          ? <span className="chip chip-ok"><Icon name="check" size={13} /> Acheté par {mine ? 'vous' : c.claimed_by_name}</span>
+          ? <span className="chip chip-ok" title={`Acheté par ${mine ? 'vous' : c.claimed_by_name}`}><Icon name="check" size={13} /><span className="ell">Acheté par {mine ? 'vous' : c.claimed_by_name}</span></span>
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}

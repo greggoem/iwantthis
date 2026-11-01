@@ -14,6 +14,7 @@ import Events from './pages/Events'
 import EventDetail from './pages/EventDetail'
 import JoinEvent from './pages/JoinEvent'
 import Profile from './pages/Profile'
+import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
 import Landing from './pages/Landing'
 
@@ -95,6 +96,7 @@ export default function App() {
           <Route path="listes" element={<SharedLists />} />
           <Route path="listes/:id" element={<ListView />} />
           <Route path="l/:token" element={<OpenShared />} />
+          <Route path="offrir" element={<ToGive />} />
           <Route path="evenements" element={<Events />} />
           <Route path="evenements/:id" element={<EventDetail />} />
           <Route path="e/:code" element={<JoinEvent />} />

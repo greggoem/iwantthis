@@ -5,8 +5,10 @@ import { supabase, errMsg } from '../lib/supabase'
 import { formatDate, todayISO } from '../lib/format'
 import type { EventRow } from '../lib/types'
 import { Notice, Spinner } from '../components/ui'
+import Icon from '../components/Icon'
 
 type Row = EventRow & { event_members: { count: number }[] }
+interface Pending { invite_id: string; event_id: string; event_name: string; event_date: string; organizer: string; invited_name: string }
 
 export default function Events() {
   const { session } = useAuth()
@@ -16,6 +18,20 @@ export default function Events() {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [err, setErr] = useState('')
+  const [pending, setPending] = useState<Pending[]>([])
+
+  const loadPending = () => supabase.rpc('my_pending_invites').then(({ data }) => setPending((data as Pending[]) ?? []))
+  useEffect(() => { loadPending() }, [])
+  const accept = async (p: Pending) => {
+    setErr('')
+    const { data, error } = await supabase.rpc('accept_invite', { p_invite: p.invite_id })
+    if (error) setErr(errMsg(error)); else nav(`/evenements/${data as string}`)
+  }
+  const decline = async (p: Pending) => {
+    setErr('')
+    const { error } = await supabase.rpc('decline_invite', { p_invite: p.invite_id })
+    if (error) setErr(errMsg(error)); else loadPending()
+  }
 
   useEffect(() => {
     supabase.from('events').select('*,event_members(count)').order('event_date').then(({ data }) => {
@@ -53,6 +69,25 @@ export default function Events() {
     <div className="narrow">
       <h1>Événements</h1>
       <p className="muted">Noël, anniversaire, pendaison de crémaillère… Invitez des proches : ils voient les listes des uns des autres, et vous pouvez organiser un tirage au sort.</p>
+
+      <Notice>{err}</Notice>
+      {pending.length > 0 && (
+        <section className="stack mt">
+          <h2>Invitations ({pending.length})</h2>
+          {pending.map(p => (
+            <div key={p.invite_id} className="card item invite-card">
+              <div className="item-main">
+                <strong>{p.event_name}</strong>
+                <p className="small muted">{formatDate(p.event_date)} · invité(e) par {p.organizer}</p>
+              </div>
+              <div className="item-actions">
+                <button className="btn btn-primary btn-sm" onClick={() => accept(p)}><Icon name="check" size={15} /> Rejoindre</button>
+                <button className="btn btn-ghost btn-sm" onClick={() => decline(p)}>Refuser</button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {rows.length === 0 && <p className="muted">Aucun événement pour l'instant.</p>}
       {upcoming.length > 0 && <><h2 className="mt">À venir</h2><ul className="items">{upcoming.map(r => <Card key={r.id} r={r} />)}</ul></>}

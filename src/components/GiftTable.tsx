@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
 import { safeUrl } from '../lib/affiliate'
-import ItemLink from './ItemLink'
+import ItemLink, { ItemAnchor } from './ItemLink'
 import Icon from './Icon'
 
 export function Thumb({ src, alt, large }: { src: string | null; alt: string; large?: boolean }) {
@@ -42,9 +42,9 @@ export function GiftRow({ item, status, actions, children, highlight }: {
 }) {
   return (
     <div className={`gtable-row ${highlight ? 'is-claimed' : ''}`} role="row">
-      <Thumb src={item.image_url} alt={item.title} />
+      <ItemAnchor url={item.url} className="thumb-link"><Thumb src={item.image_url} alt={item.title} /></ItemAnchor>
       <div className="g-main" role="cell">
-        <strong>{item.title}</strong>
+        <ItemAnchor url={item.url} className="title-link"><strong>{item.title}</strong></ItemAnchor>
         {item.details && <p className="small g-details">{item.details}</p>}
       </div>
       <div className={`g-price ${item.price === null ? 'is-none' : ''}`} role="cell">{item.price !== null ? formatPrice(item.price) : <span className="muted">—</span>}</div>

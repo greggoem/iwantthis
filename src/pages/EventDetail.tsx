@@ -1,24 +1,30 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { supabase, errMsg, eventInviteUrl } from '../lib/supabase'
+import { supabase, errMsg, eventInviteUrl, APP_NAME } from '../lib/supabase'
 import { formatDate, formatDateShort } from '../lib/format'
 import type { EventRow, MemberRow } from '../lib/types'
-import { CopyField, Notice, Spinner } from '../components/ui'
+import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/ui'
+import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
 
 interface Excl { giver_id: string; receiver_id: string }
+interface Invite { id: string; name: string; email: string }
 
 export default function EventDetail() {
   const { id } = useParams()
   const { session } = useAuth()
   const me = session!.user.id
   const nav = useNavigate()
+  const confirm = useConfirm()
 
   const [ev, setEv] = useState<EventRow | null>(null)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [lists, setLists] = useState<Record<string, string>>({})
   const [excl, setExcl] = useState<Excl[]>([])
+  const [invites, setInvites] = useState<Invite[]>([])
+  const [invName, setInvName] = useState('')
+  const [invEmail, setInvEmail] = useState('')
   const [myTarget, setMyTarget] = useState<string | null>(null)
   const [showTarget, setShowTarget] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -38,11 +44,13 @@ export default function EventDetail() {
     const { data: m } = await supabase.from('event_members').select('event_id,user_id,in_draw,profiles(display_name)').eq('event_id', id!)
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
-    const [w, x, a] = await Promise.all([
+    const [w, x, a, inv] = await Promise.all([
       supabase.from('wishlists').select('id,owner_id').in('owner_id', mem.map(k => k.user_id)),
       supabase.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id!),
       supabase.from('draw_assignments').select('receiver_id').eq('event_id', id!).maybeSingle(),
+      supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
     ])
+    setInvites((inv.data as Invite[]) ?? [])
     setLists(Object.fromEntries(((w.data as { id: string; owner_id: string }[]) ?? []).map(l => [l.owner_id, l.id])))
     setExcl((x.data as Excl[]) ?? [])
     setMyTarget((a.data as { receiver_id: string } | null)?.receiver_id ?? null)
@@ -69,15 +77,32 @@ export default function EventDetail() {
     setEditing(false)
   }
   const deleteEvent = async () => {
-    if (!confirm('Supprimer cet événement pour tout le monde ?')) return
+    if (!(await confirm({ title: 'Supprimer l\'événement ?', message: 'Il sera supprimé pour tous les invités, avec le tirage au sort et les achats liés à cette date. Cette action est définitive.', confirmLabel: 'Supprimer', danger: true }))) return
     const { error } = await supabase.from('events').delete().eq('id', id!)
     if (error) setErr(errMsg(error)); else nav('/evenements', { replace: true })
   }
   const leave = async () => {
-    if (!confirm('Quitter cet événement ?')) return
+    if (!(await confirm({ title: 'Quitter l\'événement ?', message: 'Vous ne verrez plus les listes des autres invités, et ils ne verront plus la vôtre via cet événement.', confirmLabel: 'Quitter', danger: true }))) return
     const { error } = await supabase.from('event_members').delete().eq('event_id', id!).eq('user_id', me)
     if (error) setErr(errMsg(error)); else nav('/evenements', { replace: true })
   }
+  const addInvite = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr(''); setMsg('')
+    const { error } = await supabase.rpc('add_event_invite', { p_event: id, p_name: invName, p_email: invEmail })
+    if (error) { setErr(errMsg(error)); return }
+    setMsg(`${invName.trim()} est ajouté(e). Envoyez-lui l'invitation avec le bouton « E-mail ».`)
+    setInvName(''); setInvEmail('')
+    await load()
+  }
+  const removeInvite = async (i: Invite) => {
+    if (!(await confirm({ title: 'Retirer cette invitation ?', message: `${i.name} (${i.email}) ne sera plus invité(e) à cet événement.`, confirmLabel: 'Retirer', danger: true }))) return
+    await run(() => supabase.from('event_invites').delete().eq('id', i.id))
+  }
+  const inviteText = (i: Invite) =>
+    `Bonjour ${i.name},\n\nJe t'invite à « ${ev!.name} » le ${formatDate(ev!.event_date)} sur ${APP_NAME} : on y partage nos listes de cadeaux, sans doublon.\n\nRejoins l'événement ici : ${eventInviteUrl(ev!.invite_code)}\n(Connecte-toi ou crée ton compte avec cette adresse e-mail : ${i.email})\n\nÀ bientôt !`
+  const mailtoFor = (i: Invite) => `mailto:${encodeURIComponent(i.email)}?subject=${encodeURIComponent(`Invitation : ${ev!.name}`)}&body=${encodeURIComponent(inviteText(i))}`
+  const copyInvite = async (i: Invite) => { if (await copyText(inviteText(i))) { setErr(''); setMsg(`Message pour ${i.name} copié.`) } }
   const addExcl = async () => {
     if (!exGiver || !exReceiver || exGiver === exReceiver) { setErr('Choisissez deux personnes différentes.'); return }
     const rows = [{ event_id: id!, giver_id: exGiver, receiver_id: exReceiver }]
@@ -92,13 +117,18 @@ export default function EventDetail() {
     }
     load()
   }
+  const removeMember = async (m: MemberRow) => {
+    const name = m.profiles?.display_name ?? 'cette personne'
+    if (!(await confirm({ title: `Retirer ${name} ?`, message: `${name} ne fera plus partie de l'événement.`, confirmLabel: 'Retirer', danger: true }))) return
+    await run(() => supabase.from('event_members').delete().eq('event_id', id!).eq('user_id', m.user_id))
+  }
   const doDraw = async () => {
-    if (ev?.draw_done_at && !confirm('Un tirage existe déjà. Le refaire remplacera tous les résultats actuels. Continuer ?')) return
+    if (ev?.draw_done_at && !(await confirm({ title: 'Refaire le tirage ?', message: 'Un tirage existe déjà. Le refaire remplacera tous les résultats actuels.', confirmLabel: 'Refaire le tirage', danger: true }))) return
     setShowTarget(false)
     await run(() => supabase.rpc('run_draw', { p_event: id }), 'Tirage effectué ! Chacun peut maintenant découvrir son résultat.')
   }
   const resetDraw = async () => {
-    if (!confirm('Annuler le tirage ? Les résultats seront effacés.')) return
+    if (!(await confirm({ title: 'Annuler le tirage ?', message: 'Les résultats seront effacés pour tout le monde.', confirmLabel: 'Annuler le tirage', danger: true }))) return
     setShowTarget(false)
     await run(() => supabase.rpc('reset_draw', { p_event: id }), 'Tirage annulé.')
   }
@@ -149,7 +179,40 @@ export default function EventDetail() {
         <h2>Inviter des proches</h2>
         <p className="small muted">Ils ouvrent ce lien, se connectent, et rejoignent l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
         <CopyField value={eventInviteUrl(ev.invite_code)} />
+        {isOrg && (
+          <>
+            <hr />
+            <h3>Ajouter quelqu'un par son nom et son e-mail</h3>
+            <p className="small muted">La personne verra l'événement en attente dès qu'elle se connecte avec cette adresse, et choisira de le rejoindre.</p>
+            <form className="invite-form" onSubmit={addInvite}>
+              <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
+              <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
+              <button className="btn btn-primary">Ajouter</button>
+            </form>
+          </>
+        )}
       </section>
+
+      {isOrg && invites.length > 0 && (
+        <>
+          <h2 className="mt">En attente ({invites.length})</h2>
+          <ul className="items">
+            {invites.map(i => (
+              <li key={i.id} className="card item">
+                <div className="item-main">
+                  <strong>{i.name}</strong><span className="tag">en attente</span>
+                  <p className="small muted">{i.email}</p>
+                </div>
+                <div className="item-actions">
+                  <a className="btn btn-sm" href={mailtoFor(i)}><Icon name="mail" size={15} /> E-mail</a>
+                  <IconButton icon="copy" label="Copier le message d'invitation" onClick={() => copyInvite(i)} />
+                  <IconButton icon="trash" label="Retirer l'invitation" danger onClick={() => removeInvite(i)} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <h2 className="mt">Invités ({members.length})</h2>
       <ul className="items">
@@ -173,7 +236,7 @@ export default function EventDetail() {
                 : lists[m.user_id] ? <Link className="btn btn-sm" to={`/listes/${lists[m.user_id]}`}>Voir sa liste</Link>
                 : <span className="small muted">pas encore de liste</span>}
               {isOrg && m.user_id !== me && (
-                <button className="btn btn-ghost btn-sm danger" onClick={() => confirm(`Retirer ${m.profiles?.display_name} ?`) && run(() => supabase.from('event_members').delete().eq('event_id', id!).eq('user_id', m.user_id))}>Retirer</button>
+                <button className="btn btn-ghost btn-sm danger" onClick={() => removeMember(m)}>Retirer</button>
               )}
             </div>
           </li>
@@ -210,6 +273,7 @@ export default function EventDetail() {
         {isOrg && (
           <>
             <hr />
+            {invites.length > 0 && <Notice kind="info">{invites.length} personne{invites.length > 1 ? 's' : ''} invitée{invites.length > 1 ? 's' : ''} n'ont pas encore rejoint l'événement : elles ne seront pas incluses dans le tirage.</Notice>}
             <h3>Qui ne doit pas s'offrir de cadeau ?</h3>
             <p className="small muted">Par exemple un couple, ou deux personnes qui se sont déjà tirées l'an dernier. Vous ne verrez pas le résultat du tirage des autres : seulement le vôtre.</p>
             {exclGroups.length > 0 && (

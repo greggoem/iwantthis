@@ -5,6 +5,7 @@ import { supabase, errMsg } from '../lib/supabase'
 import { formatDateShort, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { IconButton, Notice, Spinner } from '../components/ui'
+import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
 import { GiftRow, GiftTable } from '../components/GiftTable'
 
@@ -13,6 +14,7 @@ interface CommonEvent { id: string; name: string; event_date: string }
 export default function ListView() {
   const { id } = useParams()
   const { session } = useAuth()
+  const confirm = useConfirm()
   const me = session!.user.id
   const [list, setList] = useState<Wishlist | null>(null)
   const [owner, setOwner] = useState('')
@@ -81,7 +83,7 @@ export default function ListView() {
     const norm = (t: string) => t.trim().toLowerCase()
     const dup = ((existing as { id: string; title: string; url: string | null }[]) ?? [])
       .some(x => (it.url && x.url === it.url) || norm(x.title) === norm(it.title))
-    if (dup && !confirm('Une envie identique ou très proche est déjà dans votre liste. L\'ajouter quand même ?')) return
+    if (dup && !(await confirm({ title: 'Déjà dans votre liste', message: 'Une envie identique ou très proche figure déjà dans votre liste. L\'ajouter quand même ?', confirmLabel: 'Ajouter quand même' }))) return
     const { error: ie } = await supabase.from('items').insert({
       list_id: mine.id, title: it.title, url: it.url, details: it.details, price: it.price, image_url: it.image_url,
     })

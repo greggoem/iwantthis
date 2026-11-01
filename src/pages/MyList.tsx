@@ -11,6 +11,7 @@ import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
 import { GiftRow, GiftTable, Thumb } from '../components/GiftTable'
 import Icon from '../components/Icon'
 import Modal from '../components/Modal'
+import { useConfirm } from '../components/Confirm'
 
 interface Draft { title: string; url: string; details: string; price: string; image: string }
 const empty: Draft = { title: '', url: '', details: '', price: '', image: '' }
@@ -135,6 +136,7 @@ type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; i
 
 export default function MyList() {
   const [params, setParams] = useSearchParams()
+  const confirm = useConfirm()
   const [list, setList] = useState<Wishlist | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
@@ -195,7 +197,7 @@ export default function MyList() {
     closeModal(); await load(); return null
   }
   const remove = async (it: Item) => {
-    if (!confirm(`Supprimer « ${it.title} » de votre liste ?`)) return
+    if (!(await confirm({ title: 'Supprimer cette envie ?', message: `« ${it.title} » sera retiré de votre liste.`, confirmLabel: 'Supprimer', danger: true }))) return
     const { error } = await supabase.from('items').delete().eq('id', it.id)
     if (error) setErr(errMsg(error)); else load()
   }

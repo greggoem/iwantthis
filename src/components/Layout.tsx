@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase, APP_NAME } from '../lib/supabase'
 import { useAffiliates } from '../lib/affiliate'
@@ -8,12 +9,18 @@ import Logo from './Logo'
 const NAV: { to: string; label: string; short: string; icon: IconName; end?: boolean }[] = [
   { to: '/', label: 'Ma liste', short: 'Ma liste', icon: 'gift', end: true },
   { to: '/listes', label: 'Listes de mes proches', short: 'Proches', icon: 'users' },
+  { to: '/offrir', label: 'À offrir', short: 'À offrir', icon: 'bag' },
   { to: '/evenements', label: 'Événements', short: 'Événements', icon: 'calendar' },
 ]
 
 export default function Layout() {
   const { profile } = useAuth()
   const programs = useAffiliates()
+  const loc = useLocation()
+  const [pending, setPending] = useState(0)
+  useEffect(() => {
+    supabase.rpc('my_pending_invites').then(({ data }) => setPending(Array.isArray(data) ? data.length : 0))
+  }, [loc.pathname])
   const amazon = programs.some(p => /amazon/i.test(p.domain))
   const initial = (profile?.display_name ?? '?').trim().charAt(0).toUpperCase()
 
@@ -23,7 +30,7 @@ export default function Layout() {
         <div className="topbar-in">
           <NavLink to="/" className="brand" aria-label={APP_NAME}><Logo name={APP_NAME} /></NavLink>
           <nav className="nav" aria-label="Navigation principale">
-            {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end}>{n.label}</NavLink>)}
+            {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end}>{n.label}{n.to === '/evenements' && pending > 0 && <span className="dot" title="Invitation en attente" />}</NavLink>)}
           </nav>
           <div className="who">
             <NavLink to="/profil" className="avatar" title={profile?.display_name ?? 'Mon profil'} aria-label="Mon profil">{initial}</NavLink>
@@ -41,7 +48,7 @@ export default function Layout() {
 
       <nav className="tabbar" aria-label="Navigation mobile">
         {NAV.map(n => (
-          <NavLink key={n.to} to={n.to} end={n.end}><Icon name={n.icon} size={22} /><span>{n.short}</span></NavLink>
+          <NavLink key={n.to} to={n.to} end={n.end}><span className="tab-ico"><Icon name={n.icon} size={22} />{n.to === '/evenements' && pending > 0 && <span className="dot" />}</span><span>{n.short}</span></NavLink>
         ))}
         <NavLink to="/profil"><Icon name="user" size={22} /><span>Profil</span></NavLink>
       </nav>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { supabase, errMsg, apiBase } from '../lib/supabase'
 import { formatDateShort } from '../lib/format'
 import { CopyField, Notice } from './ui'
+import { useConfirm } from './Confirm'
 
 interface Tok { id: string; name: string; token_prefix: string; created_at: string; expires_at: string; last_used_at: string | null }
 
@@ -20,6 +21,7 @@ export default function ApiAccess() {
   const [name, setName] = useState('')
   const [fresh, setFresh] = useState<string | null>(null)
   const [err, setErr] = useState('')
+  const confirm = useConfirm()
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('api_tokens')
@@ -35,7 +37,7 @@ export default function ApiAccess() {
     setFresh(data as string); setName(''); load()
   }
   const revoke = async (t: Tok) => {
-    if (!confirm(`Révoquer le jeton « ${t.name} » ? Toute application qui l'utilise cessera de fonctionner.`)) return
+    if (!(await confirm({ title: 'Révoquer ce jeton ?', message: `Le jeton « ${t.name} » sera révoqué : toute application qui l'utilise cessera de fonctionner.`, confirmLabel: 'Révoquer', danger: true }))) return
     const { error } = await supabase.from('api_tokens').delete().eq('id', t.id)
     if (error) setErr(errMsg(error)); else { setFresh(null); load() }
   }

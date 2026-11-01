@@ -122,6 +122,10 @@ Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
 
 *Mon profil → Se désinscrire → Supprimer mon compte* (confirmation en tapant SUPPRIMER) appelle la fonction SQL `delete_my_account()` (`supabase/delete_account.sql`) : le compte, le profil, la liste, les cadeaux, les jetons API et les achats de la personne sont supprimés ; ses achats sont annulés (les cadeaux redeviennent disponibles) ; un événement qu'elle organisait est transmis au plus ancien autre invité, ou supprimé s'il est seul.
 
+## 5 quinquies. Inviter par nom + e-mail
+
+Dans un événement, l'organisateur peut **ajouter un invité avec son nom et son e-mail** (`supabase/event_invites.sql`). Le site n'envoie pas d'e-mail lui-même : le bouton « E-mail » ouvre votre messagerie avec un message prêt (lien d'invitation inclus), et « Copier » met ce message dans le presse-papiers (WhatsApp, SMS…). Dès que la personne se connecte avec cette adresse, l'événement lui apparaît dans **Événements → Invitations** et elle choisit de le rejoindre ou de refuser. Si elle rejoint par le lien d'invitation, elle disparaît toute seule des « En attente ». Seuls les invités qui ont rejoint participent au tirage au sort.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -134,6 +138,7 @@ Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
 supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
 supabase/delete_account.sql  désinscription (suppression de son compte)
+supabase/event_invites.sql   invitations par nom + e-mail
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)
 src/lib/                 connexion Supabase, liens de parrainage, authentification
 src/pages/               Ma liste, liste d'un proche, événements, tirage, connexion

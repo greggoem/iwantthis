@@ -2,7 +2,6 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice } from '../components/ui'
-import MyPurchases from '../components/MyPurchases'
 import ApiAccess from '../components/ApiAccess'
 import DeleteAccount from '../components/DeleteAccount'
 
@@ -33,7 +32,6 @@ export default function Profile() {
       </form>
       <p className="small muted">Les achats déjà réservés gardent l'ancien nom affiché.</p>
 
-      <MyPurchases />
       <ApiAccess />
       <DeleteAccount />
     </div>

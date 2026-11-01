@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
+import { Link } from 'react-router-dom'
+import Icon from './Icon'
 import { formatDateShort, formatPrice, todayISO } from '../lib/format'
 import { IconButton, Notice } from './ui'
 import { Thumb } from './GiftTable'
-import ItemLink from './ItemLink'
+import ItemLink, { ItemAnchor } from './ItemLink'
+import { useConfirm } from './Confirm'
 
 interface ClaimRow {
   item_id: string
@@ -21,6 +24,7 @@ interface Purchase {
 /** Profil : les cadeaux que j'ai indiqué offrir (à venir), avec possibilité d'annuler en cas de changement d'avis */
 export default function MyPurchases() {
   const { session } = useAuth()
+  const confirm = useConfirm()
   const [rows, setRows] = useState<Purchase[] | null>(null)
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
@@ -50,7 +54,7 @@ export default function MyPurchases() {
   useEffect(() => { load() }, [load])
 
   const cancel = async (p: Purchase) => {
-    if (!confirm(`Annuler votre achat de « ${p.title} » pour ${p.owner} ?\nLe cadeau redeviendra disponible pour les autres invités.`)) return
+    if (!(await confirm({ title: 'Annuler cet achat ?', message: `Votre achat de « ${p.title} » pour ${p.owner} sera annulé. Le cadeau redeviendra disponible pour les autres invités.`, confirmLabel: 'Annuler l\'achat', danger: true }))) return
     setErr(''); setMsg(''); setBusy(p.id)
     const { error } = await supabase.from('item_claims').delete().eq('item_id', p.id)
     setBusy(null)
@@ -65,9 +69,9 @@ export default function MyPurchases() {
 
   const Row = ({ p, canCancel }: { p: Purchase; canCancel: boolean }) => (
     <li className="purchase">
-      <Thumb src={p.image} alt={p.title} />
+      <ItemAnchor url={p.url} className="thumb-link"><Thumb src={p.image} alt={p.title} /></ItemAnchor>
       <div className="purchase-main">
-        <strong>{p.title}</strong>
+        <ItemAnchor url={p.url} className="title-link"><strong>{p.title}</strong></ItemAnchor>
         <p className="small muted">
           Pour {p.owner} · remise le {formatDateShort(p.revealOn)}{p.event ? ` · ${p.event}` : ''}
         </p>
@@ -81,17 +85,15 @@ export default function MyPurchases() {
   )
 
   return (
-    <section className="card stack mt">
-      <div className="row between wrap gap">
-        <h2 style={{ margin: 0 }}>Mes cadeaux à offrir</h2>
-        {upcoming.length > 0 && total > 0 && <span className="chip">{upcoming.length} cadeau{upcoming.length > 1 ? 'x' : ''} · {formatPrice(total)}</span>}
-      </div>
-      <p className="small muted">Les cadeaux que vous avez indiqué acheter pour vos proches. Un changement d'avis ? Annulez l'achat : le cadeau redevient disponible pour les autres.</p>
+    <div className="stack">
+      {upcoming.length > 0 && total > 0 && (
+        <div className="row"><span className="chip">{upcoming.length} cadeau{upcoming.length > 1 ? 'x' : ''} à offrir · {formatPrice(total)}</span></div>
+      )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
       {upcoming.length === 0
-        ? <p className="muted small">Aucun cadeau à offrir pour l'instant. Sur la liste d'un proche, cliquez « J'ai acheté » après votre achat.</p>
-        : <ul className="purchases">{upcoming.map(p => <Row key={p.id} p={p} canCancel />)}</ul>}
+        ? <div className="empty"><div className="empty-ico"><Icon name="bag" size={26} /></div><h2>Rien à offrir pour l'instant</h2><p className="muted">Sur la liste d'un proche, cliquez « J'ai acheté » après votre achat : il apparaîtra ici.</p><Link className="btn btn-primary" to="/listes">Voir les listes de mes proches</Link></div>
+        : <ul className="purchases card">{upcoming.map(p => <Row key={p.id} p={p} canCancel />)}</ul>}
 
       {past.length > 0 && (
         <details className="bm">
@@ -99,6 +101,6 @@ export default function MyPurchases() {
           <ul className="purchases">{past.map(p => <Row key={p.id} p={p} canCancel={false} />)}</ul>
         </details>
       )}
-    </section>
+    </div>
   )
 }

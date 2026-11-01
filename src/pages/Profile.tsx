@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice } from '../components/ui'
+import ApiAccess from '../components/ApiAccess'
 
 export default function Profile() {
   const { profile, session, refreshProfile } = useAuth()
@@ -29,6 +30,8 @@ export default function Profile() {
         <button className="btn btn-primary">Enregistrer</button>
       </form>
       <p className="small muted">Les achats déjà réservés gardent l'ancien nom affiché.</p>
+
+      <ApiAccess />
     </div>
   )
 }

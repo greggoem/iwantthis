@@ -18,6 +18,7 @@ Technique : React + Vite (site statique) et **Supabase** (comptes + base de donn
 
 1. Créez un compte gratuit sur <https://supabase.com> puis **New project** (région *West EU – Paris* ou *Frankfurt*).
 2. Menu **SQL Editor → New query**, collez **tout** le contenu de `supabase/schema.sql`, cliquez **Run**.
+   Puis, dans une nouvelle requête, collez `supabase/api_tokens.sql` (jetons personnels pour l'API / MCP).
 3. Menu **Authentication → Providers** :
    - **Email** : activé par défaut. Pour un usage familial, vous pouvez désactiver *Confirm email* (inscription immédiate) ou le laisser actif (lien de confirmation par e-mail).
    - **Google** (optionnel) : créez des identifiants OAuth dans la [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (*ID client OAuth → Application Web*), avec comme *URI de redirection autorisé* l'adresse indiquée par Supabase (`https://<votre-projet>.supabase.co/auth/v1/callback`), puis collez *Client ID* et *Client secret* dans Supabase.
@@ -93,6 +94,28 @@ Quand on colle un lien, la fonction Supabase `supabase/functions/link-preview` l
 
 Certains magasins (Amazon, Fnac, Zalando, Coolblue, Bol.com…) bloquent souvent les serveurs. Dans ce cas, l'écran *Ma liste* propose un **raccourci à glisser dans la barre de favoris** : il lit la page dans le navigateur de la personne (donc jamais bloqué) et pré-remplit le formulaire.
 
+## 5 ter. API REST et serveur MCP (piloter ses listes depuis Claude)
+
+La fonction Supabase `supabase/functions/api` expose **la même chose que le site** de deux façons :
+
+- une **API REST** (`/v1/…`, description OpenAPI sur `/v1/openapi.json`) ;
+- un **serveur MCP** (`/mcp`) avec 23 outils : ma liste, listes des proches, ajout/modification de cadeaux, « j'ai acheté », événements, exclusions, tirage au sort…
+
+Adresse de base : `https://<projet>.supabase.co/functions/v1/api`
+
+**Connexion** : sur le site, *Mon profil → Accès API & Claude → Créer un jeton*. Le jeton (`ncg_…`) n'est affiché qu'une fois ; seule son empreinte est stockée. Il expire au bout d'un an, 10 jetons maximum, révocable à tout moment (effet immédiat).
+
+| Client | Configuration |
+|---|---|
+| Claude Code | `claude mcp add --transport http nos-cadeaux <base>/mcp --header "Authorization: Bearer ncg_…"` |
+| claude.ai / applications qui n'acceptent qu'une adresse | `<base>/mcp/t/ncg_…` (le jeton est dans l'adresse : ne la partagez pas) |
+| Claude Desktop | `npx -y mcp-remote <base>/mcp --header "Authorization: Bearer ncg_…"` dans `claude_desktop_config.json` |
+| REST | `curl -H "Authorization: Bearer ncg_…" <base>/v1/list` |
+
+**Sécurité** : le serveur ouvre une vraie session au nom de l'utilisateur, donc toutes les règles de la base s'appliquent (le propriétaire d'une liste ne voit pas les achats avant la date ; le résultat du tirage n'est visible que par la personne concernée). La clé « service » ne sert qu'à vérifier le jeton. Les instructions du serveur MCP rappellent aussi à l'IA de ne pas deviner ces informations.
+
+**Tests** : `cd supabase/functions/api && deno test --no-prompt api.test.ts` (client Supabase simulé). **Déploiement** : `supabase functions deploy api --no-verify-jwt` et `supabase functions deploy link-preview` (ou via le tableau de bord / l'outil MCP Supabase).
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -103,6 +126,8 @@ Certains magasins (Amazon, Fnac, Zalando, Coolblue, Bol.com…) bloquent souvent
 
 ```
 supabase/schema.sql      base de données, sécurité, tirage, parrainage
+supabase/api_tokens.sql  jetons personnels (API / MCP)
+supabase/functions/      link-preview (image + prix) et api (REST + MCP)
 src/lib/                 connexion Supabase, liens de parrainage, authentification
 src/pages/               Ma liste, liste d'un proche, événements, tirage, connexion
 .github/workflows/       publication automatique sur GitHub Pages

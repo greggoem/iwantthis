@@ -17,6 +17,9 @@ export function siteUrl(): string {
   return window.location.origin + window.location.pathname
 }
 
+/** Base de l'API REST / du serveur MCP (fonction Edge « api ») */
+export const apiBase = () => `${url ?? ''}/functions/v1/api`
+
 export const listShareUrl = (token: string) => `${siteUrl()}#/l/${token}`
 export const eventInviteUrl = (code: string) => `${siteUrl()}#/e/${code}`
 

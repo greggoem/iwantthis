@@ -1,0 +1,104 @@
+import { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '../lib/auth'
+import { supabase, errMsg } from '../lib/supabase'
+import { formatDateShort, formatPrice, todayISO } from '../lib/format'
+import { IconButton, Notice } from './ui'
+import { Thumb } from './GiftTable'
+import ItemLink from './ItemLink'
+
+interface ClaimRow {
+  item_id: string
+  reveal_on: string
+  event_id: string | null
+  items: { id: string; title: string; url: string | null; price: number | null; image_url: string | null; wishlists: { owner_id: string } | null } | null
+  events: { name: string } | null
+}
+interface Purchase {
+  id: string; title: string; url: string | null; price: number | null; image: string | null
+  owner: string; revealOn: string; event: string | null
+}
+
+/** Profil : les cadeaux que j'ai indiqué offrir (à venir), avec possibilité d'annuler en cas de changement d'avis */
+export default function MyPurchases() {
+  const { session } = useAuth()
+  const [rows, setRows] = useState<Purchase[] | null>(null)
+  const [err, setErr] = useState('')
+  const [msg, setMsg] = useState('')
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    if (!session) return
+    const { data, error } = await supabase.from('item_claims')
+      .select('item_id,reveal_on,event_id,items(id,title,url,price,image_url,wishlists(owner_id)),events(name)')
+      .eq('claimed_by', session.user.id).order('reveal_on')
+    if (error) { setErr(errMsg(error)); setRows([]); return }
+    const claims = ((data as unknown as ClaimRow[]) ?? []).filter(c => c.items)
+    const ownerIds = [...new Set(claims.map(c => c.items!.wishlists?.owner_id).filter(Boolean) as string[])]
+    const names: Record<string, string> = {}
+    if (ownerIds.length) {
+      const { data: p } = await supabase.from('profiles').select('id,display_name').in('id', ownerIds)
+      for (const x of (p as { id: string; display_name: string }[]) ?? []) names[x.id] = x.display_name
+    }
+    setRows(claims.map(c => ({
+      id: c.item_id, title: c.items!.title, url: c.items!.url,
+      price: c.items!.price === null ? null : Number(c.items!.price), image: c.items!.image_url,
+      owner: names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche',
+      revealOn: c.reveal_on, event: c.events?.name ?? null,
+    })))
+  }, [session])
+
+  useEffect(() => { load() }, [load])
+
+  const cancel = async (p: Purchase) => {
+    if (!confirm(`Annuler votre achat de « ${p.title} » pour ${p.owner} ?\nLe cadeau redeviendra disponible pour les autres invités.`)) return
+    setErr(''); setMsg(''); setBusy(p.id)
+    const { error } = await supabase.from('item_claims').delete().eq('item_id', p.id)
+    setBusy(null)
+    if (error) setErr(errMsg(error)); else { setMsg(`Achat de « ${p.title} » annulé.`); load() }
+  }
+
+  if (rows === null) return null
+  const today = todayISO()
+  const upcoming = rows.filter(r => r.revealOn >= today)
+  const past = rows.filter(r => r.revealOn < today)
+  const total = upcoming.reduce((s, r) => s + (r.price ?? 0), 0)
+
+  const Row = ({ p, canCancel }: { p: Purchase; canCancel: boolean }) => (
+    <li className="purchase">
+      <Thumb src={p.image} alt={p.title} />
+      <div className="purchase-main">
+        <strong>{p.title}</strong>
+        <p className="small muted">
+          Pour {p.owner} · remise le {formatDateShort(p.revealOn)}{p.event ? ` · ${p.event}` : ''}
+        </p>
+        <div className="row wrap gap">
+          {p.price !== null && <span className="small">{formatPrice(p.price)}</span>}
+          <ItemLink url={p.url} />
+        </div>
+      </div>
+      {canCancel && <IconButton icon="trash" label="Annuler mon achat" danger disabled={busy === p.id} onClick={() => cancel(p)} />}
+    </li>
+  )
+
+  return (
+    <section className="card stack mt">
+      <div className="row between wrap gap">
+        <h2 style={{ margin: 0 }}>Mes cadeaux à offrir</h2>
+        {upcoming.length > 0 && total > 0 && <span className="chip">{upcoming.length} cadeau{upcoming.length > 1 ? 'x' : ''} · {formatPrice(total)}</span>}
+      </div>
+      <p className="small muted">Les cadeaux que vous avez indiqué acheter pour vos proches. Un changement d'avis ? Annulez l'achat : le cadeau redevient disponible pour les autres.</p>
+      <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+
+      {upcoming.length === 0
+        ? <p className="muted small">Aucun cadeau à offrir pour l'instant. Sur la liste d'un proche, cliquez « J'ai acheté » après votre achat.</p>
+        : <ul className="purchases">{upcoming.map(p => <Row key={p.id} p={p} canCancel />)}</ul>}
+
+      {past.length > 0 && (
+        <details className="bm">
+          <summary>Déjà remis ({past.length})</summary>
+          <ul className="purchases">{past.map(p => <Row key={p.id} p={p} canCancel={false} />)}</ul>
+        </details>
+      )}
+    </section>
+  )
+}

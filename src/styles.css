@@ -139,7 +139,7 @@ select { width: auto; max-width: 100%; }
 .g-details { margin: .1rem 0 0; color: var(--muted); }
 .g-price { font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .g-link { min-width: 0; }
-.g-status { display: flex; align-items: center; justify-content: space-between; gap: .4rem; }
+.g-status { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
 .g-status:has(.g-actions:only-child) { justify-content: flex-end; }
 .g-actions { display: flex; gap: .1rem; margin-left: auto; }
 .g-extra { grid-column: 2 / -1; }
@@ -278,3 +278,10 @@ select { width: auto; max-width: 100%; }
 .danger-btn-solid { background: var(--danger); border-color: var(--danger); color: #fff; }
 .danger-btn-solid:hover { background: #a51f17; border-color: #a51f17; }
 .consequences { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: .35rem; color: var(--ink-2); }
+
+/* ---------- Mes cadeaux à offrir ---------- */
+.purchases { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.purchase { display: flex; gap: .9rem; align-items: center; padding: .8rem 0; border-top: 1px solid var(--line-soft); }
+.purchase:first-child { border-top: 0; }
+.purchase-main { flex: 1; min-width: 0; }
+.purchase-main p { margin: .1rem 0 .2rem; }

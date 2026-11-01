@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { formatDateShort, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
-import { Notice, Spinner } from '../components/ui'
+import { IconButton, Notice, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
 import { GiftRow, GiftTable } from '../components/GiftTable'
 
@@ -25,6 +25,8 @@ export default function ListView() {
   const [choice, setChoice] = useState('custom')
   const [customDate, setCustomDate] = useState(todayISO())
   const [busy, setBusy] = useState(false)
+  const [copied, setCopied] = useState<Set<string>>(new Set())
+  const [copyMsg, setCopyMsg] = useState('')
 
   const load = useCallback(async () => {
     const { data: l } = await supabase.from('wishlists').select('*').eq('id', id!).maybeSingle()
@@ -69,6 +71,25 @@ export default function ListView() {
     load()
   }
 
+  /** Copie l'idée d'un proche dans MA liste (titre, lien, détails, prix, image) */
+  const copyIdea = async (it: Item) => {
+    setErr(''); setCopyMsg('')
+    const { data, error } = await supabase.rpc('ensure_my_list')
+    if (error) { setErr(errMsg(error)); return }
+    const mine = (Array.isArray(data) ? data[0] : data) as Wishlist
+    const { data: existing } = await supabase.from('items').select('id,title,url').eq('list_id', mine.id)
+    const norm = (t: string) => t.trim().toLowerCase()
+    const dup = ((existing as { id: string; title: string; url: string | null }[]) ?? [])
+      .some(x => (it.url && x.url === it.url) || norm(x.title) === norm(it.title))
+    if (dup && !confirm('Une envie identique ou très proche est déjà dans votre liste. L\'ajouter quand même ?')) return
+    const { error: ie } = await supabase.from('items').insert({
+      list_id: mine.id, title: it.title, url: it.url, details: it.details, price: it.price, image_url: it.image_url,
+    })
+    if (ie) { setErr(errMsg(ie)); return }
+    setCopied(prev => new Set(prev).add(it.id))
+    setCopyMsg(`« ${it.title} » a été ajouté à votre liste.`)
+  }
+
   const unclaim = async (itemId: string) => {
     const { error } = await supabase.from('item_claims').delete().eq('item_id', itemId)
     if (error) setErr(errMsg(error)); else load()
@@ -85,6 +106,7 @@ export default function ListView() {
       <h1>{list.title}</h1>
       <p className="muted">Liste de <strong>{owner}</strong>. {owner} ne voit pas ce que vous marquez comme acheté, avant la date de remise.</p>
       <Notice>{err}</Notice>
+      {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
 
       {items.length > 0 && (
@@ -101,8 +123,9 @@ export default function ListView() {
                   ? <span className="chip chip-ok"><Icon name="check" size={13} /> Acheté par {mine ? 'vous' : c.claimed_by_name}</span>
                   : <span className="chip">À offrir</span>}
                 actions={<>
-                  {!c && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté ce cadeau</button>}
-                  {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler mon achat</button>}
+                  {!c && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}
+                  {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler</button>}
+                  <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />
                 </>}
               >
                 {claimingId === it.id && (

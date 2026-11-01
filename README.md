@@ -1,4 +1,6 @@
-# 🎁 Nos cadeaux — listes de cadeaux partagées
+# I Want This (IWT) — listes de cadeaux partagées
+
+> Nom provisoire : il se change avec la variable `VITE_APP_NAME` (et le logo dans `src/components/Logo.tsx`).
 
 Site web (ordinateur et téléphone) pour :
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import type { EmailOtpType } from '@supabase/supabase-js'
 import { supabase, errMsg, APP_NAME } from '../lib/supabase'
+import Logo from '../components/Logo'
 import { Notice, Spinner } from '../components/ui'
 
 /**
@@ -30,7 +31,7 @@ export default function Confirm() {
   return (
     <div className="auth-wrap">
       <div className="card auth-card">
-        <h1>🎁 {APP_NAME}</h1>
+        <Logo name={APP_NAME} size={32} />
         {err ? (
           <>
             <Notice>{err}</Notice>

@@ -5,6 +5,7 @@ import { supabase, errMsg } from '../lib/supabase'
 import { formatDateShort, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { Notice, Spinner } from '../components/ui'
+import Icon from '../components/Icon'
 import { GiftRow, GiftTable } from '../components/GiftTable'
 
 interface CommonEvent { id: string; name: string; event_date: string }
@@ -97,8 +98,8 @@ export default function ListView() {
                 item={it}
                 highlight={Boolean(c)}
                 status={c
-                  ? <span className="badge badge-ok">✓ Déjà acheté par {mine ? 'vous' : c.claimed_by_name}<br /><span className="small">remise le {formatDateShort(c.reveal_on)}</span></span>
-                  : <span className="small muted">À offrir</span>}
+                  ? <span className="chip chip-ok"><Icon name="check" size={13} /> Acheté par {mine ? 'vous' : c.claimed_by_name}</span>
+                  : <span className="chip">À offrir</span>}
                 actions={<>
                   {!c && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté ce cadeau</button>}
                   {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler mon achat</button>}

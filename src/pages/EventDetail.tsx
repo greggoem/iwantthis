@@ -5,6 +5,7 @@ import { supabase, errMsg, eventInviteUrl } from '../lib/supabase'
 import { formatDate, formatDateShort } from '../lib/format'
 import type { EventRow, MemberRow } from '../lib/types'
 import { CopyField, Notice, Spinner } from '../components/ui'
+import Icon from '../components/Icon'
 
 interface Excl { giver_id: string; receiver_id: string }
 
@@ -179,7 +180,7 @@ export default function EventDetail() {
         ))}
       </ul>
 
-      <h2 className="mt">🎲 Tirage au sort</h2>
+      <h2 className="mt row"><Icon name="dice" size={20} /> Tirage au sort</h2>
       <section className="card stack">
         {ev.draw_done_at ? (
           <>

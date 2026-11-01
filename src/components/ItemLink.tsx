@@ -1,5 +1,6 @@
 import { buildLink } from '../lib/affiliate'
 import { useAffiliates } from '../lib/affiliate'
+import Icon from './Icon'
 
 /** Lien « Voir le produit » : applique automatiquement le parrainage du site si le magasin en propose un */
 export default function ItemLink({ url }: { url: string | null }) {
@@ -8,7 +9,7 @@ export default function ItemLink({ url }: { url: string | null }) {
   if (!link) return null
   return (
     <a className="itemlink" href={link.href} target="_blank" rel="noopener noreferrer sponsored nofollow">
-      {link.host} ↗
+      {link.host}<Icon name="external" size={13} />
       {link.affiliated && <span className="tag" title="Lien partenaire">partenaire</span>}
     </a>
   )

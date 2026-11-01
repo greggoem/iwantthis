@@ -10,7 +10,7 @@ export const supabase = createClient(url ?? 'http://localhost', key ?? 'missing'
   auth: { flowType: 'pkce', detectSessionInUrl: true, persistSession: true, autoRefreshToken: true },
 })
 
-export const APP_NAME = (import.meta.env.VITE_APP_NAME as string | undefined) || 'Nos cadeaux'
+export const APP_NAME = (import.meta.env.VITE_APP_NAME as string | undefined) || 'I Want This'
 
 /** Adresse du site sans le #, ex. https://greg.github.io/cadeaux/ */
 export function siteUrl(): string {

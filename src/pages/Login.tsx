@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
+import Logo from '../components/Logo'
 import { Notice } from '../components/ui'
 
 type Mode = 'in' | 'up' | 'forgot'
@@ -52,7 +53,7 @@ export default function Login() {
   return (
     <div className="auth-wrap">
       <form className="card auth-card" onSubmit={submit}>
-        <h1>🎁 {APP_NAME}</h1>
+        <Logo name={APP_NAME} size={32} />
         <p className="muted">Partagez vos envies, offrez sans doublon, tirez au sort en famille.</p>
 
         {mode !== 'forgot' && (

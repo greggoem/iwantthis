@@ -3,15 +3,16 @@ import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
 import { safeUrl } from '../lib/affiliate'
 import ItemLink from './ItemLink'
+import Icon from './Icon'
 
-export function Thumb({ src, alt }: { src: string | null; alt: string }) {
+export function Thumb({ src, alt, large }: { src: string | null; alt: string; large?: boolean }) {
   const [broken, setBroken] = useState(false)
   const ok = src && safeUrl(src) && !broken
   return (
-    <div className="thumb">
+    <div className={`thumb ${large ? 'thumb-lg' : ''}`}>
       {ok
         ? <img src={src!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
-        : <span aria-hidden>🎁</span>}
+        : <Icon name="gift" size={22} />}
     </div>
   )
 }
@@ -46,8 +47,8 @@ export function GiftRow({ item, status, actions, children, highlight }: {
         <strong>{item.title}</strong>
         {item.details && <p className="small g-details">{item.details}</p>}
       </div>
-      <div className="g-price" role="cell">{item.price !== null ? formatPrice(item.price) : <span className="muted">—</span>}</div>
-      <div className="g-link" role="cell">{item.url ? <ItemLink url={item.url} /> : <span className="muted small">—</span>}</div>
+      <div className={`g-price ${item.price === null ? 'is-none' : ''}`} role="cell">{item.price !== null ? formatPrice(item.price) : <span className="muted">—</span>}</div>
+      <div className={`g-link ${item.url ? '' : 'is-none'}`} role="cell">{item.url ? <ItemLink url={item.url} /> : <span className="muted small">—</span>}</div>
       <div className="g-status" role="cell">
         {status}
         {actions && <div className="g-actions">{actions}</div>}

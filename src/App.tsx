@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { useAuth } from './lib/auth'
 import { isConfigured, supabase, errMsg, APP_NAME } from './lib/supabase'
 import Layout from './components/Layout'
+import Logo from './components/Logo'
 import { Notice, Spinner } from './components/ui'
 import Login from './pages/Login'
 import MyList from './pages/MyList'
@@ -69,7 +70,7 @@ function NotConfigured() {
   return (
     <div className="auth-wrap">
       <div className="card auth-card">
-        <h1>🎁 {APP_NAME}</h1>
+        <Logo name={APP_NAME} size={32} />
         <Notice kind="info">
           Le site n'est pas encore relié à Supabase. Copiez <code>.env.example</code> en <code>.env</code> et renseignez
           <code> VITE_SUPABASE_URL</code> et <code>VITE_SUPABASE_ANON_KEY</code> (voir le README).

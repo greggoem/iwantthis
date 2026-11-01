@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type ReactNode, type ButtonHTMLAttributes } from 'react'
+import Icon, { type IconName } from './Icon'
 
 export function Notice({ kind = 'error', children }: { kind?: 'error' | 'ok' | 'info'; children: ReactNode }) {
   if (!children) return null
@@ -7,6 +8,14 @@ export function Notice({ kind = 'error', children }: { kind?: 'error' | 'ok' | '
 
 export function Spinner({ label = 'Chargement…' }: { label?: string }) {
   return <p className="muted center pad">{label}</p>
+}
+
+export function IconButton({ icon, label, danger, ...rest }: { icon: IconName; label: string; danger?: boolean } & ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button type="button" className={`icon-btn ${danger ? 'danger' : ''}`} aria-label={label} title={label} {...rest}>
+      <Icon name={icon} />
+    </button>
+  )
 }
 
 export async function copyText(text: string): Promise<boolean> {
@@ -33,7 +42,7 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
       <div className="row">
         <input readOnly value={value} onFocus={e => e.currentTarget.select()} />
         <button type="button" className="btn" onClick={async () => { if (await copyText(value)) { setDone(true); setTimeout(() => setDone(false), 1800) } }}>
-          {done ? 'Copié ✓' : 'Copier'}
+          <Icon name={done ? 'check' : 'copy'} size={16} /> {done ? 'Copié' : 'Copier'}
         </button>
         {canShare && (
           <button type="button" className="btn btn-ghost" onClick={() => navigator.share({ url: value }).catch(() => {})}>Partager</button>

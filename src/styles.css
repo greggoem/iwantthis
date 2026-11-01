@@ -377,8 +377,10 @@ select { width: auto; max-width: 100%; }
 .gcard-meta { min-height: 1.6rem; }
 .gcard .title-link strong { font-weight: 600; overflow-wrap: anywhere; }
 .gcard-meta { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; }
-.gcard-foot { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; margin-top: auto; padding-top: .35rem; }
-.gcard-foot .g-actions { margin-left: auto; }
+.gcard-foot { display: grid; gap: .3rem; margin-top: auto; padding-top: .45rem; }
+.gcard-status { min-height: 1.75rem; display: flex; align-items: center; min-width: 0; }
+.gcard-status > .chip { min-width: 0; max-width: 100%; }
+.gcard-actions { min-height: 34px; display: flex; align-items: center; justify-content: flex-end; gap: .1rem; flex-wrap: wrap; }
 .gsection { grid-column: 1 / -1; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
 .gsection-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .9rem 1.1rem; cursor: pointer; flex-wrap: wrap; }
 .gsection[data-open="1"] > .gsection-head { border-bottom: 1px solid var(--line-soft); margin-bottom: 1rem; }

@@ -161,8 +161,8 @@ export function GiftCard({ item, status, actions, children, highlight, dim }: Gi
           {item.url && <ItemLink url={item.url} />}
         </div>
         <div className="gcard-foot">
-          {status}
-          {actions && <div className="g-actions">{actions}</div>}
+          <div className="gcard-status">{status}</div>
+          <div className="gcard-actions">{actions}</div>
         </div>
         {children}
       </div>

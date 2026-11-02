@@ -7,4 +7,5 @@ zip -qr $OUT/iwt-extension.zip . -x README.md build.sh manifest.firefox.json 'st
 T=$(mktemp -d); cp -r . "$T/"; cp manifest.firefox.json "$T/manifest.json"
 (cd "$T" && zip -qr "$OLDPWD/$OUT/iwt-extension-firefox.zip" . -x README.md build.sh manifest.firefox.json 'store/*')
 cp $OUT/iwt-extension.zip $OUT/iwt-extension-chrome-edge.zip
+cp $OUT/iwt-extension-firefox.zip $OUT/iwt-extension-firefox-2.zip
 rm -rf "$T"; ls -l $OUT

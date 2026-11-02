@@ -11,4 +11,4 @@ export const STORE_LINKS = {
 
 export const EXTENSION_ZIP = `${import.meta.env.BASE_URL}extension/iwt-extension.zip`
 export const EXTENSION_SOURCE = 'https://github.com/greggoem/liste-cadeaux/tree/main/extension'
-export const EXTENSION_ZIP_FIREFOX = `${import.meta.env.BASE_URL}extension/iwt-extension-firefox.zip`
+export const EXTENSION_ZIP_FIREFOX = `${import.meta.env.BASE_URL}extension/iwt-extension-firefox-2.zip`

@@ -1,4 +1,4 @@
-import { useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
@@ -13,6 +13,7 @@ const ZOOM = 280
 export function Thumb({ src, alt, large, zoom }: { src: string | null; alt: string; large?: boolean; zoom?: boolean }) {
   const [broken, setBroken] = useState(false)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  useEffect(() => { setBroken(false) }, [src])   // une nouvelle image repart de zéro (l'ancienne avait pu échouer)
   const ok = Boolean(src && safeUrl(src) && !broken)
 
   const show = (e: MouseEvent<HTMLDivElement>) => {
@@ -40,6 +41,7 @@ export function Thumb({ src, alt, large, zoom }: { src: string | null; alt: stri
 /** Grande image (galerie) */
 export function Pic({ src, alt }: { src: string | null; alt: string }) {
   const [broken, setBroken] = useState(false)
+  useEffect(() => { setBroken(false) }, [src])
   const ok = src && safeUrl(src) && !broken
   return (
     <div className="pic">

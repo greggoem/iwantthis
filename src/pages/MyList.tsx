@@ -70,6 +70,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     if ('error' in r) { setErr(r.error); return }
     uploaded.current.push(r.url)
     setD(prev => ({ ...prev, image: r.url }))
+    setHint('Image ajoutée.')
   }
   const cancel = async () => {
     for (const u of uploaded.current) if (u !== initial.image) await deleteItemImage(u)   // rien ne traîne si on abandonne

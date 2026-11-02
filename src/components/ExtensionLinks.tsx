@@ -1,5 +1,5 @@
 import { APP_NAME } from '../lib/supabase'
-import { EXTENSION_SOURCE, EXTENSION_ZIP, EXTENSION_ZIP_FIREFOX, STORE_LINKS } from '../lib/extensions'
+import { EXTENSION_ZIP, EXTENSION_ZIP_FIREFOX, STORE_LINKS } from '../lib/extensions'
 import { LogoMark } from './Logo'
 import Icon from './Icon'
 
@@ -7,7 +7,6 @@ const BROWSERS: { key: keyof typeof STORE_LINKS; name: string; hint: string }[] 
   { key: 'chrome', name: 'Chrome', hint: 'et Brave, Opera, Vivaldi…' },
   { key: 'edge', name: 'Edge', hint: 'Microsoft Edge' },
   { key: 'firefox', name: 'Firefox', hint: 'Mozilla Firefox' },
-  { key: 'safari', name: 'Safari', hint: 'Mac, iPhone, iPad' },
 ]
 
 /** « Mon profil » : l'extension de navigateur (un clic sur une page produit pour l'ajouter à ma liste) */
@@ -39,7 +38,6 @@ export default function ExtensionLinks() {
         <ul className="small steps-list">
           <li><strong>Chrome, Edge, Brave :</strong> ouvrez <code>chrome://extensions</code> (ou <code>edge://extensions</code>), activez le <em>Mode développeur</em>, cliquez <em>Charger l'extension non empaquetée</em> et choisissez le dossier décompressé.</li>
           <li><strong>Firefox :</strong> <a href={EXTENSION_ZIP_FIREFOX} download>téléchargez la version Firefox</a>, décompressez-la, ouvrez <code>about:debugging#/runtime/this-firefox</code>, <em>Charger un module complémentaire temporaire</em>, choisissez <code>manifest.json</code> (à refaire à chaque redémarrage tant qu'elle n'est pas sur le store).</li>
-          <li><strong>Safari :</strong> sur un Mac avec Xcode, <a href={EXTENSION_SOURCE} target="_blank" rel="noopener noreferrer">suivez les étapes de conversion</a>.</li>
         </ul>
         <p className="small muted">L'extension lit seulement la page sur laquelle vous cliquez, et n'a accès ni à votre compte ni à vos mots de passe.</p>
       </details>

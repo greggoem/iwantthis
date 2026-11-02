@@ -239,7 +239,7 @@ function BookmarkletBox() {
         Sur la page d'un produit, cliquez sur ce favori : le cadeau arrive ici, déjà rempli.
       </p>
       <a ref={ref} className="btn btn-sm" draggable onClick={e => e.preventDefault()}><LogoMark size={20} /> Ajouter à {APP_NAME}</a>
-      <p className="small muted">Plus pratique : l'<Link to="/profil">extension pour Chrome, Edge, Firefox ou Safari</Link> (dans Mon profil), avec l'icône du site dans la barre du navigateur.</p>
+      <p className="small muted">Plus pratique : l'<Link to="/profil">extension pour Chrome, Edge ou Firefox</Link> (dans Mon profil), avec l'icône du site dans la barre du navigateur.</p>
       <p className="small muted">Sur téléphone : collez le lien du produit et saisissez le prix à la main si besoin.</p>
     </details>
   )

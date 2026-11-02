@@ -1,7 +1,7 @@
 # Dossier de dépôt — extension « I Want This »
 
-Archive à envoyer (la même pour Chrome, Edge et Firefox) : `public/extension/iwt-extension.zip`
-(régénérer : `cd extension && zip -qr ../public/extension/iwt-extension.zip . -x README.md 'store/*'`)
+Archives à envoyer : `public/extension/iwt-extension.zip` (Chrome et Edge) et `public/extension/iwt-extension-firefox.zip` (Firefox)
+(régénérer : `extension/build.sh`)
 
 Page de confidentialité (à coller dans le champ « Politique de confidentialité ») :
 `https://greggoem.github.io/liste-cadeaux/extension/privacy.html`

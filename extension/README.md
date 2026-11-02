@@ -10,7 +10,7 @@ Permissions : `activeTab` (lire la page seulement quand vous cliquez), `scriptin
 
 - **Chrome / Edge / Brave** : `chrome://extensions` (ou `edge://extensions`) → activer le *Mode développeur* →
   *Charger l'extension non empaquetée* → choisir ce dossier (ou l'archive décompressée).
-- **Firefox** : `about:debugging#/runtime/this-firefox` → *Charger un module complémentaire temporaire…* → choisir `manifest.json`.
+- **Firefox** : `about:debugging#/runtime/this-firefox` → *Charger un module complémentaire temporaire…* → choisir `manifest.json` de l'archive Firefox.
   (Temporaire : à refaire à chaque redémarrage, tant que l'extension n'est pas signée par Mozilla — voir « Publier ».)
 - **Safari (Mac)** : `xcrun safari-web-extension-converter extension/ --app-name "I Want This"` génère un projet Xcode ;
   le lancer, puis Safari → Réglages → Extensions. Un compte développeur Apple est nécessaire pour la distribuer.
@@ -21,7 +21,7 @@ Clic droit sur l'icône → *Options* : par défaut `https://greggoem.github.io/
 
 ## Publier sur les stores
 
-1. Archive : `cd extension && zip -r ../public/extension/iwt-extension.zip . -x README.md 'store/*'` (c'est le fichier proposé dans « Mon profil »).
+1. Archives : `extension/build.sh` génère `iwt-extension.zip` (Chrome et Edge, manifeste avec `service_worker`) et `iwt-extension-firefox.zip` (Firefox, manifeste `manifest.firefox.json` avec `scripts` et l'identifiant gecko). Ce sont les fichiers proposés dans « Mon profil ».
 2. Chrome Web Store (5 $ une fois), Microsoft Edge Add-ons (gratuit), Firefox Add-ons (gratuit, signature incluse), App Store (compte Apple Developer).
 3. Une fois publiée, collez l'adresse de la fiche dans `src/lib/extensions.ts` : le bouton « Installer » apparaît dans « Mon profil ».
 

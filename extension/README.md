@@ -21,6 +21,8 @@ Clic droit sur l'icône → *Options* : par défaut `https://greggoem.github.io/
 
 ## Publier sur les stores
 
-1. Archive : `cd extension && zip -r ../public/extension/iwt-extension.zip . -x README.md` (c'est le fichier proposé dans « Mon profil »).
+1. Archive : `cd extension && zip -r ../public/extension/iwt-extension.zip . -x README.md 'store/*'` (c'est le fichier proposé dans « Mon profil »).
 2. Chrome Web Store (5 $ une fois), Microsoft Edge Add-ons (gratuit), Firefox Add-ons (gratuit, signature incluse), App Store (compte Apple Developer).
 3. Une fois publiée, collez l'adresse de la fiche dans `src/lib/extensions.ts` : le bouton « Installer » apparaît dans « Mon profil ».
+
+Le dossier `store/` contient tout ce qu'il faut pour remplir les fiches (textes, justification des permissions, captures 1280×800, vignette) : voir `store/LISTING.md`.

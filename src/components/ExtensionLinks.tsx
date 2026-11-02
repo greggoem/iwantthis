@@ -1,4 +1,4 @@
-import { APP_NAME } from '../lib/supabase'
+import { APP_NAME, siteUrl } from '../lib/supabase'
 import { EXTENSION_ZIP, EXTENSION_ZIP_FIREFOX, STORE_LINKS } from '../lib/extensions'
 import { LogoMark } from './Logo'
 import Icon from './Icon'
@@ -41,6 +41,14 @@ export default function ExtensionLinks() {
           <li><strong>Firefox :</strong> <a href={EXTENSION_ZIP_FIREFOX} download>téléchargez la version Firefox</a>, décompressez-la, ouvrez <code>about:debugging#/runtime/this-firefox</code>, <em>Charger un module complémentaire temporaire</em>, choisissez <code>manifest.json</code> (à refaire à chaque redémarrage tant qu'elle n'est pas sur le store).</li>
         </ul>
         <p className="small muted">L'extension lit seulement la page sur laquelle vous cliquez, et n'a accès ni à votre compte ni à vos mots de passe.</p>
+      </details>
+      <details className="bm">
+        <summary>Sur téléphone : partager un produit vers {APP_NAME}</summary>
+        <ul className="small steps-list">
+          <li><strong>Android (Chrome) :</strong> ouvrez ce site, menu ⋮ → <em>Installer l'application</em> (ou <em>Ajouter à l'écran d'accueil</em>). Ensuite, dans n'importe quelle appli (Amazon, Zalando, navigateur…), touchez <em>Partager</em> puis <em>{APP_NAME}</em> : le formulaire s'ouvre déjà rempli.</li>
+          <li><strong>iPhone / iPad :</strong> Safari ne permet pas encore ce partage direct. Ouvrez l'app <em>Raccourcis</em> → <em>+</em> → ajoutez <em>Recevoir des URL depuis la feuille de partage</em>, <em>Encoder l'URL</em> (sur « Entrée de raccourci »), puis <em>Ouvrir des URL</em> avec <code>{siteUrl()}#/?add=1&amp;u=</code> suivi de la variable « URL encodée ». Dans le menu Partager, touchez <em>Raccourcis</em> → votre raccourci.</li>
+          <li><strong>Sinon :</strong> copiez le lien du produit, ouvrez {APP_NAME} → <em>Ajouter</em> et collez-le : le nom, l'image et le prix se remplissent.</li>
+        </ul>
       </details>
       <BookmarkletBox open hideTip title="Raccourci pour la barre de favoris (tous navigateurs)" />
     </section>

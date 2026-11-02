@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { supabase, errMsg, listShareUrl, siteUrl, APP_NAME } from '../lib/supabase'
-import { bookmarkletHref } from '../lib/bookmarklet'
+import { useSearchParams } from 'react-router-dom'
+import { supabase, errMsg, listShareUrl, APP_NAME } from '../lib/supabase'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
 import { fetchPreview, euroPrice } from '../lib/preview'
@@ -13,7 +12,7 @@ import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
 import { cleanTitle, groupTree, nameFromUrl, parseLinks } from '../lib/groups'
 import Icon from '../components/Icon'
-import { LogoMark } from '../components/Logo'
+import BookmarkletBox from '../components/BookmarkletBox'
 import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
@@ -222,26 +221,6 @@ function KidsForm({ group, onCancel, onSubmit }: {
         <button className="btn btn-primary" disabled={busy}>{busy ? 'Un instant…' : 'Ajouter au groupe'}</button>
       </div>
     </form>
-  )
-}
-
-/* ---------- Raccourci navigateur (magasins qui bloquent la lecture automatique) ---------- */
-function BookmarkletBox() {
-  const ref = useRef<HTMLAnchorElement>(null)
-  // le href « javascript: » est posé après coup (React refuse ce type de lien dans le JSX)
-  useEffect(() => { ref.current?.setAttribute('href', bookmarkletHref(siteUrl())) }, [])
-  return (
-    <details className="bm">
-      <summary>Le magasin ne donne ni image ni prix ?</summary>
-      <p className="small">
-        Certains magasins (Amazon, Zalando, Fnac…) interdisent la lecture automatique. Ce raccourci passe par <strong>votre</strong> navigateur :
-        sur ordinateur, <strong>glissez le bouton ci-dessous dans votre barre de favoris</strong> (Ctrl+Maj+B pour l'afficher).
-        Sur la page d'un produit, cliquez sur ce favori : le cadeau arrive ici, déjà rempli.
-      </p>
-      <a ref={ref} className="btn btn-sm" draggable onClick={e => e.preventDefault()}><LogoMark size={20} /> Ajouter à {APP_NAME}</a>
-      <p className="small muted">Plus pratique : l'<Link to="/profil">extension pour Chrome, Edge ou Firefox</Link> (dans Mon profil), avec l'icône du site dans la barre du navigateur.</p>
-      <p className="small muted">Sur téléphone : collez le lien du produit et saisissez le prix à la main si besoin.</p>
-    </details>
   )
 }
 

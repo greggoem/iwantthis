@@ -2,6 +2,7 @@ import { APP_NAME } from '../lib/supabase'
 import { EXTENSION_ZIP, EXTENSION_ZIP_FIREFOX, STORE_LINKS } from '../lib/extensions'
 import { LogoMark } from './Logo'
 import Icon from './Icon'
+import BookmarkletBox from './BookmarkletBox'
 
 const BROWSERS: { key: keyof typeof STORE_LINKS; name: string; hint: string }[] = [
   { key: 'chrome', name: 'Chrome', hint: 'et Brave, Opera, Vivaldi…' },
@@ -41,6 +42,7 @@ export default function ExtensionLinks() {
         </ul>
         <p className="small muted">L'extension lit seulement la page sur laquelle vous cliquez, et n'a accès ni à votre compte ni à vos mots de passe.</p>
       </details>
+      <BookmarkletBox open hideTip title="Raccourci pour la barre de favoris (tous navigateurs)" />
     </section>
   )
 }

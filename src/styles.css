@@ -421,3 +421,5 @@ select { width: auto; max-width: 100%; }
 .exthead { display: flex; gap: .9rem; align-items: flex-start; }
 .exthead > svg { flex: none; }
 .exthead h2 { margin-bottom: .2rem; }
+
+.formthumb { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: none; }

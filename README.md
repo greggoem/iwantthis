@@ -160,6 +160,10 @@ Limite : un lien collé dans WhatsApp ou un e-mail n'affiche pas d'aperçu avec 
 - **Extension** (`extension/`, Chrome, Edge, Brave, Firefox, Safari) : un clic sur une page produit lit le titre, l'image et le prix dans le navigateur, puis ouvre le site avec le formulaire rempli. Elle n'a accès ni au compte ni aux mots de passe (permissions : `activeTab`, `scripting`, `storage`). L'archive à installer à la main est téléchargeable dans **Mon profil → Extension pour votre navigateur** (`public/extension/iwt-extension.zip`, à régénérer après toute modification : voir `extension/README.md`).
 - **Publier sur les stores** : ce sont des comptes à ouvrir à votre nom (Chrome Web Store 5 $ une fois, Edge Add-ons et Firefox Add-ons gratuits, Apple Developer 99 $/an pour Safari). Une fois la fiche en ligne, collez son adresse dans `src/lib/extensions.ts` : le bouton « Installer » remplace « bientôt sur le store ».
 
+## 5 undecies. Ajouter sa propre image à un cadeau
+
+Dans le formulaire d'un cadeau, **Ajouter une image** (ou *Changer l'image*) permet de choisir une photo ou un fichier ; sur téléphone, l'appareil photo est proposé. L'image est réduite dans le navigateur (≈ 1200 px) puis stockée dans le bucket public `item-images` (`supabase/item_images.sql`, à exécuter une fois), dans un dossier au nom de la personne : personne d'autre ne peut y écrire. Une image choisie à la main n'est jamais écrasée par la lecture automatique du lien. Les images remplacées, retirées ou abandonnées sont supprimées.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -173,6 +177,7 @@ supabase/schema.sql      base de données, sécurité, tirage, parrainage
 supabase/api_tokens.sql  jetons personnels (API / MCP)
 supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/event_invites.sql   invitations par nom + e-mail
+supabase/item_images.sql     images de cadeaux envoyées par l'utilisateur
 supabase/event_images.sql    image d'un événement (bucket + droits)
 supabase/edit_invites_claims.sql  modifier une invitation / la date d'un achat
 supabase/item_groups.sql     groupes de cadeaux (plusieurs liens, « un seul à choisir »)

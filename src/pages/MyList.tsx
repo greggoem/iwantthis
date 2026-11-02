@@ -4,6 +4,8 @@ import { supabase, errMsg, listShareUrl, APP_NAME } from '../lib/supabase'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
 import { fetchPreview, euroPrice } from '../lib/preview'
+import { deleteItemImage, uploadItemImage } from '../lib/itemImage'
+import { useAuth } from '../lib/auth'
 import { formatDateShort, formatPrice, todayISO } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
@@ -32,6 +34,10 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   const [hint, setHint] = useState('')
   const [busy, setBusy] = useState(false)
   const [reading, setReading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const { session } = useAuth()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const uploaded = useRef<string[]>([])   // images envoyées pendant cette saisie (nettoyées si abandon / remplacées)
   const lastUrl = useRef(initial.url.trim())
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD(prev => ({ ...prev, [k]: e.target.value }))
 
@@ -47,12 +53,27 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     const price = euroPrice(p)
     setD(prev => ({
       ...prev,
-      image: p.image ?? '',
+      image: prev.image || (p.image ?? ''),   // une image choisie à la main n'est pas écrasée
       title: prev.title.trim() ? prev.title : (p.title ?? ''),
       price: prev.price === '' && price !== undefined ? String(price) : prev.price,
     }))
     const bits = [p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
     setHint(bits.length ? `Trouvé sur ${p.site} : ${bits.join(' et ')}. Modifiable.` : `Rien de plus trouvé sur ${p.site} : renseignez le prix si vous le connaissez.`)
+  }
+
+  const pickImage = async (file: File | undefined) => {
+    if (!file || !session) return
+    setErr(''); setSending(true)
+    const r = await uploadItemImage(session.user.id, file)
+    setSending(false)
+    if (fileRef.current) fileRef.current.value = ''
+    if ('error' in r) { setErr(r.error); return }
+    uploaded.current.push(r.url)
+    setD(prev => ({ ...prev, image: r.url }))
+  }
+  const cancel = async () => {
+    for (const u of uploaded.current) if (u !== initial.image) await deleteItemImage(u)   // rien ne traîne si on abandonne
+    onCancel()
   }
 
   const submit = async (e: FormEvent) => {
@@ -63,7 +84,9 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     setBusy(true)
     const msg = await onSubmit(d)
     setBusy(false)
-    if (msg) setErr(msg)
+    if (msg) { setErr(msg); return }
+    // enregistré : on supprime les images envoyées mais plus utilisées (remplacées ou retirées)
+    for (const u of [...uploaded.current, initial.image]) if (u && u !== d.image) await deleteItemImage(u)
   }
 
   return (
@@ -75,12 +98,14 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
       {reading && <p className="small muted">Lecture de la fiche produit…</p>}
       {hint && <p className="small muted">{hint}</p>}
       <div className="formrow">
-        {d.image && (
-          <div className="formthumb">
-            <Thumb src={d.image} alt="Aperçu" large />
-            <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer</button>
-          </div>
-        )}
+        <div className="formthumb">
+          {d.image && <Thumb src={d.image} alt="Aperçu" large />}
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => pickImage(e.target.files?.[0])} />
+          <button type="button" className="btn btn-sm" disabled={sending} onClick={() => fileRef.current?.click()}>
+            <Icon name="image" size={15} /> {sending ? 'Envoi…' : d.image ? 'Changer l\'image' : 'Ajouter une image'}
+          </button>
+          {d.image && <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer</button>}
+        </div>
         <div className="stack grow">
           <label>Cadeau
             <input required maxLength={200} value={d.title} onChange={set('title')} placeholder="Ex. Pull en laine mérinos" />
@@ -109,8 +134,8 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
         </div>
       )}
       <div className="modal-foot">
-        <button type="button" className="btn btn-ghost" onClick={onCancel}>Annuler</button>
-        <button className="btn btn-primary" disabled={busy || reading}>{submitLabel}</button>
+        <button type="button" className="btn btn-ghost" onClick={cancel}>Annuler</button>
+        <button className="btn btn-primary" disabled={busy || reading || sending}>{submitLabel}</button>
       </div>
     </form>
   )

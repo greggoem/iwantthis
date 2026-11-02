@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase, errMsg, listShareUrl, siteUrl, APP_NAME } from '../lib/supabase'
 import { bookmarkletHref } from '../lib/bookmarklet'
 import { parsePrice } from '../lib/price'
@@ -13,17 +13,20 @@ import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
 import { cleanTitle, groupTree, nameFromUrl, parseLinks } from '../lib/groups'
 import Icon from '../components/Icon'
+import { LogoMark } from '../components/Logo'
 import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
 
-interface Draft { title: string; url: string; details: string; price: string; image: string }
-const empty: Draft = { title: '', url: '', details: '', price: '', image: '' }
+/** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
+interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean }
+const NEW_GROUP = '__new__'
+const empty: Draft = { title: '', url: '', details: '', price: '', image: '', groupId: '', newGroup: '', newPickOne: false }
 
 /* ---------- Formulaire cadeau (ajout et modification) ---------- */
-function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
-  initial: Draft; onSubmit: (d: Draft) => Promise<string | null>; onCancel: () => void; submitLabel: string
+function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
+  initial: Draft; groups: Item[]; onSubmit: (d: Draft) => Promise<string | null>; onCancel: () => void; submitLabel: string
 }) {
   const [d, setD] = useState<Draft>(initial)
   const [err, setErr] = useState('')
@@ -57,6 +60,7 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
     e.preventDefault()
     setErr('')
     if (d.url.trim() && !safeUrl(d.url)) { setErr('Ce lien ne semble pas valide (il doit commencer par http:// ou https://).'); return }
+    if (d.groupId === NEW_GROUP && !d.newGroup.trim()) { setErr('Donnez un nom au nouveau groupe.'); return }
     setBusy(true)
     const msg = await onSubmit(d)
     setBusy(false)
@@ -90,6 +94,21 @@ function ItemForm({ initial, onSubmit, onCancel, submitLabel }: {
           </label>
         </div>
       </div>
+      <label>Où l'ajouter ?
+        <select value={d.groupId} onChange={e => setD(prev => ({ ...prev, groupId: e.target.value }))}>
+          <option value="">Ma liste (sans groupe)</option>
+          {groups.map(g => <option key={g.id} value={g.id}>Groupe : {g.title}</option>)}
+          <option value={NEW_GROUP}>＋ Nouveau groupe…</option>
+        </select>
+      </label>
+      {d.groupId === NEW_GROUP && (
+        <div className="stack newgroup">
+          <label>Nom du nouveau groupe
+            <input maxLength={200} value={d.newGroup} onChange={e => setD(prev => ({ ...prev, newGroup: e.target.value }))} placeholder="Ex. Livres d'architecture" autoFocus />
+          </label>
+          <ModeChoice pickOne={d.newPickOne} onChange={v => setD(prev => ({ ...prev, newPickOne: v }))} />
+        </div>
+      )}
       <div className="modal-foot">
         <button type="button" className="btn btn-ghost" onClick={onCancel}>Annuler</button>
         <button className="btn btn-primary" disabled={busy || reading}>{submitLabel}</button>
@@ -219,7 +238,8 @@ function BookmarkletBox() {
         sur ordinateur, <strong>glissez le bouton ci-dessous dans votre barre de favoris</strong> (Ctrl+Maj+B pour l'afficher).
         Sur la page d'un produit, cliquez sur ce favori : le cadeau arrive ici, déjà rempli.
       </p>
-      <a ref={ref} className="btn btn-sm" draggable onClick={e => e.preventDefault()}><Icon name="plus" size={15} /> Ajouter à {APP_NAME}</a>
+      <a ref={ref} className="btn btn-sm" draggable onClick={e => e.preventDefault()}><LogoMark size={20} /> Ajouter à {APP_NAME}</a>
+      <p className="small muted">Plus pratique : l'<Link to="/profil">extension pour Chrome, Edge, Firefox ou Safari</Link> (dans Mon profil), avec l'icône du site dans la barre du navigateur.</p>
       <p className="small muted">Sur téléphone : collez le lien du produit et saisissez le prix à la main si besoin.</p>
     </details>
   )
@@ -277,6 +297,7 @@ export default function MyList() {
     return {
       title: (params.get('t') ?? '').slice(0, 200), url: u ? u.toString() : '', details: '',
       price: price !== undefined ? String(price) : '', image: img ? img.toString() : '',
+      groupId: '', newGroup: '', newPickOne: false,
     }
   })() : null
 
@@ -298,6 +319,7 @@ export default function MyList() {
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
   const { tops, kids } = groupTree(items)
+  const groupList = items.filter(i => i.is_group)
   const gallery = prefs.view === 'gallery'
   const Row = gallery ? GiftCard : GiftRow
   const Group = gallery ? GroupSection : GroupRow
@@ -369,13 +391,26 @@ export default function MyList() {
     image_url: d.image && safeUrl(d.image) ? d.image : null,
   })
 
+  /** Renvoie le groupe choisi (créé au besoin) : null = liste, sinon son identifiant ; ou un message d'erreur */
+  const resolveParent = async (d: Draft): Promise<{ parent: string | null } | { error: string }> => {
+    if (d.groupId !== NEW_GROUP) return { parent: d.groupId || null }
+    const { data, error } = await supabase.from('items').insert({
+      list_id: list!.id, title: d.newGroup.trim(), is_group: true, pick_one: d.newPickOne,
+    }).select('id').single()
+    return error ? { error: errMsg(error) } : { parent: (data as { id: string }).id }
+  }
+
   const add = async (d: Draft) => {
-    const { error } = await supabase.from('items').insert({ ...toRow(d), list_id: list!.id })
+    const r = await resolveParent(d)
+    if ('error' in r) return r.error
+    const { error } = await supabase.from('items').insert({ ...toRow(d), list_id: list!.id, parent_id: r.parent })
     if (error) return errMsg(error)
     closeModal(); await load(); return null
   }
   const update = async (id: string, d: Draft) => {
-    const { error } = await supabase.from('items').update(toRow(d)).eq('id', id)
+    const r = await resolveParent(d)
+    if ('error' in r) return r.error
+    const { error } = await supabase.from('items').update({ ...toRow(d), parent_id: r.parent }).eq('id', id)
     if (error) return errMsg(error)
     closeModal(); await load(); return null
   }
@@ -508,7 +543,7 @@ export default function MyList() {
       {modal?.kind === 'share' && list && <ShareModal list={list} onClose={closeModal} />}
       {modal?.kind === 'add' && (
         <Modal title="Ajouter une envie" onClose={closeModal}>
-          <ItemForm key={prefill ? params.toString() : 'new'} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add} />
+          <ItemForm key={prefill ? params.toString() : 'new'} groups={groupList} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add} />
           <BookmarkletBox />
         </Modal>
       )}
@@ -532,7 +567,8 @@ export default function MyList() {
       {modal?.kind === 'edit' && (
         <Modal title="Modifier l'envie" onClose={closeModal}>
           <ItemForm
-            initial={{ title: modal.item.title, url: modal.item.url ?? '', details: modal.item.details ?? '', price: modal.item.price?.toString() ?? '', image: modal.item.image_url ?? '' }}
+            groups={groupList}
+            initial={{ title: modal.item.title, url: modal.item.url ?? '', details: modal.item.details ?? '', price: modal.item.price?.toString() ?? '', image: modal.item.image_url ?? '', groupId: modal.item.parent_id ?? '', newGroup: '', newPickOne: false }}
             submitLabel="Enregistrer" onCancel={closeModal} onSubmit={d => update(modal.item.id, d)}
           />
         </Modal>

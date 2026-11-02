@@ -410,3 +410,14 @@ select { width: auto; max-width: 100%; }
 .sharecard { width: 100%; aspect-ratio: 1200 / 630; border-radius: 14px; border: 1px solid var(--line-soft); object-fit: cover; display: block; }
 .sharecard-wait { background: var(--fill); animation: fade .4s ease; }
 @media (max-width: 560px) { .event-cover { aspect-ratio: 16 / 9; } }
+
+.newgroup { padding: .8rem; background: var(--fill); border-radius: 12px; }
+.bm .btn-sm svg { flex: none; border-radius: 6px; }
+
+.extlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.extlist li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .65rem 0; border-top: 1px solid var(--line-soft); }
+.steps-list { padding-left: 1.1rem; display: grid; gap: .5rem; }
+.steps-list code { background: var(--fill); padding: 1px 6px; border-radius: 6px; font-size: .85em; }
+.exthead { display: flex; gap: .9rem; align-items: flex-start; }
+.exthead > svg { flex: none; }
+.exthead h2 { margin-bottom: .2rem; }

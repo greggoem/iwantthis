@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice } from '../components/ui'
 import ApiAccess from '../components/ApiAccess'
+import ExtensionLinks from '../components/ExtensionLinks'
 import DeleteAccount from '../components/DeleteAccount'
 
 export default function Profile() {
@@ -32,6 +33,7 @@ export default function Profile() {
       </form>
       <p className="small muted">Les achats déjà réservés gardent l'ancien nom affiché.</p>
 
+      <ExtensionLinks />
       <ApiAccess />
       <DeleteAccount />
     </div>

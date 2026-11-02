@@ -154,6 +154,12 @@ Le bouton **Partager** (événement ou liste) prépare une **carte image** 1200�
 
 Limite : un lien collé dans WhatsApp ou un e-mail n'affiche pas d'aperçu avec l'image de l'événement (l'aperçu d'un lien est lu sur la page elle-même, qui est la même pour tous). L'image est donc **jointe** au message plutôt qu'affichée en aperçu.
 
+## 5 decies. Raccourci, groupes et extension de navigateur
+
+- **Ajouter dans un groupe** : le formulaire d'ajout (à la main ou via le raccourci / l'extension) propose « Où l'ajouter ? » : la liste, un groupe existant, ou **un nouveau groupe** (nom + « plusieurs possibles » / « un seul à choisir »). Le même choix existe en modifiant une envie (pour la déplacer).
+- **Extension** (`extension/`, Chrome, Edge, Brave, Firefox, Safari) : un clic sur une page produit lit le titre, l'image et le prix dans le navigateur, puis ouvre le site avec le formulaire rempli. Elle n'a accès ni au compte ni aux mots de passe (permissions : `activeTab`, `scripting`, `storage`). L'archive à installer à la main est téléchargeable dans **Mon profil → Extension pour votre navigateur** (`public/extension/iwt-extension.zip`, à régénérer après toute modification : voir `extension/README.md`).
+- **Publier sur les stores** : ce sont des comptes à ouvrir à votre nom (Chrome Web Store 5 $ une fois, Edge Add-ons et Firefox Add-ons gratuits, Apple Developer 99 $/an pour Safari). Une fois la fiche en ligne, collez son adresse dans `src/lib/extensions.ts` : le bouton « Installer » remplace « bientôt sur le store ».
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).

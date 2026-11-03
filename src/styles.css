@@ -423,3 +423,8 @@ select { width: auto; max-width: 100%; }
 .exthead h2 { margin-bottom: .2rem; }
 
 .formthumb { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: none; }
+
+/* Pastilles : cadenas / coche et texte centrés sur le même axe */
+.chip { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; min-height: 26px; padding: 0 .7rem; line-height: 1; box-sizing: border-box; }
+.chip > svg { display: block; flex: none; }
+.chip > .ell { display: block; line-height: 1.25; padding-bottom: 1px; }

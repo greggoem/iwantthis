@@ -99,3 +99,6 @@ html[data-theme="fete"] .progress { background: var(--fill); }
 .themecard .sw i { width: 18px; height: 18px; border-radius: 50%; display: block; border: 1px solid rgba(0, 0, 0, .08); }
 .themecard span.small { color: var(--muted); }
 @media (max-width: 560px) { .themepick { grid-template-columns: 1fr; } }
+
+/* pastilles : le contour ne doit pas décaler le contenu */
+html[data-theme="fete"] .chip { box-sizing: border-box; min-height: 26px; padding: 0 .7rem; }

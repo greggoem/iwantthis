@@ -168,13 +168,16 @@ Dans le formulaire d'un cadeau, **Ajouter une image** (ou *Changer l'image*) per
 
 Trois thèmes au choix dans **Mon profil → Apparence**, mémorisé sur l'appareil : **Fête** (par défaut : fond crème, confettis estompés en haut de page, cartes à ombre de couleur, boutons en relief, pastilles pastel), **Doodle** (dessiné à la main : trait noir épais, coins irréguliers, cartes en pastels qui alternent, onglets colorés, polices manuscrites Caveat Brush et Patrick Hand hébergées avec le site, décor d'étoiles et de cœurs) et **Classique** (le design sobre d'origine). Le thème est un attribut `data-theme` sur `<html>` ; Fête vit dans `src/theme-fete.css` (socle commun à Fête et Doodle) et Doodle dans `src/theme-doodle.css`, qui surchargent les variables et quelques classes du design de base : pour changer une couleur, modifier les variables `--f-*` en tête de ce fichier.
 
-## 5 terdecies. Ajout direct et notifications
+## 5 terdecies. Invitations avec accord, notifications et e-mails
 
-Quand l'organisateur ajoute quelqu'un à un événement avec son e-mail (`supabase/notifications.sql`, à exécuter une fois après `event_invites.sql`) :
-- si l'adresse correspond à **un compte existant**, la personne **rejoint tout de suite** l'événement et reçoit une **notification dans le site** ;
-- sinon, une **invitation en attente** est créée, comme avant, et l'e-mail reste à envoyer à la main.
+Quand l'organisateur ajoute quelqu'un à un événement par son e-mail (`supabase/notifications.sql`, à exécuter une fois après `event_invites.sql`), **la personne n'est jamais ajoutée sans son accord** : une invitation est créée, et elle choisit de la rejoindre ou de la refuser dans **Événements → Invitations**. Tant qu'elle n'a pas accepté, ses listes ne sont pas visibles des autres invités.
+- Si l'adresse correspond à **un compte existant**, la personne reçoit aussi une **notification dans le site** : cloche en haut de page avec compteur, et page **Notifications**.
+- L'**e-mail** d'invitation (nom de l'événement, date, image de l'événement, bouton « Rejoindre ») part automatiquement à l'ajout, et le bouton **Envoyer** d'une invitation en attente le renvoie (au plus un envoi toutes les 2 minutes par personne, contrôlé par le serveur). Le bouton **E-mail** ouvre à la place votre propre messagerie avec un message prêt.
 
-Les notifications s'affichent via la **cloche** de la barre du haut (compteur de non lues, mis à jour à chaque page, au retour sur l'onglet et chaque minute) et la page **Notifications** (marquer comme lu, supprimer). Seule la personne concernée les voit, et seules les fonctions du serveur en créent. Le site n'envoie pas d'e-mail : pour prévenir aussi par e-mail ou par notification du téléphone, il faudrait brancher un service d'envoi (Resend, Brevo…) ou le « push » du navigateur.
+**Activer l'envoi des e-mails** (fonction `send-invite-email`, déjà déployée ; sans réglage, le site propose l'envoi manuel) :
+1. Créez un compte gratuit chez **Brevo** (brevo.com, 300 e-mails par jour) : *Expéditeurs, domaines* → ajoutez et validez l'adresse d'expédition (idéalement authentifiez votre domaine pour éviter les spams), puis *SMTP et API* → créez une **clé API**.
+2. Supabase → *Edge Functions* → *Secrets*, ajoutez : `BREVO_API_KEY` (la clé), `MAIL_FROM` (par exemple `I Want This <invitations@votre-domaine.be>`, l'adresse validée) et, facultatif, `SITE_URL`.
+3. Alternative : **Resend** avec `RESEND_API_KEY` (le domaine d'envoi doit être vérifié).
 
 ## 6. Limites connues / pistes
 

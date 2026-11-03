@@ -102,9 +102,12 @@ export default function EventDetail() {
     setErr(''); setMsg('')
     const { data, error } = await supabase.rpc('add_event_invite', { p_event: id, p_name: invName, p_email: invEmail })
     if (error) { setErr(errMsg(error)); return }
-    setMsg(data === 'added'
-      ? `${invName.trim()} a déjà un compte : la personne est ajoutée directement à l'événement et vient d'être notifiée dans le site.`
-      : `${invName.trim()} n'a pas encore de compte : invitation créée. Envoyez-la avec le bouton « E-mail ».`)
+    const first = invName.trim()
+    const mailed = await sendInviteEmail(invEmail)
+    const lead = data === 'invited_notified'
+      ? `${first} a déjà un compte : elle vient d'être notifiée dans le site et devra accepter pour rejoindre l'événement.`
+      : `${first} n'a pas encore de compte : invitation créée, en attente de son accord.`
+    setMsg(`${lead} ${mailed}`)
     setInvName(''); setInvEmail('')
     await load()
   }
@@ -118,6 +121,17 @@ export default function EventDetail() {
     setEditInv(null); setErr(''); setMsg(`Invitation de ${eiName.trim()} mise à jour. Si l'adresse a changé, renvoyez-lui l'invitation avec le bouton « E-mail ».`)
     await load()
   }
+  /** Demande au serveur d'envoyer l'e-mail d'invitation ; renvoie une phrase pour l'utilisateur */
+  const sendInviteEmail = async (email: string): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('send-invite-email', { body: { event_id: id, email } })
+    const r = data as { sent?: boolean; reason?: string; error?: string } | null
+    if (r?.sent) return 'Un e-mail d\'invitation vient d\'être envoyé.'
+    if (r?.reason === 'not_configured') return 'L\'envoi d\'e-mails n\'est pas encore activé sur le site : utilisez le bouton « E-mail » ci-dessous.'
+    if (r?.reason === 'refused' && r.error) return r.error
+    if (error || r?.reason) return 'L\'e-mail n\'a pas pu être envoyé : utilisez le bouton « E-mail » ci-dessous.'
+    return ''
+  }
+  const resendEmail = async (i: Invite) => { setErr(''); setMsg(await sendInviteEmail(i.email) || 'Demande envoyée.') }
   const removeInvite = async (i: Invite) => {
     if (!(await confirm({ title: 'Retirer cette invitation ?', message: `${i.name} (${i.email}) ne sera plus invité(e) à cet événement.`, confirmLabel: 'Retirer', danger: true }))) return
     await run(() => supabase.from('event_invites').delete().eq('id', i.id))
@@ -240,7 +254,7 @@ export default function EventDetail() {
           <>
             <hr />
             <h3>Ajouter quelqu'un par son nom et son e-mail</h3>
-            <p className="small muted">La personne verra l'événement en attente dès qu'elle se connecte avec cette adresse, et choisira de le rejoindre.</p>
+            <p className="small muted">La personne reçoit un e-mail (et une notification si elle a déjà un compte) et choisit de rejoindre l'événement ou de refuser : rien n'est visible avant son accord.</p>
             <form className="invite-form" onSubmit={addInvite}>
               <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
               <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
@@ -261,7 +275,8 @@ export default function EventDetail() {
                   <p className="small muted">{i.email}</p>
                 </div>
                 <div className="item-actions">
-                  <a className="btn btn-sm" href={mailtoFor(i)}><Icon name="mail" size={15} /> E-mail</a>
+                  <button className="btn btn-sm" onClick={() => resendEmail(i)} title="Envoyer l'e-mail d'invitation depuis le site"><Icon name="mail" size={15} /> Envoyer</button>
+                  <a className="btn btn-ghost btn-sm" href={mailtoFor(i)} title="Ouvrir votre messagerie avec le message prêt">E-mail</a>
                   <IconButton icon="copy" label="Copier le message d'invitation" onClick={() => copyInvite(i)} />
                   <IconButton icon="pencil" label="Modifier le nom ou l'e-mail" onClick={() => openEditInvite(i)} />
                   <IconButton icon="trash" label="Retirer l'invitation" danger onClick={() => removeInvite(i)} />

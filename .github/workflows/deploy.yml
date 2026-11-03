@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write   # pour publier la branche « site » (site construit, récupéré par le serveur ordiman.com)
   pages: write
   id-token: write
 
@@ -33,6 +33,19 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+      # Site construit sur une branche « site » (une seule validation, réécrite à chaque fois) :
+      # un serveur peut la récupérer avec « git pull », sans outils de construction.
+      - name: Publier le site construit sur la branche « site »
+        continue-on-error: true
+        run: |
+          cd dist
+          touch .nojekyll
+          git init -q -b site
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Site construit depuis ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" site
 
   deploy:
     needs: build

@@ -6,8 +6,11 @@ import { AuthProvider } from './lib/auth'
 import { AffiliateProvider } from './lib/affiliate'
 import { ConfirmProvider } from './components/Confirm'
 import './styles.css'
+import './theme-fete.css'
+import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 
+applyTheme(getTheme())   // avant le premier affichage : pas de clignotement
 consumeShareTarget()   // « Partager vers I Want This » depuis un téléphone : convertit en lien d'ajout
 
 createRoot(document.getElementById('root')!).render(

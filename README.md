@@ -164,6 +164,10 @@ Limite : un lien collé dans WhatsApp ou un e-mail n'affiche pas d'aperçu avec 
 
 Dans le formulaire d'un cadeau, **Ajouter une image** (ou *Changer l'image*) permet de choisir une photo ou un fichier ; sur téléphone, l'appareil photo est proposé. L'image est réduite dans le navigateur (≈ 1200 px) puis stockée dans le bucket public `item-images` (`supabase/item_images.sql`, à exécuter une fois), dans un dossier au nom de la personne : personne d'autre ne peut y écrire. Une image choisie à la main n'est jamais écrasée par la lecture automatique du lien. Les images remplacées, retirées ou abandonnées sont supprimées.
 
+## 5 duodecies. Apparence : Fête et Classique
+
+Deux thèmes au choix dans **Mon profil → Apparence**, mémorisé sur l'appareil : **Fête** (par défaut : fond crème, confettis estompés en haut de page, cartes à ombre de couleur, boutons en relief, pastilles pastel) et **Classique** (le design sobre d'origine). Le thème est un attribut `data-theme` sur `<html>` ; Fête vit dans `src/theme-fete.css` et surcharge les variables et quelques classes du design de base : pour changer une couleur, modifier les variables `--f-*` en tête de ce fichier.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).

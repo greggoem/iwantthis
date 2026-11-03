@@ -44,6 +44,7 @@ export default function Layout() {
           </nav>
           <div className="who">
             <NavLink to="/notifications" className="icon-btn bell" aria-label={unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications'} title="Notifications"><Icon name="bell" />{unread > 0 && <span className="bell-count">{unread > 9 ? '9+' : unread}</span>}</NavLink>
+            <NavLink to="/reglages" className="icon-btn" aria-label="Réglages" title="Réglages"><Icon name="settings" /></NavLink>
             <NavLink to="/profil" className="avatar" title={profile?.display_name ?? 'Mon profil'} aria-label="Mon profil">{initial}</NavLink>
             <button className="icon-btn" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion" title="Déconnexion"><Icon name="logout" /></button>
           </div>

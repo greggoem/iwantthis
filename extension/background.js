@@ -2,7 +2,7 @@
 // et ouvre votre site avec le formulaire d'ajout déjà rempli. Aucun identifiant n'est manipulé ici :
 // la connexion se fait sur le site, comme d'habitude.
 const api = globalThis.browser ?? globalThis.chrome
-const DEFAULT_SITE = 'https://greggoem.github.io/liste-cadeaux/'
+const DEFAULT_SITE = 'https://iwantthis.gift/'
 
 // Exécutée DANS la page (doit rester autonome)
 function readProduct() {

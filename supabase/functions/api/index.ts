@@ -11,7 +11,7 @@ import { ApiError, type Ctx } from './ops.ts'
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://greggoem.github.io/liste-cadeaux/'
+const SITE_URL = Deno.env.get('SITE_URL') ?? 'https://iwantthis.gift/'
 const PUBLIC_BASE = `${SUPABASE_URL}/functions/v1/api`
 
 const noSession = { auth: { persistSession: false, autoRefreshToken: false } }

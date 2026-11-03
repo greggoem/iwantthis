@@ -4,7 +4,7 @@
 // Secrets à définir (Supabase → Edge Functions → Secrets) :
 //   BREVO_API_KEY  ou  RESEND_API_KEY   (l'un des deux)
 //   MAIL_FROM      ex. « I Want This <invitations@votre-domaine.be> » (adresse validée chez le service d'envoi)
-//   SITE_URL       ex. https://greggoem.github.io/liste-cadeaux/   (facultatif)
+//   SITE_URL       ex. https://iwantthis.gift/   (facultatif)
 //   APP_NAME       facultatif
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { build, providerRequest, type InviteMail, type Provider } from './mail.ts'
@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
   const row = (Array.isArray(data) ? data[0] : data) as InviteMail | undefined
   if (!row) return json({ sent: false, reason: 'refused', error: 'Invitation introuvable' }, 200)
 
-  const mail = build(row, Deno.env.get('SITE_URL') ?? 'https://greggoem.github.io/liste-cadeaux/', Deno.env.get('APP_NAME') ?? 'I Want This')
+  const mail = build(row, Deno.env.get('SITE_URL') ?? 'https://iwantthis.gift/', Deno.env.get('APP_NAME') ?? 'I Want This')
   const { url, init } = providerRequest(provider, key, from, { email: row.invite_email, name: row.invite_name }, mail)
   try {
     const r = await fetch(url, init)

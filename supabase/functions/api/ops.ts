@@ -16,7 +16,7 @@ export interface Ctx {
   sb: SB
   uid: string
   jwt: string
-  siteUrl: string      // ex. https://greggoem.github.io/liste-cadeaux/
+  siteUrl: string      // ex. https://iwantthis.gift/
   supabaseUrl: string
   anonKey: string
 }

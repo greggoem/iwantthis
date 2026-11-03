@@ -4,7 +4,7 @@ Archives à envoyer : `public/extension/iwt-extension.zip` (Chrome et Edge) et `
 (régénérer : `extension/build.sh`)
 
 Page de confidentialité (à coller dans le champ « Politique de confidentialité ») :
-`https://greggoem.github.io/liste-cadeaux/extension/privacy.html`
+`https://iwantthis.gift/extension/privacy.html`
 
 Images : `screenshot-1.png`, `screenshot-2.png`, `screenshot-3.png` (1280×800) et `promo-tile-440x280.png` (vignette).
 Icône 128 px : `icons/icon-128.png`.
@@ -51,10 +51,10 @@ Ajouter le produit affiché dans l'onglet actif à la liste de cadeaux de l'util
 Ne collecte aucune des catégories de données. Cocher les 3 certifications (pas de vente de données, pas d'usage sans rapport avec la fonction, pas d'évaluation de solvabilité).
 
 ## Notes pour les validateurs (Firefox / Edge)
-Aucun code minifié ni transpilé : les sources sont celles de l'archive. Pour tester : ouvrir une page produit (par exemple une fiche Amazon ou Fnac), cliquer sur l'icône : un onglet s'ouvre sur `https://greggoem.github.io/liste-cadeaux/#/?add=1&u=…&t=…&i=…&p=…`. Le site demande un compte pour valider l'ajout ; l'extension elle-même n'a besoin d'aucun compte. Code source : https://github.com/greggoem/liste-cadeaux/tree/main/extension
+Aucun code minifié ni transpilé : les sources sont celles de l'archive. Pour tester : ouvrir une page produit (par exemple une fiche Amazon ou Fnac), cliquer sur l'icône : un onglet s'ouvre sur `https://iwantthis.gift/#/?add=1&u=…&t=…&i=…&p=…`. Le site demande un compte pour valider l'ajout ; l'extension elle-même n'a besoin d'aucun compte. Code source : https://github.com/greggoem/iwantthis/tree/main/extension
 
 ## Site / assistance
-https://greggoem.github.io/liste-cadeaux/ · https://github.com/greggoem/liste-cadeaux/issues
+https://iwantthis.gift/ · https://github.com/greggoem/iwantthis/issues
 
 ## Où déposer
 | Boutique | Adresse | Coût | Remarque |

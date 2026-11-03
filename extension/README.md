@@ -17,7 +17,7 @@ Permissions : `activeTab` (lire la page seulement quand vous cliquez), `scriptin
 
 ## Régler l'adresse du site
 
-Clic droit sur l'icône → *Options* : par défaut `https://greggoem.github.io/liste-cadeaux/`.
+Clic droit sur l'icône → *Options* : par défaut `https://iwantthis.gift/`.
 
 ## Publier sur les stores
 

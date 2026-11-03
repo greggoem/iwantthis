@@ -25,7 +25,7 @@ Technique : React + Vite (site statique) et **Supabase** (comptes + base de donn
    - **Email** : activé par défaut. Pour un usage familial, vous pouvez désactiver *Confirm email* (inscription immédiate) ou le laisser actif (lien de confirmation par e-mail).
    - **Google** (optionnel) : créez des identifiants OAuth dans la [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (*ID client OAuth → Application Web*), avec comme *URI de redirection autorisé* l'adresse indiquée par Supabase (`https://<votre-projet>.supabase.co/auth/v1/callback`), puis collez *Client ID* et *Client secret* dans Supabase.
 4. Menu **Authentication → URL Configuration** :
-   - **Site URL** : l'adresse finale du site (ex. `https://greggoem.github.io/liste-cadeaux/`).
+   - **Site URL** : l'adresse finale du site (ex. `https://iwantthis.gift/`).
    - **Redirect URLs** : ajoutez la même adresse, et `http://localhost:5173/` pour tester chez vous.
 5. Menu **Project Settings → API** : notez l'**URL du projet** et la clé **anon public**.
 
@@ -55,7 +55,7 @@ Par défaut, Supabase envoie ces e-mails depuis sa propre adresse, en anglais, e
 
 1. **Expéditeur** : Supabase → *Authentication → Emails → SMTP Settings* → *Enable custom SMTP*, avec un service d'envoi (Resend, Brevo… offres gratuites) et une adresse d'un domaine que vous possédez (ex. `noreply@votredomaine.be`, après vérification DNS chez le service d'envoi).
 2. **Textes** : Supabase → *Authentication → Emails → Templates* : collez le contenu de `supabase/emails/confirmation-inscription.html` (« Confirm sign up ») et `supabase/emails/mot-de-passe-oublie.html` (« Reset password »), avec l'objet indiqué en commentaire en haut de chaque fichier.
-3. **Site URL** : dans *Authentication → URL Configuration*, mettez l'adresse du site **avec la barre finale** (ex. `https://greggoem.github.io/liste-cadeaux/`). Les liens des e-mails pointent alors directement vers votre site (page `#/confirm`) et non vers supabase.co.
+3. **Site URL** : dans *Authentication → URL Configuration*, mettez l'adresse du site **avec la barre finale** (ex. `https://iwantthis.gift/`). Les liens des e-mails pointent alors directement vers votre site (page `#/confirm`) et non vers supabase.co.
 
 Option la plus simple : désactiver *Confirm email* (*Authentication → Providers → Email*). L'inscription est alors immédiate, sans e-mail (seul « mot de passe oublié » en envoie encore un).
 

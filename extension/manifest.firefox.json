@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "I Want This",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Ajoutez en un clic le produit affiché à votre liste de cadeaux I Want This.",
   "icons": {
     "16": "icons/icon-16.png",

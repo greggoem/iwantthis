@@ -21,6 +21,16 @@ export interface Item {
   created_at: string
 }
 
+export interface AppNotification {
+  id: string
+  kind: string
+  title: string
+  body: string | null
+  link: string | null
+  created_at: string
+  read_at: string | null
+}
+
 export interface Claim {
   item_id: string
   claimed_by: string

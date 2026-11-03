@@ -18,8 +18,18 @@ export default function Layout() {
   const programs = useAffiliates()
   const loc = useLocation()
   const [pending, setPending] = useState(0)
+  const [unread, setUnread] = useState(0)
   useEffect(() => {
     supabase.rpc('my_pending_invites').then(({ data }) => setPending(Array.isArray(data) ? data.length : 0))
+  }, [loc.pathname])
+  // notifications non lues : au changement de page, au retour sur l'onglet et chaque minute
+  useEffect(() => {
+    const load = () => supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null).then(({ count }) => setUnread(count ?? 0))
+    load()
+    const t = window.setInterval(load, 60000)
+    window.addEventListener('focus', load)
+    window.addEventListener('iwt-notifications', load)
+    return () => { window.clearInterval(t); window.removeEventListener('focus', load); window.removeEventListener('iwt-notifications', load) }
   }, [loc.pathname])
   const amazon = programs.some(p => /amazon/i.test(p.domain))
   const initial = (profile?.display_name ?? '?').trim().charAt(0).toUpperCase()
@@ -33,6 +43,7 @@ export default function Layout() {
             {NAV.map(n => <NavLink key={n.to} to={n.to} end={n.end}>{n.label}{n.to === '/evenements' && pending > 0 && <span className="dot" title="Invitation en attente" />}</NavLink>)}
           </nav>
           <div className="who">
+            <NavLink to="/notifications" className="icon-btn bell" aria-label={unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications'} title="Notifications"><Icon name="bell" />{unread > 0 && <span className="bell-count">{unread > 9 ? '9+' : unread}</span>}</NavLink>
             <NavLink to="/profil" className="avatar" title={profile?.display_name ?? 'Mon profil'} aria-label="Mon profil">{initial}</NavLink>
             <button className="icon-btn" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion" title="Déconnexion"><Icon name="logout" /></button>
           </div>

@@ -168,6 +168,14 @@ Dans le formulaire d'un cadeau, **Ajouter une image** (ou *Changer l'image*) per
 
 Trois thèmes au choix dans **Mon profil → Apparence**, mémorisé sur l'appareil : **Fête** (par défaut : fond crème, confettis estompés en haut de page, cartes à ombre de couleur, boutons en relief, pastilles pastel), **Doodle** (dessiné à la main : trait noir épais, coins irréguliers, cartes en pastels qui alternent, onglets colorés, polices manuscrites Caveat Brush et Patrick Hand hébergées avec le site, décor d'étoiles et de cœurs) et **Classique** (le design sobre d'origine). Le thème est un attribut `data-theme` sur `<html>` ; Fête vit dans `src/theme-fete.css` (socle commun à Fête et Doodle) et Doodle dans `src/theme-doodle.css`, qui surchargent les variables et quelques classes du design de base : pour changer une couleur, modifier les variables `--f-*` en tête de ce fichier.
 
+## 5 terdecies. Ajout direct et notifications
+
+Quand l'organisateur ajoute quelqu'un à un événement avec son e-mail (`supabase/notifications.sql`, à exécuter une fois après `event_invites.sql`) :
+- si l'adresse correspond à **un compte existant**, la personne **rejoint tout de suite** l'événement et reçoit une **notification dans le site** ;
+- sinon, une **invitation en attente** est créée, comme avant, et l'e-mail reste à envoyer à la main.
+
+Les notifications s'affichent via la **cloche** de la barre du haut (compteur de non lues, mis à jour à chaque page, au retour sur l'onglet et chaque minute) et la page **Notifications** (marquer comme lu, supprimer). Seule la personne concernée les voit, et seules les fonctions du serveur en créent. Le site n'envoie pas d'e-mail : pour prévenir aussi par e-mail ou par notification du téléphone, il faudrait brancher un service d'envoi (Resend, Brevo…) ou le « push » du navigateur.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).
@@ -183,6 +191,7 @@ supabase/delete_account.sql  désinscription (suppression de son compte)
 supabase/event_invites.sql   invitations par nom + e-mail
 supabase/item_images.sql     images de cadeaux envoyées par l'utilisateur
 supabase/event_images.sql    image d'un événement (bucket + droits)
+supabase/notifications.sql  notifications + ajout direct des comptes existants
 supabase/edit_invites_claims.sql  modifier une invitation / la date d'un achat
 supabase/item_groups.sql     groupes de cadeaux (plusieurs liens, « un seul à choisir »)
 supabase/functions/      link-preview (image + prix) et api (REST + MCP)

@@ -428,3 +428,17 @@ select { width: auto; max-width: 100%; }
 .chip { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; min-height: 26px; padding: 0 .7rem; line-height: 1; box-sizing: border-box; }
 .chip > svg { display: block; flex: none; }
 .chip > .ell { display: block; line-height: 1.25; padding-bottom: 1px; }
+
+/* ---------- Notifications ---------- */
+.bell { position: relative; display: inline-grid; place-items: center; text-decoration: none; color: inherit; }
+.bell-count { position: absolute; top: 1px; right: -3px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: var(--accent); color: #fff; font-size: .62rem; font-weight: 700; line-height: 15px; text-align: center; border: 1.5px solid var(--bg); box-sizing: content-box; pointer-events: none; }
+.bell svg { display: block; }
+.notifs { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: .6rem; }
+.notifs li { display: flex; align-items: center; gap: .4rem; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: .3rem .5rem .3rem .3rem; }
+.notifs li.unread { border-color: var(--ink); }
+.notif-main { flex: 1; min-width: 0; display: flex; gap: .7rem; align-items: flex-start; background: none; border: 0; padding: .6rem .6rem; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 12px; }
+.notif-main:hover { background: var(--fill); }
+.notif-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: .45rem; flex: none; background: transparent; }
+.unread .notif-dot { background: var(--accent); }
+.notif-text { display: grid; gap: .15rem; min-width: 0; }
+.notif-text strong { font-weight: 600; }

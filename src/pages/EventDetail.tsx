@@ -100,9 +100,11 @@ export default function EventDetail() {
   const addInvite = async (e: FormEvent) => {
     e.preventDefault()
     setErr(''); setMsg('')
-    const { error } = await supabase.rpc('add_event_invite', { p_event: id, p_name: invName, p_email: invEmail })
+    const { data, error } = await supabase.rpc('add_event_invite', { p_event: id, p_name: invName, p_email: invEmail })
     if (error) { setErr(errMsg(error)); return }
-    setMsg(`${invName.trim()} est ajouté(e). Envoyez-lui l'invitation avec le bouton « E-mail ».`)
+    setMsg(data === 'added'
+      ? `${invName.trim()} a déjà un compte : la personne est ajoutée directement à l'événement et vient d'être notifiée dans le site.`
+      : `${invName.trim()} n'a pas encore de compte : invitation créée. Envoyez-la avec le bouton « E-mail ».`)
     setInvName(''); setInvEmail('')
     await load()
   }

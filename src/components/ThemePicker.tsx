@@ -3,6 +3,7 @@ import { getTheme, setTheme, type Theme } from '../lib/theme'
 
 const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
   { key: 'fete', name: 'Fête', desc: 'Coloré et joyeux, cartes avec une ombre de couleur.', colors: ['#ff4d8d', '#ffc933', '#2dd4a7', '#38bdf8', '#8b5cf6'] },
+  { key: 'doodle', name: 'Doodle', desc: 'Dessiné à la main : trait noir épais, cartes pastel, police manuscrite.', colors: ['#ffe9a8', '#fcd3d3', '#cfe6fa', '#e4d3f2', '#cdeedd'] },
   { key: 'classique', name: 'Classique', desc: 'Sobre et épuré : noir et blanc, touche de corail.', colors: ['#0f0f10', '#f4f4f5', '#ffffff', '#ff5a36'] },
 ]
 

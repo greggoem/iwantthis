@@ -1,0 +1,74 @@
+/* ============ Thème « Doodle » : trait noir épais, pastels, polices manuscrites (sur le socle Fête) ============ */
+
+html[data-theme="doodle"]{--ink:#1a1a1a;--ink-2:#333;--muted:#5d5d5d;--bg:#fff5da;--line:#1a1a1a;--line-soft:#1a1a1a22;--fill:#fff0b8;--f-edge:#1a1a1a;--c1:#fff0b8;--c2:#d2e8fb;--c3:#fcd3d3;--c4:#e4d3f2;--c5:#cdeedd}
+html[data-theme="doodle"] *{box-shadow:none !important}
+html[data-theme="doodle"] body{font-family:'Patrick Hand',ui-rounded,system-ui,sans-serif;font-size:20px;background-color:#fff5da;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='380'%3E%3Cg fill='none' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M40 52l4 9 10 1-7.500 6.500 2.500 9.500-9-5-9 5 2.500-9.500L25 62l10-1z' fill='%23ffe69a' stroke='%23e9c76a' stroke-width='1.500'/%3E%3Cpath d='M300 40c8-12 22-8 22 2s-14 14-22 24c-8-10-22-14-22-24s14-14 22-2z' fill='%23ffc9d4' stroke='%23eba2b3' stroke-width='1.500'/%3E%3Cpath d='M170 30c10-14 20 14 30 0s20 14 30 0' stroke='%23b9a3ea' stroke-width='3'/%3E%3Ccircle cx='110' cy='150' r='6' fill='%23bfe3f7'/%3E%3Cpath d='M240 140l3 7 7 .8-5.500 4.700 1.800 7-6.300-3.800-6.300 3.800 1.800-7-5.500-4.700 7-.8z' fill='%23c9ecd8' stroke='%2395d1b3' stroke-width='1.500'/%3E%3Cpath d='M330 190c-8 0-8 10 0 10s8 10 0 10' stroke='%23ffb6a0' stroke-width='3'/%3E%3Crect x='40' y='230' width='26' height='22' rx='3' fill='%23e4d3f2' stroke='%23b99fdc' stroke-width='1.500'/%3E%3Cpath d='M53 230v22M40 238h26' stroke='%23b99fdc' stroke-width='1.500'/%3E%3Ccircle cx='170' cy='260' r='5' fill='%23ffe69a'/%3E%3Cpath d='M250 270c8-12 22-8 22 2s-14 14-22 24c-8-10-22-14-22-24s14-14 22-2z' fill='%23d2e8fb' stroke='%23a6c9ea' stroke-width='1.500'/%3E%3Cpath d='M90 330c10-14 20 14 30 0s20 14 30 0' stroke='%23ffc9d4' stroke-width='3'/%3E%3Ccircle cx='320' cy='330' r='6' fill='%23ffd4b8'/%3E%3C/g%3E%3C/svg%3E");background-size:380px 380px;color:#1a1a1a;letter-spacing:0}
+html[data-theme="doodle"] body::before{display:none}
+html[data-theme="doodle"] h1,html[data-theme="doodle"] h2,html[data-theme="doodle"] h3,html[data-theme="doodle"] .btn,html[data-theme="doodle"] .nav a,html[data-theme="doodle"] .logo-name,html[data-theme="doodle"] .chip,html[data-theme="doodle"] .tag,html[data-theme="doodle"] .title-input,html[data-theme="doodle"] .gcard .title-link strong,html[data-theme="doodle"] .g-price,html[data-theme="doodle"] strong{font-family:'Caveat Brush','Patrick Hand',cursive;font-weight:400;letter-spacing:.01em}
+html[data-theme="doodle"] h1,html[data-theme="doodle"] .title-input{font-size:3rem;line-height:1.05;background:none;-webkit-text-fill-color:#1a1a1a;color:#1a1a1a}
+html[data-theme="doodle"] h2{font-size:1.6rem}
+html[data-theme="doodle"] .title-input{border:none !important;background:none !important}
+html[data-theme="doodle"] .page-head{position:relative;padding-left:2.6rem}
+html[data-theme="doodle"] .page-head::before{content:"";position:absolute;left:0;top:-4px;width:34px;height:34px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cpath d='M17 3l3.6 8.4 9 .8-6.9 6 2.2 8.9L17 22.4 9.1 27l2.2-8.9-6.9-6 9-.8z' fill='%23fff3a8' stroke='%231a1a1a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;transform:rotate(-12deg)}
+html[data-theme="doodle"] .page-head::after{content:"";position:absolute;left:2rem;bottom:-6px;width:20px;height:20px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Cpath d='M17 3l3.6 8.4 9 .8-6.9 6 2.2 8.9L17 22.4 9.1 27l2.2-8.9-6.9-6 9-.8z' fill='%23fff3a8' stroke='%231a1a1a' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat;background-size:contain;transform:rotate(14deg)}
+/* barre du haut + onglets colorés */
+html[data-theme="doodle"] .topbar{background:#fff;border-bottom:2.5px solid #1a1a1a}
+html[data-theme="doodle"] .nav a{font-size:1.2rem;border-radius:20px 14px 22px 12px / 14px 22px 12px 20px;border:2px solid transparent;color:#1a1a1a}
+html[data-theme="doodle"] .nav a:nth-child(1){background:#ffe9a8}html[data-theme="doodle"] .nav a:nth-child(2){background:#fcd3d3}html[data-theme="doodle"] .nav a:nth-child(3){background:#cfe6fa}html[data-theme="doodle"] .nav a:nth-child(4){background:#e4d3f2}
+html[data-theme="doodle"] .nav a.active{border-color:#1a1a1a}
+html[data-theme="doodle"] .logo-name{font-size:1.5rem}
+/* cartes : pastel de couleur + trait noir épais, coins irréguliers */
+html[data-theme="doodle"] .gcard,html[data-theme="doodle"] .gsection,html[data-theme="doodle"] .gtable,html[data-theme="doodle"] .card,html[data-theme="doodle"] .empty,html[data-theme="doodle"] .modal{border:2.5px solid #1a1a1a;border-radius:30px 24px 34px 26px / 26px 34px 24px 30px}
+html[data-theme="doodle"] .gcard:nth-child(2n){border-radius:24px 32px 26px 34px / 34px 26px 32px 24px}
+html[data-theme="doodle"] .gcard:nth-child(3n){border-radius:34px 26px 28px 24px / 24px 30px 34px 28px}
+html[data-theme="doodle"] .gcard:nth-child(5n+1){background:var(--c1)}html[data-theme="doodle"] .gcard:nth-child(5n+2){background:var(--c2)}html[data-theme="doodle"] .gcard:nth-child(5n+3){background:var(--c3)}html[data-theme="doodle"] .gcard:nth-child(5n+4){background:var(--c4)}html[data-theme="doodle"] .gcard:nth-child(5n+5){background:var(--c5)}
+html[data-theme="doodle"] .gcard.is-claimed{background:var(--c5)}
+html[data-theme="doodle"] .gcard .pic,html[data-theme="doodle"] .gcard:nth-child(n) .pic{background:transparent;border:none}
+html[data-theme="doodle"] .gcard .pic::after{display:none}
+html[data-theme="doodle"] .pic img{mix-blend-mode:multiply}
+html[data-theme="doodle"] .gcard .title-link strong{font-size:1.35rem;line-height:1.1}
+html[data-theme="doodle"] .gcard .g-details,html[data-theme="doodle"] .g-details{color:#333}
+html[data-theme="doodle"] .gsection{background:#fff}
+html[data-theme="doodle"] .gsection[data-open="1"] > .gsection-head{border-bottom:2px dashed #1a1a1a55}
+html[data-theme="doodle"] .gtable{background:#fff}
+html[data-theme="doodle"] .gtable-head{background:#ffe9a8;border-bottom:2.5px solid #1a1a1a;font-family:'Caveat Brush';font-size:1.05rem;text-transform:none;letter-spacing:.02em;color:#1a1a1a}
+html[data-theme="doodle"] .gtable-row{border-top:2px dashed #1a1a1a33}
+html[data-theme="doodle"] .gtable-row:hover{background:#fffbe9}
+html[data-theme="doodle"] .thumb{border:2px solid #1a1a1a;border-radius:16px 12px 18px 12px / 12px 18px 12px 16px;background:#fff}
+/* boutons pastel, trait noir */
+html[data-theme="doodle"] .btn{background:#cfe6fa;border:2.5px solid #1a1a1a;border-radius:20px 14px 22px 14px / 14px 22px 14px 20px;font-size:1.15rem;color:#1a1a1a;padding:.45rem 1rem}
+html[data-theme="doodle"] .btn-primary{background:#ffe9a8;color:#1a1a1a}
+html[data-theme="doodle"] .page-actions .btn:nth-child(1){background:#fcd3d3}html[data-theme="doodle"] .page-actions .btn:nth-child(2){background:#cfe6fa}html[data-theme="doodle"] .page-actions .btn:nth-child(3){background:#ffe9a8}
+html[data-theme="doodle"] .btn:hover{transform:rotate(-1.2deg);filter:brightness(.97)}
+html[data-theme="doodle"] .btn-ghost{background:transparent;border-color:transparent}
+html[data-theme="doodle"] .gcard .btn{background:#fff}
+html[data-theme="doodle"] .chip,html[data-theme="doodle"] .tag{background:#fff;border:1.8px solid #1a1a1a;color:#1a1a1a;font-size:1.02rem;border-radius:14px 10px 15px 11px / 10px 15px 11px 14px}
+html[data-theme="doodle"] .chip-ok{background:#cdeedd}html[data-theme="doodle"] .chip-quiet{background:#fff}
+html[data-theme="doodle"] .seg-view{background:#fff;border:2.5px solid #1a1a1a;border-radius:18px 12px 20px 12px / 12px 20px 12px 18px}
+html[data-theme="doodle"] .seg-view button.on{background:#cdeedd;color:#1a1a1a;border-radius:12px 9px 13px 10px / 9px 13px 10px 12px}
+html[data-theme="doodle"] input,html[data-theme="doodle"] textarea,html[data-theme="doodle"] select{font-family:'Patrick Hand';font-size:1.05rem;background:#fff;border:2.5px solid #1a1a1a;border-radius:16px 10px 18px 12px / 12px 18px 10px 16px}
+html[data-theme="doodle"] .count-badge{background:#fcd3d3;color:#1a1a1a;border:2px solid #1a1a1a;font-family:'Caveat Brush'}
+html[data-theme="doodle"] .claimbox,html[data-theme="doodle"] .newgroup{background:#fff0b8;border:2px solid #1a1a1a;border-radius:20px 14px 22px 14px / 14px 22px 14px 20px}
+html[data-theme="doodle"] .tabbar{background:#fff;border-top:2.5px solid #1a1a1a}
+html[data-theme="doodle"] .tabbar a{font-family:'Caveat Brush';font-size:.95rem;color:#1a1a1a}
+html[data-theme="doodle"] .tabbar a.active{color:#e0457b}
+html[data-theme="doodle"] .small{font-size:1rem}
+
+html[data-theme="doodle"] .small,html[data-theme="doodle"] .g-details,html[data-theme="doodle"] .itemlink,html[data-theme="doodle"] .muted{font-size:1.08rem}
+html[data-theme="doodle"] .g-price{font-size:1.45rem}
+html[data-theme="doodle"] .page-head{padding-left:3.4rem}
+html[data-theme="doodle"] .gtable-head span{font-size:1.15rem}
+html[data-theme="doodle"] .itemlink{font-family:'Patrick Hand'}
+
+/* Téléphone : tout doit tenir dans l'écran */
+@media (max-width: 560px) {
+  html[data-theme="doodle"] body { font-size: 19px; overflow-x: hidden; }
+  html[data-theme="doodle"] h1, html[data-theme="doodle"] .title-input { font-size: 2.2rem; }
+  html[data-theme="doodle"] .page-head { padding-left: 2.3rem; gap: .5rem; }
+  html[data-theme="doodle"] .page-head::before { width: 26px; height: 26px; }
+  html[data-theme="doodle"] .page-head::after { display: none; }
+  html[data-theme="doodle"] .title-input { width: 100%; min-width: 0; }
+  html[data-theme="doodle"] .page-actions { flex-wrap: wrap; gap: .4rem; }
+  html[data-theme="doodle"] .page-actions .btn { padding: .3rem .7rem; font-size: 1.05rem; }
+  html[data-theme="doodle"] .sub-head, html[data-theme="doodle"] .viewbar { flex-wrap: wrap; gap: .5rem; }
+}

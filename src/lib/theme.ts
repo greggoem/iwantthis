@@ -1,9 +1,9 @@
-export type Theme = 'fete' | 'classique'
+export type Theme = 'fete' | 'classique' | 'doodle'
 const KEY = 'iwt.theme'
-const COLORS: Record<Theme, string> = { fete: '#fffaf0', classique: '#fafaf9' }
+const COLORS: Record<Theme, string> = { fete: '#fffaf0', classique: '#fafaf9', doodle: '#fff5da' }
 
 export function getTheme(): Theme {
-  try { return localStorage.getItem(KEY) === 'classique' ? 'classique' : 'fete' } catch { return 'fete' }
+  try { const v = localStorage.getItem(KEY); return v === 'classique' || v === 'doodle' ? v : 'fete' } catch { return 'fete' }
 }
 
 /** Applique le thème au document (attribut sur <html>) et à la couleur de la barre du navigateur */

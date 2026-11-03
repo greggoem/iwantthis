@@ -166,7 +166,7 @@ Dans le formulaire d'un cadeau, **Ajouter une image** (ou *Changer l'image*) per
 
 ## 5 duodecies. Apparence : Fête et Classique
 
-Deux thèmes au choix dans **Mon profil → Apparence**, mémorisé sur l'appareil : **Fête** (par défaut : fond crème, confettis estompés en haut de page, cartes à ombre de couleur, boutons en relief, pastilles pastel) et **Classique** (le design sobre d'origine). Le thème est un attribut `data-theme` sur `<html>` ; Fête vit dans `src/theme-fete.css` et surcharge les variables et quelques classes du design de base : pour changer une couleur, modifier les variables `--f-*` en tête de ce fichier.
+Trois thèmes au choix dans **Mon profil → Apparence**, mémorisé sur l'appareil : **Fête** (par défaut : fond crème, confettis estompés en haut de page, cartes à ombre de couleur, boutons en relief, pastilles pastel), **Doodle** (dessiné à la main : trait noir épais, coins irréguliers, cartes en pastels qui alternent, onglets colorés, polices manuscrites Caveat Brush et Patrick Hand hébergées avec le site, décor d'étoiles et de cœurs) et **Classique** (le design sobre d'origine). Le thème est un attribut `data-theme` sur `<html>` ; Fête vit dans `src/theme-fete.css` (socle commun à Fête et Doodle) et Doodle dans `src/theme-doodle.css`, qui surchargent les variables et quelques classes du design de base : pour changer une couleur, modifier les variables `--f-*` en tête de ce fichier.
 
 ## 6. Limites connues / pistes
 

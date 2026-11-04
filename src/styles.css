@@ -442,3 +442,11 @@ select { width: auto; max-width: 100%; }
 .unread .notif-dot { background: var(--accent); }
 .notif-text { display: grid; gap: .15rem; min-width: 0; }
 .notif-text strong { font-weight: 600; }
+
+/* Listes des proches : vue par événement */
+.ev-group { padding: 0; overflow: hidden; }
+.ev-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 1rem; background: transparent; border: 0; cursor: pointer; text-align: left; color: inherit; font: inherit; }
+.ev-title { display: flex; flex-direction: column; gap: .1rem; }
+.ev-head .chev { display: grid; place-items: center; color: var(--muted); transition: transform .15s; }
+.ev-head .chev.up { transform: rotate(180deg); }
+.ev-people { margin: 0; padding: 0 .75rem .75rem; }

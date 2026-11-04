@@ -9,6 +9,26 @@ export interface Preview {
   currency?: string
   site?: string
   reason?: string
+  /** lien complet et nettoyé, quand il diffère du lien envoyé (lien court résolu, pistage retiré) */
+  url?: string
+}
+
+/** Raccourcisseurs de liens des magasins (le vrai lien est obtenu en suivant la redirection) */
+export const SHORT_HOSTS = ['amzn.eu', 'amzn.to', 'a.co', 'amzn.asia']
+
+export function isShortLink(u: URL): boolean {
+  const h = u.hostname.toLowerCase().replace(/^www\./, '')
+  return SHORT_HOSTS.includes(h)
+}
+
+/** Fiche Amazon → https://www.amazon.xx/dp/ASIN (retire ref=, tag= d'autrui, suivi…). Autres liens : inchangés. */
+export function cleanProductUrl(raw: string): string {
+  let u: URL
+  try { u = new URL(raw) } catch { return raw }
+  const host = u.hostname.toLowerCase().replace(/^(www|smile|m)\./, '')
+  if (!/^amazon\.(com|co\.uk|com\.be|fr|nl|de|it|es|se|pl|com\.tr|ca|co\.jp)$/.test(host)) return raw
+  const m = u.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d|exec\/obidos\/asin)\/([A-Z0-9]{10})(?:[/?]|$)/i)
+  return m ? `https://www.${host}/dp/${m[1].toUpperCase()}` : raw
 }
 
 const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', euro: '€', rsquo: '’', lsquo: '‘', eacute: 'é', egrave: 'è', agrave: 'à', ecirc: 'ê', ccedil: 'ç' }

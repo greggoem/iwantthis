@@ -49,6 +49,10 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     setReading(true); setHint('')
     const p = await fetchPreview(u.toString())
     setReading(false)
+    if (p.url && safeUrl(p.url)) {   // lien court (amzn.eu…) remplacé par le lien complet
+      lastUrl.current = p.url
+      setD(prev => ({ ...prev, url: p.url! }))
+    }
     if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Saisissez le prix à la main, ou utilisez le raccourci ci-dessous.`); return }
     const price = euroPrice(p)
     setD(prev => ({
@@ -353,7 +357,7 @@ export default function MyList() {
           const p = await fetchPreview(u.toString())
           const price = p.found ? euroPrice(p) : undefined
           const title = l.label || (p.found && p.title ? cleanTitle(p.title) : '') || nameFromUrl(l.url)
-          rows[i] = { title: title.slice(0, 200), url: u.toString(), price: price ?? null, image_url: p.found && p.image && safeUrl(p.image) ? p.image : null }
+          rows[i] = { title: title.slice(0, 200), url: p.url && safeUrl(p.url) ? p.url : u.toString(), price: price ?? null, image_url: p.found && p.image && safeUrl(p.image) ? p.image : null }
         }
         progress(++done, links.length)
       }
@@ -433,12 +437,14 @@ export default function MyList() {
   const refreshOne = async (it: Item, quiet = false): Promise<boolean> => {
     if (!it.url) return false
     const p = await fetchPreview(it.url)
-    if (!p.found) { if (!quiet) setErr(`« ${it.title} » : ${p.reason ?? 'lecture impossible'}`); return false }
+    const better = p.url && p.url !== it.url && safeUrl(p.url) ? p.url : undefined
+    if (better) await supabase.from('items').update({ url: better }).eq('id', it.id)
+    if (!p.found) { if (!quiet) setErr(`« ${it.title} » : ${p.reason ?? 'lecture impossible'}`); return !!better }
     const price = euroPrice(p)
     const patch: { image_url?: string; price?: number } = {}
     if (p.image) patch.image_url = p.image
     if (price !== undefined) patch.price = price
-    if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : le site ne donne ni image ni prix.`); return false }
+    if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : le site ne donne ni image ni prix.`); return !!better }
     const { error } = await supabase.from('items').update(patch).eq('id', it.id)
     if (error) { setErr(errMsg(error)); return false }
     if (!quiet) setMsg(`« ${it.title} » mis à jour${price !== undefined ? ` (${formatPrice(price)})` : ''}.`)

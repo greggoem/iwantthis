@@ -8,6 +8,8 @@ export interface Preview {
   currency?: string
   site?: string
   reason?: string
+  /** lien complet et nettoyé (lien court amzn.eu résolu, pistage retiré) */
+  url?: string
 }
 
 /** Demande à la fonction « link-preview » de lire la fiche produit (titre, image, prix). Ne lève jamais d'erreur. */

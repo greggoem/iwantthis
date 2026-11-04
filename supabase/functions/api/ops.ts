@@ -90,7 +90,9 @@ function giftOut(it: any, claim: any | undefined, me: string) {
 }
 
 // ---------- aperçu d'un lien (image, prix, titre) ----------
-export interface Preview { found: boolean; title?: string; image?: string; price?: number; currency?: string; site?: string; reason?: string }
+export interface Preview { found: boolean; title?: string; image?: string; price?: number; currency?: string; site?: string; reason?: string; url?: string }
+const SHORT = /^(www\.)?(amzn\.eu|amzn\.to|a\.co|amzn\.asia)$/i
+const isShort = (u: string) => { try { return SHORT.test(new URL(u).hostname) } catch { return false } }
 
 export async function previewLink(c: Ctx, url: string): Promise<Preview> {
   try {
@@ -143,8 +145,9 @@ export async function addGift(c: Ctx, b: any) {
   }
   row.list_id = (await myListRow(c)).id
   let preview: Preview | undefined
-  if (row.url && b.fetch_preview !== false && (!row.image_url || row.price === null)) {
+  if (row.url && ((b.fetch_preview !== false && (!row.image_url || row.price === null)) || isShort(row.url))) {
     preview = await previewLink(c, row.url)
+    if (preview.url) row.url = httpUrl(preview.url)   // lien court résolu
     if (preview.found) {
       if (!row.image_url && preview.image) row.image_url = preview.image
       if (row.price === null && euro(preview) !== undefined) row.price = euro(preview)
@@ -181,6 +184,10 @@ export async function refreshGift(c: Ctx, id: string) {
   if (!it) throw new ApiError(404, 'Cadeau introuvable')
   if (!it.url) throw new ApiError(400, 'Ce cadeau n\'a pas de lien à relire')
   const p = await previewLink(c, it.url)
+  if (p.url && p.url !== it.url) {
+    const rows = ok(await c.sb.from('items').update({ url: httpUrl(p.url) }).eq('id', id).select()) as any[]
+    if (rows.length) Object.assign(it, rows[0])
+  }
   if (!p.found) return { updated: false, reason: p.reason ?? 'Lecture impossible', gift: giftOut(it, undefined, c.uid) }
   const patch: any = {}
   if (p.image) patch.image_url = p.image

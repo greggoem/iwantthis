@@ -3,7 +3,7 @@
 // - bloque les adresses internes (protection SSRF) et limite la taille / la durée
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { parseProductPage, type Preview } from './parse.ts'
+import { parseProductPage, isShortLink, cleanProductUrl, type Preview } from './parse.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +94,20 @@ async function fetchHtml(start: URL): Promise<{ html: string; finalUrl: string }
   throw new Error('Trop de redirections')
 }
 
+/** Suit les redirections d'un lien court (amzn.eu…) sans lire la page : renvoie l'adresse de destination */
+async function resolveShort(start: URL): Promise<URL> {
+  let url = start
+  for (let hop = 0; hop <= MAX_REDIRECTS && isShortLink(url); hop++) {
+    await assertPublic(url)
+    const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': UA } })
+    res.body?.cancel().catch(() => {})
+    const loc = res.headers.get('location')
+    if (res.status < 300 || res.status >= 400 || !loc) break
+    url = new URL(loc, url)
+  }
+  return url
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
@@ -109,14 +123,22 @@ Deno.serve(async (req) => {
   try { raw = String((await req.json()).url ?? '').trim() } catch { return json({ error: 'Requête invalide' }, 400) }
   if (!raw || raw.length > 2000) return json({ found: false, reason: 'Lien manquant' } satisfies Preview)
 
+  // 1) lien court résolu + lien produit nettoyé (renvoyé même si la page ne se laisse pas lire)
+  let start: URL
+  try { start = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`) } catch { return json({ found: false, reason: 'Lien invalide' } satisfies Preview) }
+  let target = start
+  try { if (isShortLink(start)) target = await resolveShort(start) } catch { /* on garde le lien tel quel */ }
+  const clean = cleanProductUrl(target.toString())
+  const url = clean !== start.toString() && !isShortLink(new URL(clean)) ? clean : undefined
+
+  // 2) lecture de la fiche
   try {
-    const start = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`)
-    const { html, finalUrl } = await fetchHtml(start)
+    const { html, finalUrl } = await fetchHtml(new URL(clean))
     const preview = parseProductPage(html, finalUrl)
     if (!preview.found && !preview.reason) preview.reason = 'Aucune information produit lisible sur cette page'
-    return json(preview)
+    return json({ ...preview, url })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Lecture impossible'
-    return json({ found: false, reason: msg.includes('abort') || msg.includes('timed out') ? 'Le site met trop de temps à répondre' : msg } satisfies Preview)
+    return json({ found: false, url, reason: msg.includes('abort') || msg.includes('timed out') ? 'Le site met trop de temps à répondre' : msg } satisfies Preview)
   }
 })

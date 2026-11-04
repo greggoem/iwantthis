@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
 import Logo from '../components/Logo'
 import { Notice } from '../components/ui'
+import ThemePicker from '../components/ThemePicker'
 
 type Mode = 'in' | 'up' | 'forgot'
 
@@ -81,6 +82,7 @@ export default function Login() {
         <label>E-mail
           <input type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
         </label>
+        {mode === 'up' && <ThemePicker compact />}
         {mode !== 'forgot' && (
           <label>Mot de passe
             <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)}

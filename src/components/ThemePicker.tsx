@@ -8,12 +8,13 @@ const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
 ]
 
 /** « Mon profil » : choix de l'apparence du site (mémorisé sur cet appareil) */
-export default function ThemePicker() {
+export default function ThemePicker({ compact = false }: { compact?: boolean }) {
   const [t, setT] = useState<Theme>(getTheme())
   const pick = (k: Theme) => { setTheme(k); setT(k) }
+  const Wrap = compact ? 'div' : 'section'
   return (
-    <section className="card stack mt">
-      <h2>Apparence</h2>
+    <Wrap className={compact ? 'stack' : 'card stack mt'}>
+      {compact ? <strong>Choisissez votre apparence</strong> : <h2>Apparence</h2>}
       <div className="themepick" role="radiogroup" aria-label="Apparence du site">
         {THEMES.map(x => (
           <button key={x.key} type="button" role="radio" aria-checked={t === x.key} className={`themecard ${t === x.key ? 'on' : ''}`} onClick={() => pick(x.key)}>
@@ -23,7 +24,7 @@ export default function ThemePicker() {
           </button>
         ))}
       </div>
-      <p className="small muted">Le choix est mémorisé sur cet appareil.</p>
-    </section>
+      <p className="small muted">{compact ? 'Vous pourrez la changer à tout moment dans Réglages.' : 'Le choix est mémorisé sur cet appareil.'}</p>
+    </Wrap>
   )
 }

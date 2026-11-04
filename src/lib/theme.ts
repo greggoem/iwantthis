@@ -3,7 +3,7 @@ const KEY = 'iwt.theme'
 const COLORS: Record<Theme, string> = { fete: '#fffaf0', classique: '#fafaf9', doodle: '#fff5da' }
 
 export function getTheme(): Theme {
-  try { const v = localStorage.getItem(KEY); return v === 'classique' || v === 'doodle' ? v : 'fete' } catch { return 'fete' }
+  try { const v = localStorage.getItem(KEY); return v === 'fete' || v === 'doodle' ? v : 'classique' } catch { return 'classique' }
 }
 
 /** Applique le thème au document (attribut sur <html>) et à la couleur de la barre du navigateur */

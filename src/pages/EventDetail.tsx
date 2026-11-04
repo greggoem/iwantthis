@@ -29,6 +29,7 @@ export default function EventDetail() {
   const [invites, setInvites] = useState<Invite[]>([])
   const [editInv, setEditInv] = useState<Invite | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [imgBusy, setImgBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const [eiName, setEiName] = useState('')
@@ -177,9 +178,23 @@ export default function EventDetail() {
     await run(() => supabase.from('event_members').delete().eq('event_id', id!).eq('user_id', m.user_id))
   }
   const doDraw = async () => {
-    if (ev?.draw_done_at && !(await confirm({ title: 'Refaire le tirage ?', message: 'Un tirage existe déjà. Le refaire remplacera tous les résultats actuels.', confirmLabel: 'Refaire le tirage', danger: true }))) return
+    if (ev?.draw_done_at && !(await confirm({ title: 'Refaire le tirage ?', message: 'Un tirage existe déjà. Le refaire remplacera tous les résultats actuels et chaque participant sera prévenu par e-mail.', confirmLabel: 'Refaire le tirage', danger: true }))) return
     setShowTarget(false)
-    await run(() => supabase.rpc('run_draw', { p_event: id }), 'Tirage effectué ! Chacun peut maintenant découvrir son résultat.')
+    setErr(''); setMsg('')
+    const { error } = await supabase.rpc('run_draw', { p_event: id })
+    if (error) { setErr(errMsg(error)); await load(); return }
+    const mails = await sendDrawEmails()
+    setMsg(`Tirage effectué ! Chaque participant a reçu une notification dans le site. ${mails}`)
+    await load()
+  }
+  /** Prévient chaque participant par e-mail (sans révéler le résultat) ; renvoie une phrase pour l'organisateur */
+  const sendDrawEmails = async (): Promise<string> => {
+    const { data, error } = await supabase.functions.invoke('send-draw-email', { body: { event_id: id } })
+    const r = data as { sent?: number; total?: number; reason?: string; error?: string } | null
+    if (r?.reason === 'not_configured') return 'L\'envoi d\'e-mails n\'est pas encore activé sur le site.'
+    if (r?.reason === 'refused') return r.error ?? 'Les e-mails n\'ont pas pu être envoyés.'
+    if (error || !r) return 'Les e-mails n\'ont pas pu être envoyés.'
+    return r.sent === r.total ? `${r.sent} e-mail${(r.sent ?? 0) > 1 ? 's' : ''} d'annonce envoyé${(r.sent ?? 0) > 1 ? 's' : ''}.` : `${r.sent} e-mail(s) envoyé(s) sur ${r.total}.`
   }
   const resetDraw = async () => {
     if (!(await confirm({ title: 'Annuler le tirage ?', message: 'Les résultats seront effacés pour tout le monde.', confirmLabel: 'Annuler le tirage', danger: true }))) return
@@ -243,26 +258,14 @@ export default function EventDetail() {
       )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
-      <section className="card stack mt">
-        <div className="row between wrap gap">
-          <h2>Inviter des proches</h2>
-          <button className="btn btn-sm" onClick={() => setShareOpen(true)}><Icon name="share" size={15} /> Partager</button>
-        </div>
-        <p className="small muted">Ils ouvrent ce lien, se connectent, et rejoignent l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
-        <CopyField value={eventInviteUrl(ev.invite_code)} />
+      <div className="row wrap gap mt event-actions">
+        <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter des proches</button>
         {isOrg && (
-          <>
-            <hr />
-            <h3>Ajouter quelqu'un par son nom et son e-mail</h3>
-            <p className="small muted">La personne reçoit un e-mail (et une notification si elle a déjà un compte) et choisit de rejoindre l'événement ou de refuser : rien n'est visible avant son accord.</p>
-            <form className="invite-form" onSubmit={addInvite}>
-              <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
-              <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
-              <button className="btn btn-primary">Ajouter</button>
-            </form>
-          </>
+          <button className="btn" disabled={inDraw.length < 2} onClick={doDraw} title={inDraw.length < 2 ? 'Il faut au moins 2 participants' : undefined}>
+            <Icon name="dice" size={16} /> {ev.draw_done_at ? 'Refaire le tirage' : 'Lancer le tirage au sort'}
+          </button>
         )}
-      </section>
+      </div>
 
       {isOrg && invites.length > 0 && (
         <>
@@ -287,6 +290,30 @@ export default function EventDetail() {
         </>
       )}
 
+      {inviteOpen && (
+        <Modal title="Inviter des proches" onClose={() => setInviteOpen(false)} wide>
+          <div className="stack">
+            <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+            <div className="row between wrap gap">
+              <p className="small muted" style={{ margin: 0 }}>Ils ouvrent ce lien, se connectent, et rejoignent l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
+              <button className="btn btn-sm" onClick={() => { setInviteOpen(false); setShareOpen(true) }}><Icon name="share" size={15} /> Partager</button>
+            </div>
+            <CopyField value={eventInviteUrl(ev.invite_code)} />
+            {isOrg && (
+              <>
+                <hr />
+                <h3>Ajouter quelqu'un par son nom et son e-mail</h3>
+                <p className="small muted">La personne reçoit un e-mail (et une notification si elle a déjà un compte) et choisit de rejoindre l'événement ou de refuser : rien n'est visible avant son accord.</p>
+                <form className="invite-form" onSubmit={addInvite}>
+                  <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
+                  <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
+                  <button className="btn btn-primary">Ajouter</button>
+                </form>
+              </>
+            )}
+          </div>
+        </Modal>
+      )}
       {shareOpen && (
         <ShareSheet
           title="Partager l'événement"

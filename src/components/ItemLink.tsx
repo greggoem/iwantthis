@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import Icon from './Icon'
 
 /** Lien « Voir le produit » : applique automatiquement le parrainage du site si le magasin en propose un
- *  (badge « partenaire » seulement pour les programmes directs : via Skimlinks, le magasin n'est pas forcément couvert) */
+ */
 export default function ItemLink({ url }: { url: string | null }) {
   const programs = useAffiliates()
   const link = buildLink(url, programs)
@@ -12,7 +12,6 @@ export default function ItemLink({ url }: { url: string | null }) {
   return (
     <a className="itemlink" href={link.href} target="_blank" rel="noopener noreferrer sponsored nofollow">
       {link.host}<Icon name="external" size={13} />
-      {link.affiliated && !link.fallback && <span className="tag" title="Lien partenaire">partenaire</span>}
     </a>
   )
 }

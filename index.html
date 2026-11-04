@@ -9,6 +9,31 @@
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>I Want This</title>
+    <!-- Umami : mesure d'audience sans cookie. Les adresses sont nettoyées avant envoi :
+         route du HashRouter remise en chemin, identifiants et jetons de partage masqués, paramètres retirés. -->
+    <script>
+      function umamiBeforeSend(type, payload) {
+        if (!payload || !payload.url) return payload;
+        try {
+          var u = new URL(payload.url, location.href);
+          var path = u.hash.indexOf('#/') === 0 ? u.hash.slice(1).split('?')[0] : u.pathname;
+          path = path
+            .replace(/^\/l\/[^/]+/, '/l/:token')
+            .replace(/^\/e\/[^/]+/, '/e/:code')
+            .replace(/^\/listes\/[^/]+/, '/listes/:id')
+            .replace(/^\/evenements\/[^/]+/, '/evenements/:id');
+          payload.url = path;
+        } catch (e) {}
+        return payload;
+      }
+    </script>
+    <script
+      defer
+      src="https://cloud.umami.is/script.js"
+      data-website-id="a914a95b-e74b-434e-905b-614f507be211"
+      data-domains="iwantthis.gift"
+      data-before-send="umamiBeforeSend"
+    ></script>
   </head>
   <body>
     <div id="root"></div>

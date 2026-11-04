@@ -42,10 +42,10 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD(prev => ({ ...prev, [k]: e.target.value }))
 
   // Dès que le lien est saisi : lecture de la fiche produit (image, prix, titre)
-  const readLink = async () => {
-    const u = safeUrl(d.url)
-    if (!u || d.url.trim() === lastUrl.current) return
-    lastUrl.current = d.url.trim()
+  const readLink = async (raw: string = d.url) => {
+    const u = safeUrl(raw)
+    if (!u || raw.trim() === lastUrl.current) return
+    lastUrl.current = raw.trim()
     setReading(true); setHint('')
     const p = await fetchPreview(u.toString())
     setReading(false)
@@ -63,6 +63,19 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     }))
     const bits = [p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
     setHint(bits.length ? `Trouvé sur ${p.site} : ${bits.join(' et ')}. Modifiable.` : `Rien de plus trouvé sur ${p.site} : renseignez le prix si vous le connaissez.`)
+  }
+
+  // lecture automatique : tout de suite au collage, ou peu après l'arrêt de la saisie
+  useEffect(() => {
+    const raw = d.url
+    if (!safeUrl(raw) || raw.trim() === lastUrl.current) return
+    const t = window.setTimeout(() => { readLink(raw) }, 700)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d.url])
+  const onPasteUrl = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData('text').trim()
+    if (safeUrl(text)) { e.preventDefault(); setD(prev => ({ ...prev, url: text })); readLink(text) }
   }
 
   const pickImage = async (file: File | undefined) => {
@@ -97,8 +110,8 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   return (
     <form className="stack" onSubmit={submit}>
       <Notice>{err}</Notice>
-      <label><span>Lien du produit <span className="muted">· image et prix récupérés automatiquement</span></span>
-        <input value={d.url} onChange={set('url')} onBlur={readLink} placeholder="https://…" inputMode="url" autoFocus={!initial.url} />
+      <label><span>Lien du produit <span className="muted">· image, prix et titre récupérés automatiquement</span></span>
+        <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} onBlur={() => readLink()} placeholder="https://…" inputMode="url" autoFocus={!initial.url} />
       </label>
       {reading && <p className="small muted">Lecture de la fiche produit…</p>}
       {hint && <p className="small muted">{hint}</p>}

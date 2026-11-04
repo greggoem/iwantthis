@@ -450,3 +450,16 @@ select { width: auto; max-width: 100%; }
 .ev-head .chev { display: grid; place-items: center; color: var(--muted); transition: transform .15s; }
 .ev-head .chev.up { transform: rotate(180deg); }
 .ev-people { margin: 0; padding: 0 .75rem .75rem; }
+
+/* Envies déjà achetées : bien visibles */
+.thumb-link, .gcard-img { position: relative; }
+.gtable-row.is-claimed { background: #eefaf3; box-shadow: inset 4px 0 0 #2dd4a7; }
+.gcard.is-claimed { background: #eefaf3; border-color: #9ae2c3; }
+.is-claimed .title-link strong { text-decoration: line-through; text-decoration-thickness: 1.5px; text-decoration-color: rgba(21, 128, 61, .55); opacity: .75; }
+.is-claimed .chip-ok { background: #15803d; color: #fff; border-color: #15803d; font-weight: 700; }
+.is-claimed .chip-ok svg { stroke: #fff; }
+.gtable-row.is-claimed .thumb-link img, .gcard.is-claimed .gcard-img img { filter: saturate(.55) brightness(.97); }
+.claimed-badge { position: absolute; right: -4px; top: -4px; width: 20px; height: 20px; border-radius: 50%; background: #15803d; color: #fff; display: grid; place-items: center; box-shadow: 0 0 0 2px #fff; pointer-events: none; }
+.claimed-badge svg { stroke: #fff; }
+.claimed-ribbon { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: .3rem; background: #15803d; color: #fff; font-weight: 700; font-size: .8rem; padding: .3rem .65rem; border-radius: 999px; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); pointer-events: none; }
+.claimed-ribbon svg { stroke: #fff; }

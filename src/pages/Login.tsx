@@ -8,6 +8,9 @@ import { getTheme } from '../lib/theme'
 
 type Mode = 'in' | 'up' | 'forgot'
 
+/** Passer à true une fois « Sign in with Apple » configuré dans Supabase (Authentication → Providers → Apple) */
+const APPLE_ENABLED = false
+
 export default function Login() {
   const [params] = useSearchParams()
   const pending = sessionStorage.getItem('postLoginPath') ?? ''
@@ -49,6 +52,12 @@ export default function Login() {
   const google = async () => {
     setErr('')
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: siteUrl() } })
+    if (error) setErr(errMsg(error))
+  }
+
+  const apple = async () => {
+    setErr('')
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: siteUrl() } })
     if (error) setErr(errMsg(error))
   }
 
@@ -106,6 +115,7 @@ export default function Login() {
           <>
             <div className="or"><span>ou</span></div>
             <button type="button" className="btn" onClick={google}>Continuer avec Google</button>
+            {APPLE_ENABLED && <button type="button" className="btn" onClick={apple}>Continuer avec Apple</button>}
           </>
         )}
       </form>

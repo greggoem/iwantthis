@@ -6,6 +6,7 @@ import { formatDate, todayISO } from '../lib/format'
 import type { EventRow } from '../lib/types'
 import { Notice, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
+import Modal from '../components/Modal'
 
 type Row = EventRow & { event_members: { count: number }[] }
 interface Pending { invite_id: string; event_id: string; event_name: string; event_date: string; organizer: string; invited_name: string }
@@ -19,6 +20,8 @@ export default function Events() {
   const [date, setDate] = useState('')
   const [err, setErr] = useState('')
   const [pending, setPending] = useState<Pending[]>([])
+  const [creating, setCreating] = useState(false)
+  const [createErr, setCreateErr] = useState('')
 
   const loadPending = () => supabase.rpc('my_pending_invites').then(({ data }) => setPending((data as Pending[]) ?? []))
   useEffect(() => { loadPending() }, [])
@@ -40,10 +43,10 @@ export default function Events() {
   }, [])
 
   const create = async (e: FormEvent) => {
-    e.preventDefault(); setErr('')
+    e.preventDefault(); setCreateErr('')
     const { data, error } = await supabase.from('events')
       .insert({ name: name.trim(), event_date: date, created_by: session!.user.id }).select('id').single()
-    if (error) setErr(errMsg(error)); else nav(`/evenements/${(data as { id: string }).id}`)
+    if (error) setCreateErr(errMsg(error)); else nav(`/evenements/${(data as { id: string }).id}`)
   }
 
   if (loading) return <Spinner />
@@ -68,7 +71,10 @@ export default function Events() {
 
   return (
     <div className="narrow">
-      <h1>Événements</h1>
+      <div className="page-head">
+        <h1>Événements</h1>
+        <button className="btn btn-primary" onClick={() => setCreating(true)}><Icon name="plus" size={16} /> Créer un événement</button>
+      </div>
       <p className="muted">Noël, anniversaire, pendaison de crémaillère… Invitez des proches : ils voient les listes des uns des autres, et vous pouvez organiser un tirage au sort.</p>
 
       <Notice>{err}</Notice>
@@ -94,17 +100,23 @@ export default function Events() {
       {upcoming.length > 0 && <><h2 className="mt">À venir</h2><ul className="items">{upcoming.map(r => <Card key={r.id} r={r} />)}</ul></>}
       {past.length > 0 && <><h2 className="mt">Passés</h2><ul className="items">{past.map(r => <Card key={r.id} r={r} />)}</ul></>}
 
-      <form className="card stack mt" onSubmit={create}>
-        <h2>Créer un événement</h2>
-        <Notice>{err}</Notice>
-        <label>Nom
-          <input required maxLength={120} value={name} onChange={e => setName(e.target.value)} placeholder="Ex. Noël en famille 2026" />
-        </label>
-        <label>Date de remise des cadeaux
-          <input required type="date" value={date} onChange={e => setDate(e.target.value)} />
-        </label>
-        <button className="btn btn-primary">Créer l'événement</button>
-      </form>
+      {creating && (
+        <Modal title="Créer un événement" onClose={() => { setCreating(false); setCreateErr('') }}>
+          <form className="stack" onSubmit={create}>
+            <Notice>{createErr}</Notice>
+            <label>Nom
+              <input required maxLength={120} value={name} onChange={e => setName(e.target.value)} placeholder="Ex. Noël en famille 2026" autoFocus />
+            </label>
+            <label>Date de remise des cadeaux
+              <input required type="date" value={date} onChange={e => setDate(e.target.value)} />
+            </label>
+            <div className="modal-foot">
+              <button type="button" className="btn btn-ghost" onClick={() => { setCreating(false); setCreateErr('') }}>Annuler</button>
+              <button className="btn btn-primary">Créer l'événement</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }

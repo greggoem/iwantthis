@@ -463,3 +463,10 @@ select { width: auto; max-width: 100%; }
 .claimed-badge svg { stroke: #fff; }
 .claimed-ribbon { position: absolute; left: 10px; top: 10px; display: inline-flex; align-items: center; gap: .3rem; background: #15803d; color: #fff; font-weight: 700; font-size: .8rem; padding: .3rem .65rem; border-radius: 999px; box-shadow: 0 2px 6px rgba(0, 0, 0, .25); pointer-events: none; }
 .claimed-ribbon svg { stroke: #fff; }
+
+/* Mobile (Safari iOS) : pas de défilement horizontal, la page reste fixe comme sur Android */
+html, body { max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; }
+html { touch-action: pan-y pinch-zoom; }
+body { position: relative; width: 100%; }
+#root, .app, .main { max-width: 100%; overflow-x: clip; }
+img, video, svg { max-width: 100%; }

@@ -126,6 +126,7 @@ export default function Landing() {
 
       <footer className="footer">
         Certains liens vers des magasins sont des liens partenaires : le prix ne change pas pour vous, mais ils peuvent rapporter une petite commission au site.
+        {' '}<a href="/privacy.html">Confidentialité</a>
       </footer>
     </div>
   )

@@ -56,6 +56,7 @@ export default function Layout() {
       <footer className="footer">
         Certains liens sont des liens partenaires : le prix ne change pas pour vous, mais ils peuvent rapporter une petite commission au site.
         {amazon && <> En tant que Partenaire Amazon, ce site réalise un bénéfice sur les achats remplissant les conditions requises.</>}
+        {' '}<a href="/privacy.html">Confidentialité</a>
       </footer>
 
       <nav className="tabbar" aria-label="Navigation mobile">

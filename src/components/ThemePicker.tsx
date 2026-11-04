@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
+import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 
 const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
   { key: 'fete', name: 'Fête', desc: 'Coloré et joyeux, cartes avec une ombre de couleur.', colors: ['#ff4d8d', '#ffc933', '#2dd4a7', '#38bdf8', '#8b5cf6'] },
@@ -10,7 +12,11 @@ const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
 /** « Mon profil » : choix de l'apparence du site (mémorisé sur cet appareil) */
 export default function ThemePicker({ compact = false }: { compact?: boolean }) {
   const [t, setT] = useState<Theme>(getTheme())
-  const pick = (k: Theme) => { setTheme(k); setT(k) }
+  const { session } = useAuth()
+  const pick = (k: Theme) => {
+    setTheme(k); setT(k)
+    if (session) supabase.auth.updateUser({ data: { theme: k } }).catch(() => {})   // enregistré dans le compte
+  }
   const Wrap = compact ? 'div' : 'section'
   return (
     <Wrap className={compact ? 'stack' : 'card stack mt'}>
@@ -24,7 +30,7 @@ export default function ThemePicker({ compact = false }: { compact?: boolean }) 
           </button>
         ))}
       </div>
-      <p className="small muted">{compact ? 'Vous pourrez la changer à tout moment dans Réglages.' : 'Le choix est mémorisé sur cet appareil.'}</p>
+      <p className="small muted">{compact ? 'Vous pourrez la changer à tout moment dans Réglages.' : 'Le choix est enregistré dans votre compte.'}</p>
     </Wrap>
   )
 }

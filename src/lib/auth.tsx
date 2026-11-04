@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import type { Profile } from './types'
+import { isTheme, setTheme } from './theme'
 
 interface AuthState {
   session: Session | null
@@ -41,6 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase.from('profiles').select('id,display_name').eq('id', session.user.id).maybeSingle()
     setProfile(data as Profile | null)
   }
+
+  // le thème choisi est enregistré dans le compte : on le retrouve sur tous les appareils
+  useEffect(() => {
+    const t = session?.user.user_metadata?.theme
+    if (isTheme(t)) setTheme(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id])
 
   useEffect(() => {
     if (!session) { setProfile(null); return }

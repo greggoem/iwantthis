@@ -16,3 +16,5 @@ export function setTheme(t: Theme): void {
   try { localStorage.setItem(KEY, t) } catch { /* stockage indisponible : le choix vaut pour cette visite */ }
   applyTheme(t)
 }
+
+export const isTheme = (v: unknown): v is Theme => v === 'fete' || v === 'classique' || v === 'doodle'

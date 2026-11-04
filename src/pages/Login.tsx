@@ -4,6 +4,7 @@ import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
 import Logo from '../components/Logo'
 import { Notice } from '../components/ui'
 import ThemePicker from '../components/ThemePicker'
+import { getTheme } from '../lib/theme'
 
 type Mode = 'in' | 'up' | 'forgot'
 
@@ -29,7 +30,7 @@ export default function Login() {
       } else if (mode === 'up') {
         const { data, error } = await supabase.auth.signUp({
           email, password: pw,
-          options: { data: { display_name: name.trim() }, emailRedirectTo: siteUrl() },
+          options: { data: { display_name: name.trim(), theme: getTheme() }, emailRedirectTo: siteUrl() },
         })
         if (error) throw error
         if (!data.session) setInfo('Compte créé ! Cliquez sur le lien de confirmation reçu par e-mail, puis connectez-vous.')

@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import ApiAccess from '../components/ApiAccess'
 import ThemePicker from '../components/ThemePicker'
 import ExtensionLinks from '../components/ExtensionLinks'
-import DeleteAccount from '../components/DeleteAccount'
 
 export default function Settings() {
   return (
@@ -12,7 +11,6 @@ export default function Settings() {
       <ThemePicker />
       <ExtensionLinks />
       <ApiAccess />
-      <DeleteAccount />
     </div>
   )
 }

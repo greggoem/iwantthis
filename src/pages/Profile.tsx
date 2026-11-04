@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg, siteUrl } from '../lib/supabase'
 import { Notice } from '../components/ui'
+import DeleteAccount from '../components/DeleteAccount'
 
 export default function Profile() {
   const { profile, session, refreshProfile } = useAuth()
@@ -75,7 +76,9 @@ export default function Profile() {
         <div><button className="btn btn-primary">{hasPassword ? 'Changer le mot de passe' : 'Définir un mot de passe'}</button></div>
       </form>
 
-      <p className="small muted mt">Thème, extensions, accès API et suppression du compte : <Link to="/reglages">Réglages</Link>.</p>
+      <p className="small muted mt">Thème, extensions et accès API : <Link to="/reglages">Réglages</Link>.</p>
+
+      <DeleteAccount />
     </div>
   )
 }

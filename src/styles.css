@@ -468,5 +468,6 @@ select { width: auto; max-width: 100%; }
 html, body { max-width: 100%; overflow-x: hidden; overflow-x: clip; overscroll-behavior-x: none; }
 html { touch-action: pan-y pinch-zoom; }
 body { position: relative; width: 100%; }
-#root, .app, .main { max-width: 100%; overflow-x: clip; }
+#root, .app { max-width: 100%; overflow-x: clip; }
+.main { overflow-x: clip; }
 img, video, svg { max-width: 100%; }

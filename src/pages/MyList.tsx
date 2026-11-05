@@ -310,7 +310,7 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
   return (
     <ShareSheet
       title="Partager ma liste"
-      intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant la date de remise."
+      intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant le lendemain de la date de remise."
       message={listMessage(list.title, url, APP_NAME)}
       subject={list.title}
       heading={list.title} sub={ev ? `${ev.name} · ${formatDateShort(ev.event_date)}` : undefined} imageUrl={ev?.image_url}
@@ -332,6 +332,7 @@ export default function MyList() {
   const [list, setList] = useState<Wishlist | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
+  const [opened, setOpened] = useState(false)   // cadeaux reçus découverts pendant cette visite
   const [modal, setModal] = useState<ModalState>(null)
   const [title, setTitle] = useState('')
   const [err, setErr] = useState('')
@@ -370,8 +371,28 @@ export default function MyList() {
   useEffect(() => { load() }, [load])
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
-  const { tops, kids } = groupTree(items)
-  const groupList = items.filter(i => i.is_group)
+  // cadeaux reçus : « nouveaux » tant que la personne ne les a pas découverts, puis archivés
+  const seen = (id: string) => Boolean(claims[id]?.owner_seen_at)
+  const archivedIds = new Set<string>()
+  for (const g of items.filter(i => i.is_group)) {
+    const ks = items.filter(k => k.parent_id === g.id)
+    if (g.pick_one && ks.some(k => seen(k.id))) { archivedIds.add(g.id); ks.forEach(k => archivedIds.add(k.id)); continue }
+    ks.filter(k => seen(k.id)).forEach(k => archivedIds.add(k.id))
+    if (ks.length > 0 && ks.every(k => archivedIds.has(k.id))) archivedIds.add(g.id)
+  }
+  for (const i of items) if (!i.is_group && !i.parent_id && seen(i.id)) archivedIds.add(i.id)
+  const activeItems = items.filter(i => !archivedIds.has(i.id))
+  const byTitle = (a: Item, b: Item) => a.title.localeCompare(b.title, 'fr')
+  const fresh = items.filter(i => !i.is_group && claims[i.id] && !claims[i.id].owner_seen_at).sort(byTitle)
+  const archive = items.filter(i => !i.is_group && seen(i.id)).sort((a, b) => (claims[b.id].reveal_on).localeCompare(claims[a.id].reveal_on) || byTitle(a, b))
+  const discover = async () => {
+    setOpened(true)
+    const { error } = await supabase.rpc('mark_gifts_seen')
+    if (error) setErr(errMsg(error))
+  }
+
+  const { tops, kids } = groupTree(activeItems)
+  const groupList = activeItems.filter(i => i.is_group)
   const gallery = prefs.view === 'gallery'
   const Row = gallery ? GiftCard : GiftRow
   const Group = gallery ? GroupSection : GroupRow
@@ -494,7 +515,7 @@ export default function MyList() {
     return true
   }
   const refresh = async (it: Item) => { setErr(''); setMsg(''); setBusyId(it.id); await refreshOne(it); setBusyId(null); load() }
-  const withUrl = items.filter(i => !i.is_group && i.url)
+  const withUrl = activeItems.filter(i => !i.is_group && i.url)
   const [progress, setProgress] = useState(0)
   /** Relit tous les liens de la liste (3 à la fois) : images et prix remis à jour */
   const refreshAll = async () => {
@@ -550,9 +571,36 @@ export default function MyList() {
 
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
+      {fresh.length > 0 && (
+        <section className="gifts-banner" aria-live="polite">
+          <div className="gifts-banner-head">
+            <span className="gb-ico"><Icon name="gift" size={22} /></span>
+            <div className="gb-text">
+              <strong>{fresh.length === 1 ? 'Un cadeau vous attend !' : `${fresh.length} cadeaux vous attendent !`}</strong>
+              <span className="muted small">Ils étaient une surprise jusqu'à hier : découvrez qui vous a offert quoi.</span>
+            </div>
+            {!opened && <button className="btn btn-primary" onClick={discover}>Découvrir</button>}
+          </div>
+          {opened && (
+            <>
+              <ul className="gifts-list">
+                {fresh.map(it => (
+                  <li key={it.id}>
+                    <Thumb src={it.image_url} alt={it.title} />
+                    <span className="gl-title">{it.title}</span>
+                    <span className="chip chip-ok"><Icon name="gift" size={13} /><span className="ell">{claims[it.id].claimed_by_name}</span></span>
+                  </li>
+                ))}
+              </ul>
+              <p className="small muted">À votre prochaine visite, ces cadeaux seront rangés dans vos archives.</p>
+            </>
+          )}
+        </section>
+      )}
+
       {items.length > 0 && (
         <ViewBar prefs={prefs} onChange={setPrefs} left={<>
-          <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${items.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
+          <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${activeItems.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
           {withUrl.length > 0 && (
             <button className="btn btn-sm" disabled={bulk} onClick={refreshAll} title="Relire tous les liens : met à jour les images et les prix">
               <Icon name="refresh" size={15} /> {bulk ? `Actualisation… ${progress}/${withUrl.length}` : 'Tout actualiser'}
@@ -573,6 +621,8 @@ export default function MyList() {
             <li>Créez un événement pour inviter la famille et organiser un tirage au sort</li>
           </ol>
         </div>
+      ) : activeItems.length === 0 ? (
+        <p className="muted gifts-allgiven">Toutes vos envies ont été offertes 🎉 Ajoutez-en de nouvelles quand vous voulez.</p>
       ) : (
         <GiftCollection view={prefs.view} prefs={prefs} onSort={cycleSort} statusLabel="Statut">
           {sortedTops.map(it => {
@@ -600,6 +650,21 @@ export default function MyList() {
             return itemRow(it, false)
           })}
         </GiftCollection>
+      )}
+
+      {archive.length > 0 && (
+        <details className="gifts-archive">
+          <summary><Icon name="gift" size={16} /> Cadeaux reçus · archives ({archive.length})</summary>
+          <ul className="gifts-list">
+            {archive.map(it => (
+              <li key={it.id}>
+                <Thumb src={it.image_url} alt={it.title} />
+                <span className="gl-title">{it.title}</span>
+                <span className="muted small">offert par {claims[it.id].claimed_by_name} · {formatDateShort(claims[it.id].reveal_on)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       {modal?.kind === 'share' && list && <ShareModal list={list} onClose={closeModal} />}

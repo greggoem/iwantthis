@@ -199,7 +199,7 @@ export default function ListView() {
   return (
     <div>
       <h1>{list.title}</h1>
-      <p className="muted">Liste de <strong>{owner}</strong>. {owner} ne voit pas ce que vous marquez comme acheté, avant la date de remise.</p>
+      <p className="muted">Liste de <strong>{owner}</strong>. {owner} ne voit pas ce que vous marquez comme acheté, avant le lendemain de la date de remise.</p>
       <Notice>{err}</Notice>
       {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}

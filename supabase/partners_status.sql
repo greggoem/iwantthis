@@ -41,3 +41,17 @@ begin
 end $$;
 revoke all on function public.admin_set_partner(uuid, text, text) from public, anon;
 grant execute on function public.admin_set_partner(uuid, text, text) to authenticated;
+
+-- Garde-fou : un partenaire dont le lien d'affiliation n'est pas encore complété (modèle « todo.invalid ») ne peut pas devenir actif
+create or replace function public.admin_set_partner(p_id uuid, p_status text, p_notes text default null)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Accès refusé'; end if;
+  if p_status not in ('active', 'pending', 'declined', 'paused') then raise exception 'Statut inconnu'; end if;
+  if p_status = 'active' and exists (select 1 from affiliate_programs where id = p_id and template like 'https://todo.invalid/%') then
+    raise exception 'Complétez d''abord le lien d''affiliation de ce partenaire (n° marchand Awin) avant de le passer en actif';
+  end if;
+  update affiliate_programs
+     set status = p_status, enabled = (p_status = 'active'), notes = nullif(trim(coalesce(p_notes, '')), ''), status_checked_at = now()
+   where id = p_id;
+end $$;

@@ -37,6 +37,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   const [reading, setReading] = useState(false)
   const [sending, setSending] = useState(false)
   const [shot, setShot] = useState<HTMLCanvasElement | null>(null)
+  const [menu, setMenu] = useState(false)
   const { session } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const uploaded = useRef<string[]>([])   // images envoyées pendant cette saisie (nettoyées si abandon / remplacées)
@@ -131,15 +132,27 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
       {reading && <p className="small muted">Lecture de la fiche produit…</p>}
       {hint && <p className="small muted">{hint}</p>}
       <div className="formrow">
-        <div className="formthumb" onDragOver={e => e.preventDefault()} onDrop={onDropImage}>
-          {d.image && <Thumb src={d.image} alt="Aperçu" large />}
+        <div className="formthumb">
+          <div className="imgbox" onDragOver={e => e.preventDefault()} onDrop={onDropImage} title="Glissez une image ici">
+            {d.image ? <Thumb src={d.image} alt="Aperçu" large /> : <div className="imgph"><Icon name="image" size={26} /><span>Aucune image</span></div>}
+          </div>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => pickImage(e.target.files?.[0])} />
-          <button type="button" className="btn btn-sm" disabled={sending} onClick={() => fileRef.current?.click()}>
-            <Icon name="image" size={15} /> {sending ? 'Envoi…' : d.image ? 'Changer l\'image' : 'Ajouter une image'}
-          </button>
-          {canCaptureScreen() && <button type="button" className="btn btn-sm" disabled={sending} onClick={capture} title="Choisissez l'onglet ou la fenêtre qui affiche le produit, puis entourez l'image">Capturer l'écran</button>}
-          <span className="small muted">ou collez une capture (Ctrl+V)</span>
-          {d.image && <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer</button>}
+          <div className="imgmenu-wrap">
+            <button type="button" className="btn btn-sm" disabled={sending} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(m => !m)}>
+              <Icon name="image" size={15} /> {sending ? 'Envoi…' : d.image ? 'Modifier' : 'Ajouter une image'} <Icon name="chevron" size={14} />
+            </button>
+            {menu && (
+              <>
+                <div className="imgmenu-back" onClick={() => setMenu(false)} />
+                <div className="imgmenu" role="menu">
+                  <button type="button" role="menuitem" onClick={() => { setMenu(false); fileRef.current?.click() }}>Choisir une photo ou un fichier</button>
+                  {canCaptureScreen() && <button type="button" role="menuitem" onClick={() => { setMenu(false); capture() }}>Capturer l'écran</button>}
+                  {d.image && <button type="button" role="menuitem" className="danger" onClick={() => { setMenu(false); setD(prev => ({ ...prev, image: '' })) }}>Retirer l'image</button>}
+                </div>
+              </>
+            )}
+          </div>
+          <span className="small muted imghint">ou collez une capture (Ctrl+V)</span>
         </div>
         <div className="stack grow">
           <label>Cadeau

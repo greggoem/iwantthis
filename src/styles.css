@@ -507,3 +507,11 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 
 /* « Acheté » sur l'image : même forme carrée que les étiquettes */
 .claimed-ribbon { border-radius: 4px; padding: 3px 8px; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Image d'événement : même menu que pour les envies */
+.cover-empty { display: flex; align-items: center; justify-content: center; gap: .5rem; padding: 1.1rem 1rem 4.4rem; color: var(--muted); font-size: .86rem; text-align: center; }
+.cover-actions.in-flow { right: auto; left: 50%; transform: translateX(-50%); bottom: .8rem; }
+.event-cover { overflow: visible; }
+.event-cover > img { border-radius: 18px; }
+.imgmenu.menu-right { left: auto; right: 0; top: auto; bottom: calc(100% + 4px); }
+.event-cover.is-empty { position: relative; }

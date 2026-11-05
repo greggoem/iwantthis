@@ -11,9 +11,13 @@ import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { eventMessage, occasionEmoji } from '../lib/shareCard'
 import { removeEventImage, setEventImage } from '../lib/eventImage'
+import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
 
 interface Excl { giver_id: string; receiver_id: string }
 interface Invite { id: string; name: string; email: string }
+
+const imageFrom = (dt: DataTransfer | null): File | undefined =>
+  Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -32,6 +36,8 @@ export default function EventDetail() {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [imgBusy, setImgBusy] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [imgMenu, setImgMenu] = useState(false)
+  const [shot, setShot] = useState<HTMLCanvasElement | null>(null)
   const [eiName, setEiName] = useState('')
   const [eiEmail, setEiEmail] = useState('')
   const [eiErr, setEiErr] = useState('')
@@ -73,6 +79,16 @@ export default function EventDetail() {
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
   const isOrg = ev?.created_by === me
+  // capture d'écran : Ctrl+V / Cmd+V n'importe où sur la page de l'événement (organisateur)
+  useEffect(() => {
+    if (!isOrg || editing) return
+    const onPaste = (e: ClipboardEvent) => {
+      const f = imageFrom(e.clipboardData)
+      if (f) { e.preventDefault(); onPickImage(f) }
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  })
   const inDraw = members.filter(m => m.in_draw)
   const meInDraw = members.find(m => m.user_id === me)?.in_draw ?? false
 
@@ -227,18 +243,34 @@ export default function EventDetail() {
     <div className="narrow">
       <p><Link to="/evenements" className="small">← Tous les événements</Link></p>
       {(ev.image_url || isOrg) && !editing && (
-        <div className={`event-cover ${ev.image_url ? '' : 'is-empty'}`}>
+        <div className={`event-cover ${ev.image_url ? '' : 'is-empty'}`}
+          onDragOver={isOrg ? e => e.preventDefault() : undefined}
+          onDrop={isOrg ? e => { const f = imageFrom(e.dataTransfer); if (f) { e.preventDefault(); onPickImage(f) } } : undefined}>
           {ev.image_url
             ? <img src={ev.image_url} alt="" referrerPolicy="no-referrer" />
-            : <button type="button" className="cover-add" disabled={imgBusy} onClick={() => fileRef.current?.click()}><Icon name="image" size={22} /> {imgBusy ? 'Envoi…' : 'Ajouter une image à l\'événement'}</button>}
-          {isOrg && ev.image_url && (
-            <div className="cover-actions">
-              <button type="button" className="btn btn-sm" disabled={imgBusy} onClick={() => fileRef.current?.click()}>{imgBusy ? 'Envoi…' : 'Changer'}</button>
-              <button type="button" className="btn btn-sm" disabled={imgBusy} onClick={dropImage}>Retirer</button>
+            : <div className="cover-empty"><Icon name="image" size={22} /><span>Aucune image · glissez-en une ici ou collez-la (Ctrl+V)</span></div>}
+          {isOrg && (
+            <div className={`cover-actions ${ev.image_url ? '' : 'in-flow'}`}>
+              <div className="imgmenu-wrap">
+                <button type="button" className="btn btn-sm" disabled={imgBusy} aria-haspopup="menu" aria-expanded={imgMenu} onClick={() => setImgMenu(m => !m)}>
+                  <Icon name="image" size={15} /> {imgBusy ? 'Envoi…' : ev.image_url ? 'Modifier' : 'Ajouter une image'} <Icon name="chevron" size={14} />
+                </button>
+                {imgMenu && (
+                  <>
+                    <div className="imgmenu-back" onClick={() => setImgMenu(false)} />
+                    <div className="imgmenu menu-right" role="menu">
+                      <button type="button" role="menuitem" onClick={() => { setImgMenu(false); fileRef.current?.click() }}>Choisir une photo ou un fichier</button>
+                      {canCaptureScreen() && <button type="button" role="menuitem" onClick={async () => { setImgMenu(false); const c = await grabScreen(); if (c) setShot(c) }}>Capturer l'écran</button>}
+                      {ev.image_url && <button type="button" role="menuitem" className="danger" onClick={() => { setImgMenu(false); dropImage() }}>Retirer l'image</button>}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>
       )}
+      {shot && <CropCapture source={shot} onCancel={() => setShot(null)} onDone={f => { setShot(null); onPickImage(f) }} />}
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/*" hidden onChange={e => onPickImage(e.target.files?.[0])} />
       {editing ? (
         <form className="card stack" onSubmit={saveEvent}>

@@ -251,9 +251,11 @@ export default function EventDetail() {
         </form>
       ) : (
         <>
-          <h1>{ev.name}</h1>
+          <div className="row gap" style={{ alignItems: 'center' }}>
+            <h1 style={{ margin: 0 }}>{ev.name}</h1>
+            {isOrg && <IconButton icon="pencil" label="Modifier le nom ou la date" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setEditing(true) }} />}
+          </div>
           <p className="muted">{formatDate(ev.event_date)}</p>
-          {isOrg && <button className="btn btn-ghost btn-sm" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setEditing(true) }}>Modifier le nom / la date</button>}
         </>
       )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>

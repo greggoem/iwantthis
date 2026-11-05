@@ -45,6 +45,7 @@ export default function Profile() {
   return (
     <div className="narrow">
       <h1>Mon profil</h1>
+      <p className="small muted">Un doute sur le fonctionnement du site ? Relisez le <Link to="/bienvenue">guide de bienvenue</Link>.</p>
 
       <form className="card stack" onSubmit={saveName}>
         <Notice>{nameErr}</Notice><Notice kind="ok">{nameMsg}</Notice>

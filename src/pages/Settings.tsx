@@ -13,6 +13,7 @@ export default function Settings() {
     <div className="narrow">
       <h1>Réglages</h1>
       <p className="small muted">Votre nom, votre e-mail et votre mot de passe se trouvent dans <Link to="/profil">Mon profil</Link>.</p>
+      <p className="small muted">Un doute sur le fonctionnement du site ? Relisez le <Link to="/bienvenue">guide de bienvenue</Link>.</p>
       <ThemePicker />
       <ExtensionLinks />
       <ApiAccess />

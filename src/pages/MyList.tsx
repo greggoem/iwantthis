@@ -89,6 +89,17 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     setD(prev => ({ ...prev, image: r.url }))
     setHint('Image ajoutée.')
   }
+  // capture d'écran : Ctrl+V / Cmd+V n'importe où dans le formulaire, ou glisser-déposer une image
+  const imageFrom = (dt: DataTransfer | null): File | undefined =>
+    Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
+  const onPasteForm = (e: React.ClipboardEvent) => {
+    const f = imageFrom(e.clipboardData)
+    if (f) { e.preventDefault(); pickImage(f) }
+  }
+  const onDropImage = (e: React.DragEvent) => {
+    const f = imageFrom(e.dataTransfer)
+    if (f) { e.preventDefault(); pickImage(f) }
+  }
   const cancel = async () => {
     for (const u of uploaded.current) if (u !== initial.image) await deleteItemImage(u)   // rien ne traîne si on abandonne
     onCancel()
@@ -108,7 +119,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   }
 
   return (
-    <form className="stack" onSubmit={submit}>
+    <form className="stack" onSubmit={submit} onPaste={onPasteForm}>
       <Notice>{err}</Notice>
       <label><span>Lien du produit <span className="muted">· image, prix et titre récupérés automatiquement</span></span>
         <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} onBlur={() => readLink()} placeholder="https://…" inputMode="url" autoFocus={!initial.url} />
@@ -116,12 +127,13 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
       {reading && <p className="small muted">Lecture de la fiche produit…</p>}
       {hint && <p className="small muted">{hint}</p>}
       <div className="formrow">
-        <div className="formthumb">
+        <div className="formthumb" onDragOver={e => e.preventDefault()} onDrop={onDropImage}>
           {d.image && <Thumb src={d.image} alt="Aperçu" large />}
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => pickImage(e.target.files?.[0])} />
           <button type="button" className="btn btn-sm" disabled={sending} onClick={() => fileRef.current?.click()}>
             <Icon name="image" size={15} /> {sending ? 'Envoi…' : d.image ? 'Changer l\'image' : 'Ajouter une image'}
           </button>
+          <span className="small muted">ou collez une capture d'écran (Ctrl+V)</span>
           {d.image && <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer</button>}
         </div>
         <div className="stack grow">

@@ -72,3 +72,8 @@ html[data-theme="doodle"] .itemlink{font-family:'Patrick Hand'}
   html[data-theme="doodle"] .page-actions .btn { padding: .3rem .7rem; font-size: 1.05rem; }
   html[data-theme="doodle"] .sub-head, html[data-theme="doodle"] .viewbar { flex-wrap: wrap; gap: .5rem; }
 }
+
+/* Étiquettes « Doodle » : petits cartouches tracés à la main, coins légèrement irréguliers */
+html[data-theme="doodle"] .chip,html[data-theme="doodle"] .tag{border-radius:5px 8px 6px 9px / 8px 5px 9px 6px;border-width:1.8px;min-height:0;padding:1px 8px;font-size:1rem;letter-spacing:.01em;text-transform:none;transform:rotate(-.8deg)}
+html[data-theme="doodle"] .chip-quiet{border-style:dashed;padding-left:8px}
+html[data-theme="doodle"] .is-claimed .chip.chip-ok{background:#9fe0bd;color:#1a1a1a;border-color:#1a1a1a}

@@ -497,3 +497,10 @@ img, video, svg { max-width: 100%; }
 
 .btn-social { gap: .6rem; }
 .btn-social svg { flex: none; }
+
+/* ===== Étiquettes carrées — thème Classique (sobre, neutre) ===== */
+html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle"]) .chip { border-radius: 4px; min-height: 0; padding: 3px 7px; font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: #f1f1f3; color: var(--ink-2); border: 1px solid #e3e3e7; }
+html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle"]) .chip.chip-ok { background: var(--ok-bg); color: var(--ok); border-color: #c4ecd4; }
+html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle"]) .chip.chip-quiet { background: transparent; color: var(--muted); border-color: transparent; padding-left: 0; }
+html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle"]) .is-claimed .chip.chip-ok { background: #15803d; color: #fff; border-color: #15803d; }
+html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle"]) .tag { border-radius: 3px; border: 1px solid #e3e3e7; padding: 1px 6px; }

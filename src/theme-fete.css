@@ -102,3 +102,9 @@ html:is([data-theme="fete"], [data-theme="doodle"]) .progress { background: var(
 
 /* pastilles : le contour ne doit pas décaler le contenu */
 html:is([data-theme="fete"], [data-theme="doodle"]) .chip { box-sizing: border-box; min-height: 26px; padding: 0 .7rem; }
+
+/* Étiquettes carrées « Fête » : petit relief comme les boutons, couleurs pastel conservées */
+html[data-theme="fete"] .chip { border-radius: 6px; min-height: 0; padding: 3px 8px; font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; border-width: 1.5px; border-color: var(--ink); box-shadow: 0 1.5px 0 var(--ink); }
+html[data-theme="fete"] .chip.chip-quiet { padding-left: 8px; }
+html[data-theme="fete"] .is-claimed .chip.chip-ok { background: var(--f-mint); color: #053b2c; border-color: var(--ink); }
+html[data-theme="fete"] .tag { border-radius: 5px; border: 1.5px solid var(--ink); padding: 1px 6px; font-weight: 700; }

@@ -10,6 +10,7 @@ import './theme-fete.css'
 import '@fontsource/caveat-brush/400.css'
 import '@fontsource/patrick-hand/400.css'
 import './theme-doodle.css'
+import './theme-couleur.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 

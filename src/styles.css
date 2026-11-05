@@ -548,3 +548,16 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .stat-bar { fill: var(--accent); }
 .stat-axis { stroke: var(--line); stroke-width: 1; }
 .stat-axis-text { fill: var(--muted); font-size: 11px; }
+
+/* Administration : onglets et partenaires */
+.admin-tabs { display: flex; gap: .4rem; margin: .4rem 0 1rem; border-bottom: 1px solid var(--line); }
+.admin-tabs button { display: inline-flex; align-items: center; gap: .4rem; background: transparent; border: 0; border-bottom: 2px solid transparent; padding: .6rem .8rem; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; margin-bottom: -1px; }
+.admin-tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+.admin-actions { display: flex; justify-content: flex-end; margin-bottom: .4rem; }
+.partners { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.partner { display: grid; grid-template-columns: minmax(0, 1.4fr) 140px minmax(0, 1fr) auto; gap: .6rem; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius, 14px); padding: .7rem .9rem; }
+.partner-main { display: flex; flex-direction: column; gap: .05rem; min-width: 0; }
+.partner-active { border-left: 4px solid var(--ok, #15803d); }
+.partner-pending { border-left: 4px solid #d99a00; }
+.partner-declined, .partner-paused { border-left: 4px solid var(--muted); }
+@media (max-width: 720px) { .partner { grid-template-columns: 1fr 1fr; } .partner-main { grid-column: 1 / -1; } .partner input { grid-column: 1 / -1; } }

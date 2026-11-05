@@ -55,34 +55,28 @@ function SignupChart({ days }: { days: { day: string; n: number }[] }) {
   )
 }
 
-/** Tableau de bord réservé aux administrateurs : uniquement des chiffres globaux */
-export default function Admin() {
+function StatsTab({ onDenied }: { onDenied: () => void }) {
   const [s, setS] = useState<Stats | null>(null)
-  const [denied, setDenied] = useState(false)
-  const [err, setErr] = useState('')
+    const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
     setBusy(true); setErr('')
     const { data, error } = await supabase.rpc('admin_stats')
     setBusy(false)
-    if (error) { if (/refus/i.test(error.message)) setDenied(true); else setErr(errMsg(error)); return }
+    if (error) { if (/refus/i.test(error.message)) onDenied(); else setErr(errMsg(error)); return }
     setS(data as Stats)
   }, [])
   useEffect(() => { load() }, [load])
 
-  if (denied) return <Navigate to="/" replace />
   if (!s) return err ? <Notice>{err}</Notice> : <Spinner />
 
   const u = s.users
   const when = new Date(s.generated_at).toLocaleString('fr-BE', { dateStyle: 'medium', timeStyle: 'short' })
   return (
-    <div className="admin">
-      <div className="page-head">
-        <h1>Statistiques</h1>
-        <div className="page-actions">
-          <button className="btn" onClick={load} disabled={busy}><Icon name="refresh" size={16} /> <span>{busy ? 'Actualisation…' : 'Actualiser'}</span></button>
-        </div>
+    <div>
+      <div className="admin-actions">
+        <button className="btn" onClick={load} disabled={busy}><Icon name="refresh" size={16} /> <span>{busy ? 'Actualisation…' : 'Actualiser'}</span></button>
       </div>
       <p className="small muted">Chiffres globaux uniquement : aucun contenu de liste ni adresse n'apparaît ici. Mis à jour le {when}.</p>
       <Notice>{err}</Notice>
@@ -140,6 +134,86 @@ export default function Admin() {
         <Tile label="Accès API créés" value={s.other.api_tokens} />
         <Tile label="Notifications" value={s.other.notifications} />
       </div>
+    </div>
+  )
+}
+
+interface Partner { id: string; label: string; domain: string; network: string | null; status: Status; enabled: boolean; notes: string | null; checked_at: string | null; merchant_id: string | null }
+type Status = 'active' | 'pending' | 'paused' | 'declined'
+const STATUS_LABEL: Record<Status, string> = { active: 'Actif', pending: 'En attente', paused: 'En pause', declined: 'Refusé' }
+
+function PartnerRow({ p, onSave }: { p: Partner; onSave: (id: string, status: Status, notes: string) => Promise<void> }) {
+  const [status, setStatus] = useState<Status>(p.status)
+  const [notes, setNotes] = useState(p.notes ?? '')
+  const [busy, setBusy] = useState(false)
+  const dirty = status !== p.status || notes.trim() !== (p.notes ?? '')
+  return (
+    <li className={`partner partner-${p.status}`}>
+      <div className="partner-main">
+        <strong>{p.label}</strong>
+        <span className="small muted">{p.domain === '*' ? 'tous les autres magasins' : p.domain}{p.network ? ` · ${p.network}` : ''}{p.merchant_id ? ` · n° ${p.merchant_id}` : ''}</span>
+        {p.checked_at && <span className="small muted">vérifié le {new Date(p.checked_at).toLocaleDateString('fr-BE')}</span>}
+      </div>
+      <select aria-label={`Statut de ${p.label}`} value={status} onChange={e => setStatus(e.target.value as Status)}>
+        {(Object.keys(STATUS_LABEL) as Status[]).map(k => <option key={k} value={k}>{STATUS_LABEL[k]}</option>)}
+      </select>
+      <input aria-label={`Note pour ${p.label}`} placeholder="Note (facultatif)" value={notes} maxLength={200} onChange={e => setNotes(e.target.value)} />
+      <button className="btn btn-sm" disabled={!dirty || busy} onClick={async () => { setBusy(true); await onSave(p.id, status, notes); setBusy(false) }}>Enregistrer</button>
+    </li>
+  )
+}
+
+/** Partenaires d'affiliation : actifs (liens parrainés), en attente, en pause, refusés */
+function PartnersTab() {
+  const [rows, setRows] = useState<Partner[] | null>(null)
+  const [err, setErr] = useState('')
+  const [msg, setMsg] = useState('')
+  const load = useCallback(async () => {
+    const { data, error } = await supabase.rpc('admin_partners')
+    if (error) { setErr(errMsg(error)); setRows([]); return }
+    setRows((data as Partner[]) ?? [])
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const save = async (id: string, status: Status, notes: string) => {
+    setErr(''); setMsg('')
+    const { error } = await supabase.rpc('admin_set_partner', { p_id: id, p_status: status, p_notes: notes })
+    if (error) { setErr(errMsg(error)); return }
+    setMsg(status === 'active' ? 'Enregistré : les liens de ce partenaire sont maintenant parrainés.' : 'Enregistré : les liens de ce partenaire ne sont plus parrainés.')
+    load()
+  }
+
+  if (!rows) return <Spinner />
+  const group = (st: Status) => rows.filter(r => r.status === st)
+  const counts = (Object.keys(STATUS_LABEL) as Status[]).map(k => ({ k, n: group(k).length }))
+  return (
+    <div>
+      <p className="small muted">Seuls les partenaires <strong>actifs</strong> parrainent les liens des envies. Un partenaire en attente n'est pas encore validé par le réseau : ses liens restent normaux.</p>
+      <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+      <div className="stat-grid">{counts.map(c => <Tile key={c.k} label={STATUS_LABEL[c.k]} value={c.n} />)}</div>
+      {(Object.keys(STATUS_LABEL) as Status[]).map(st => group(st).length > 0 && (
+        <section key={st}>
+          <h2>{STATUS_LABEL[st]} ({group(st).length})</h2>
+          <ul className="partners">{group(st).map(p => <PartnerRow key={p.id + p.status + (p.notes ?? '')} p={p} onSave={save} />)}</ul>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+/** Espace réservé aux administrateurs : statistiques et partenaires */
+export default function Admin() {
+  const [tab, setTab] = useState<'stats' | 'partners'>('stats')
+  const [denied, setDenied] = useState(false)
+  if (denied) return <Navigate to="/" replace />
+  return (
+    <div className="admin">
+      <div className="page-head"><h1>Administration</h1></div>
+      <div className="admin-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === 'stats'} className={tab === 'stats' ? 'on' : ''} onClick={() => setTab('stats')}><Icon name="chart" size={16} /> Statistiques</button>
+        <button role="tab" aria-selected={tab === 'partners'} className={tab === 'partners' ? 'on' : ''} onClick={() => setTab('partners')}><Icon name="gift" size={16} /> Partenaires</button>
+      </div>
+      {tab === 'stats' ? <StatsTab onDenied={() => setDenied(true)} /> : <PartnersTab />}
       <p className="small muted"><Link to="/reglages">← Réglages</Link></p>
     </div>
   )

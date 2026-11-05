@@ -15,6 +15,7 @@ import EventDetail from './pages/EventDetail'
 import JoinEvent from './pages/JoinEvent'
 import Profile from './pages/Profile'
 import Settings from './pages/Settings'
+import Admin from './pages/Admin'
 import Notifications from './pages/Notifications'
 import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="profil" element={<Profile />} />
           <Route path="reglages" element={<Settings />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="admin" element={<Admin />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -535,3 +535,16 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 /* Choix de visibilité à l'achat : texte sur deux lignes */
 .claimbox .radio, .radio:has(> span) { align-items: flex-start; }
 .radio > input { margin-top: .22rem; flex: none; }
+
+/* ---------- Statistiques (page d'administration) ---------- */
+.admin h2 { margin: 1.6rem 0 .6rem; font-size: 1.15rem; }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; margin: .5rem 0 1rem; }
+.stat-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius, 14px); padding: .8rem .95rem; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.stat-value { font-size: 1.7rem; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; }
+.stat-label { font-size: .8rem; color: var(--ink-2); }
+.stat-hint { font-size: .72rem; color: var(--muted); }
+.stat-chart { margin: 0; }
+.stat-chart svg { width: 100%; height: auto; display: block; }
+.stat-bar { fill: var(--accent); }
+.stat-axis { stroke: var(--line); stroke-width: 1; }
+.stat-axis-text { fill: var(--muted); font-size: 11px; }

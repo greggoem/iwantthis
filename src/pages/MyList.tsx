@@ -464,13 +464,22 @@ export default function MyList() {
     return true
   }
   const refresh = async (it: Item) => { setErr(''); setMsg(''); setBusyId(it.id); await refreshOne(it); setBusyId(null); load() }
-  const missing = items.filter(i => !i.is_group && i.url && !i.image_url)
-  const refreshMissing = async () => {
-    setErr(''); setMsg(''); setBulk(true)
-    let ok = 0
-    for (const it of missing) if (await refreshOne(it, true)) ok++
+  const withUrl = items.filter(i => !i.is_group && i.url)
+  const [progress, setProgress] = useState(0)
+  /** Relit tous les liens de la liste (3 à la fois) : images et prix remis à jour */
+  const refreshAll = async () => {
+    setErr(''); setMsg(''); setBulk(true); setProgress(0)
+    let ok = 0, done = 0, next = 0
+    const worker = async () => {
+      while (next < withUrl.length) {
+        const it = withUrl[next++]
+        if (await refreshOne(it, true)) ok++
+        setProgress(++done)
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(3, withUrl.length) }, worker))
     setBulk(false)
-    setMsg(`${ok} cadeau(x) complété(s) sur ${missing.length}. Les autres magasins ne permettent pas la lecture automatique.`)
+    setMsg(`${ok} cadeau(x) mis à jour sur ${withUrl.length}. Certains magasins ne permettent pas la lecture automatique.`)
     load()
   }
 
@@ -515,9 +524,9 @@ export default function MyList() {
       {items.length > 0 && (
         <ViewBar prefs={prefs} onChange={setPrefs} left={<>
           <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${items.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
-          {missing.length > 0 && (
-            <button className="btn btn-sm" disabled={bulk} onClick={refreshMissing}>
-              <Icon name="refresh" size={15} /> {bulk ? 'Lecture des liens…' : `Récupérer images et prix (${missing.length})`}
+          {withUrl.length > 0 && (
+            <button className="btn btn-sm" disabled={bulk} onClick={refreshAll} title="Relire tous les liens : met à jour les images et les prix">
+              <Icon name="refresh" size={15} /> {bulk ? `Actualisation… ${progress}/${withUrl.length}` : 'Tout actualiser'}
             </button>
           )}
         </>} />

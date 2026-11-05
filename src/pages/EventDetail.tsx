@@ -292,6 +292,23 @@ export default function EventDetail() {
       )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
+      {ev.draw_done_at && myTarget && (
+        <section className="card target-card">
+          {showTarget ? (
+            <div className="reveal">
+              <p className="small muted">Vous offrez un cadeau à…</p>
+              <p className="big">{name(myTarget)}</p>
+              <div className="row wrap gap" style={{ justifyContent: 'center' }}>
+                {lists[myTarget] && <Link className="btn btn-primary" to={`/listes/${lists[myTarget]}`}>Voir sa liste de souhaits</Link>}
+                <button className="btn btn-ghost btn-sm" onClick={() => setShowTarget(false)}>Masquer</button>
+              </div>
+            </div>
+          ) : (
+            <button className="btn btn-primary btn-lg" onClick={() => setShowTarget(true)}><Icon name="dice" size={18} /> Découvrir à qui j'offre un cadeau</button>
+          )}
+        </section>
+      )}
+
       <div className="row wrap gap mt event-actions">
         <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter des proches</button>
         {isOrg && (
@@ -414,16 +431,7 @@ export default function EventDetail() {
             <p className="small muted">Tirage effectué le {formatDateShort(ev.draw_done_at)}.</p>
             {stale && <Notice kind="info">Les invités ont changé depuis le tirage{isOrg ? ' : pensez à le refaire.' : ' : demandez à l\'organisateur de le refaire.'}</Notice>}
             {myTarget ? (
-              showTarget ? (
-                <div className="reveal">
-                  <p className="small muted">Vous offrez un cadeau à…</p>
-                  <p className="big">{name(myTarget)}</p>
-                  {lists[myTarget] && <Link className="btn btn-primary" to={`/listes/${lists[myTarget]}`}>Voir sa liste de souhaits</Link>}
-                  <button className="btn btn-ghost btn-sm" onClick={() => setShowTarget(false)}>Masquer</button>
-                </div>
-              ) : (
-                <button className="btn btn-primary" onClick={() => setShowTarget(true)}>Découvrir à qui j'offre un cadeau</button>
-              )
+              <p className="small muted">Votre résultat est affiché en haut de la page.</p>
             ) : meInDraw ? (
               <p className="muted">Vous n'avez pas encore de résultat : le tirage a eu lieu avant votre arrivée.</p>
             ) : (

@@ -469,17 +469,16 @@ export default function MyList() {
   /** Relit tous les liens de la liste (3 à la fois) : images et prix remis à jour */
   const refreshAll = async () => {
     setErr(''); setMsg(''); setBulk(true); setProgress(0)
-    let ok = 0, done = 0, next = 0
+    let done = 0, next = 0
     const worker = async () => {
       while (next < withUrl.length) {
         const it = withUrl[next++]
-        if (await refreshOne(it, true)) ok++
+        await refreshOne(it, true)
         setProgress(++done)
       }
     }
     await Promise.all(Array.from({ length: Math.min(3, withUrl.length) }, worker))
     setBulk(false)
-    setMsg(`${ok} cadeau(x) mis à jour sur ${withUrl.length}. Certains magasins ne permettent pas la lecture automatique.`)
     load()
   }
 

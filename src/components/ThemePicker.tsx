@@ -11,7 +11,7 @@ const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
 ]
 
 /** « Mon profil » : choix de l'apparence du site (mémorisé sur cet appareil) */
-export default function ThemePicker({ compact = false }: { compact?: boolean }) {
+export default function ThemePicker({ compact = false, bare = false }: { compact?: boolean; bare?: boolean }) {
   const [t, setT] = useState<Theme>(getTheme())
   const { session } = useAuth()
   const pick = (k: Theme) => {
@@ -21,7 +21,7 @@ export default function ThemePicker({ compact = false }: { compact?: boolean }) 
   const Wrap = compact ? 'div' : 'section'
   return (
     <Wrap className={compact ? 'stack' : 'card stack mt'}>
-      {compact ? <strong>Choisissez votre apparence</strong> : <h2>Apparence</h2>}
+      {bare ? null : compact ? <strong>Choisissez votre apparence</strong> : <h2>Apparence</h2>}
       <div className="themepick" role="radiogroup" aria-label="Apparence du site">
         {THEMES.map(x => (
           <button key={x.key} type="button" role="radio" aria-checked={t === x.key} className={`themecard ${t === x.key ? 'on' : ''}`} onClick={() => pick(x.key)}>
@@ -31,7 +31,7 @@ export default function ThemePicker({ compact = false }: { compact?: boolean }) 
           </button>
         ))}
       </div>
-      <p className="small muted">{compact ? 'Vous pourrez la changer à tout moment dans Réglages.' : 'Le choix est enregistré dans votre compte.'}</p>
+      {!bare && <p className="small muted">{compact ? 'Vous pourrez la changer à tout moment dans Réglages.' : 'Le choix est enregistré dans votre compte.'}</p>}
     </Wrap>
   )
 }

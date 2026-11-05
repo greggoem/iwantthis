@@ -23,6 +23,10 @@ export default function Confirm() {
     if (!token_hash || !type) { setErr('Lien incomplet. Rouvrez le lien reçu par e-mail.'); return }
     supabase.auth.verifyOtp({ token_hash, type }).then(({ error }) => {
       if (error) setErr(errMsg(error) + ' Le lien a peut-être expiré : recommencez depuis la page de connexion.')
+      else if (type === 'signup' || type === 'email') {
+        supabase.auth.getUser().then(({ data }) => { try { if (data.user) localStorage.setItem('iwt.welcomed.' + data.user.id, '1') } catch { /* ignore */ } })
+        nav('/bienvenue', { replace: true })
+      }
       else if (type !== 'recovery') nav('/', { replace: true })
       // type = recovery : le formulaire « Nouveau mot de passe » s'affiche tout seul
     })

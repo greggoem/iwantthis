@@ -565,3 +565,32 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .target-card{text-align:center;margin-top:1rem;padding:1.1rem;border:2px solid var(--primary,#6c5ce7)}
 .target-card .btn-lg{font-size:1.05rem;padding:.8rem 1.4rem;width:100%;max-width:26rem;justify-content:center}
 .target-card .big{font-size:1.8rem;margin:.2rem 0 .7rem}
+
+/* Page de bienvenue */
+.welcome{max-width:880px;margin:0 auto}
+.wl-hero{text-align:center;padding:1.5rem 0 1rem;display:flex;flex-direction:column;align-items:center;gap:.6rem}
+.wl-hero h1{margin:.2rem 0 0}
+.wl-hero .lead{font-size:1.1rem;color:var(--muted,#666);margin:0 0 .6rem;max-width:34rem}
+.btn-lg{font-size:1.05rem;padding:.8rem 1.5rem}
+.wl-block{display:flex;gap:1rem;margin-top:2rem}
+.wl-num{flex:none;width:2.2rem;height:2.2rem;border-radius:50%;background:var(--ink,#111);color:var(--surface,#fff);display:grid;place-items:center;font-weight:700}
+.wl-body{flex:1;min-width:0}
+.wl-body h2{margin-top:.2rem}
+.wl-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin-top:1rem}
+.wl-steps article{background:var(--surface,#fff);border:1px solid var(--line,#e5e5e5);border-radius:14px;padding:.8rem}
+.wl-steps h3{margin:.6rem 0 .2rem}
+.wl-steps p{margin:0;font-size:.92rem;color:var(--muted,#555)}
+.wl-art{width:100%;height:auto;display:block;color:var(--ink,#111)}
+.wl-art .a-card{fill:var(--bg,#f6f6f4);stroke:var(--line,#ddd)}
+.wl-art .a-field{fill:var(--surface,#fff);stroke:var(--line,#ddd)}
+.wl-art .a-bar{fill:var(--line,#e5e5e5)}
+.wl-art .a-img{fill:var(--line,#e2e2e2)}
+.wl-art .a-ink{fill:currentColor}
+.wl-art .a-accent{fill:var(--accent,#ff5a36)}
+.wl-art .a-ok{fill:#15803d}
+.wl-art .a-txt{font:11px sans-serif;fill:currentColor;opacity:.6}
+.wl-art .a-txt-w{font:600 11px sans-serif;fill:#fff}
+.wl-art .a-spark{font-size:16px;fill:var(--accent,#ff5a36)}
+.wl-body>.wl-art{max-width:420px;margin:.8rem 0}
+.wl-end{text-align:center;margin:2.5rem 0 3rem}
+@media(max-width:600px){.wl-block{flex-direction:column;gap:.4rem}}

@@ -20,6 +20,7 @@ import Notifications from './pages/Notifications'
 import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
 import Landing from './pages/Landing'
+import Welcome from './pages/Welcome'
 
 /** Connecté : l'application. Non connecté : page d'accueil sur « / », sinon connexion (en gardant la page voulue) */
 function Gate() {
@@ -39,6 +40,16 @@ function PostLogin() {
   const loc = useLocation()
   useEffect(() => {
     if (!session) return
+    // Compte tout juste créé (Google : première connexion) : page de bienvenue d'abord, une seule fois
+    const u = session.user
+    const key = 'iwt.welcomed.' + u.id
+    let welcomed = true
+    try { welcomed = !!localStorage.getItem(key) } catch { /* ignore */ }
+    if (!welcomed && Date.now() - new Date(u.created_at).getTime() < 10 * 60000 && loc.pathname !== '/bienvenue') {
+      try { localStorage.setItem(key, '1') } catch { /* ignore */ }
+      nav('/bienvenue', { replace: true })
+      return
+    }
     const p = sessionStorage.getItem('postLoginPath')
     if (p) { sessionStorage.removeItem('postLoginPath'); nav(p, { replace: true }) }
     else if (loc.pathname === '/login') nav('/', { replace: true })
@@ -103,6 +114,7 @@ export default function App() {
           <Route path="evenements" element={<Events />} />
           <Route path="evenements/:id" element={<EventDetail />} />
           <Route path="e/:code" element={<JoinEvent />} />
+          <Route path="bienvenue" element={<Welcome />} />
           <Route path="profil" element={<Profile />} />
           <Route path="reglages" element={<Settings />} />
           <Route path="notifications" element={<Notifications />} />

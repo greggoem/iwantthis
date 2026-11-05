@@ -299,6 +299,8 @@ function KidsForm({ group, onCancel, onSubmit }: {
 
 /* ---------- Fenêtre « Partager ma liste » ---------- */
 function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) {
+  const { profile } = useAuth()
+  const shareTitle = profile?.display_name ? `La liste d'envies de ${profile.display_name}` : list.title
   const url = listShareUrl(list.share_token)
   // l'image du prochain événement qui en a une est reprise sur la carte de partage
   const [ev, setEv] = useState<{ name: string; event_date: string; image_url: string } | null | undefined>(undefined)
@@ -311,9 +313,9 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
     <ShareSheet
       title="Partager ma liste"
       intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant le lendemain de la date de remise."
-      message={listMessage(list.title, url, APP_NAME)}
-      subject={list.title}
-      heading={list.title} sub={ev ? `${ev.name} · ${formatDateShort(ev.event_date)}` : undefined} imageUrl={ev?.image_url}
+      message={listMessage(shareTitle, url, APP_NAME)}
+      subject={shareTitle}
+      heading={shareTitle} sub={ev ? `${ev.name} · ${formatDateShort(ev.event_date)}` : undefined} imageUrl={ev?.image_url}
       fileName="ma-liste-de-cadeaux"
       onClose={onClose}
     >

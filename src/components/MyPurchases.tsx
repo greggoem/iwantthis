@@ -99,7 +99,7 @@ export default function MyPurchases() {
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
       {upcoming.length === 0
-        ? <div className="empty"><div className="empty-ico"><Icon name="bag" size={26} /></div><h2>Rien à offrir pour l'instant</h2><p className="muted">Sur la liste d'un proche, cliquez « J'ai acheté » après votre achat : il apparaîtra ici.</p><Link className="btn btn-primary" to="/listes">Voir les listes de mes proches</Link></div>
+        ? <div className="empty"><div className="empty-ico"><Icon name="bag" size={26} /></div><h2>Rien à offrir pour l'instant</h2><p className="muted">Sur la liste d'un proche, cliquez « Acheté » après votre achat : il apparaîtra ici.</p><Link className="btn btn-primary" to="/listes">Voir les listes de mes proches</Link></div>
         : <ul className="purchases card">{upcoming.map(p => <Row key={p.id} p={p} canCancel />)}</ul>}
 
       {editing && (

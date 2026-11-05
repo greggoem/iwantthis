@@ -22,7 +22,7 @@ export function eventMessage(name: string, dateLong: string, url: string, appNam
 
 export function listMessage(title: string, url: string, appName: string): string {
   return `🎁 ${title}\n\n` +
-    `Voici mes envies, avec les liens pour les trouver. Dis-moi ce que tu comptes m'offrir en cliquant « J'ai acheté » : je ne verrai rien avant le lendemain de la date de remise, la surprise reste entière 🤫\n\n` +
+    `Voici mes envies, avec les liens pour les trouver. Dis-moi ce que tu comptes m'offrir en cliquant « Acheté » : je ne verrai rien avant le lendemain de la date de remise, la surprise reste entière 🤫\n\n` +
     `👉 ${url}\n\n(sur ${appName})`
 }
 

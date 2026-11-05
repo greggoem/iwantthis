@@ -67,10 +67,10 @@ export default function Landing() {
                 <div className="mock-th" style={{ background: r.c }} />
                 <div className="mock-txt"><strong>{r.t}</strong><small>{r.s}</small></div>
                 <b>{r.p}</b>
-                <span className={r.ok ? 'chip chip-ok' : 'chip'}>{r.ok ? 'Acheté par Louis' : 'À offrir'}</span>
+                <span className={r.ok ? 'chip chip-ok' : 'chip'}>{r.ok ? 'Acheté' : 'À offrir'}</span>
               </div>
             ))}
-            <div className="mock-note"><Icon name="lock" size={14} /> Julie ne voit pas « Acheté par Louis » avant le 25 décembre.</div>
+            <div className="mock-note"><Icon name="lock" size={14} /> Julie ne voit aucun achat avant le 25 décembre.</div>
           </div>
         </div>
       </section>

@@ -152,7 +152,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
               </>
             )}
           </div>
-          <span className="small muted imghint">ou collez une capture (Ctrl+V)</span>
+          <span className="small muted imghint">ou collez une image (Ctrl+V)</span>
         </div>
         <div className="stack grow">
           <label>Cadeau

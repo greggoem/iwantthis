@@ -45,7 +45,7 @@ create trigger on_auth_user_created
 create table public.wishlists (
   id          uuid primary key default gen_random_uuid(),
   owner_id    uuid not null unique references public.profiles(id) on delete cascade,
-  title       text not null default 'Ma liste de cadeaux',
+  title       text not null default 'Ma liste d''envies',
   share_token uuid not null unique default gen_random_uuid(),
   created_at  timestamptz not null default now()
 );

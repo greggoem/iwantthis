@@ -115,8 +115,8 @@ select { width: auto; max-width: 100%; }
 .page-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
 .page-actions { display: flex; gap: .5rem; }
 .title-input { font-family: inherit; font-size: 1.9rem; font-weight: 650; line-height: 1.15; letter-spacing: -0.03em; color: var(--ink); border: 1px solid transparent; background: transparent; padding: .15rem .45rem; margin-left: -.45rem; flex: 1; min-width: 12rem; border-radius: 10px; box-shadow: none; }
-.title-input:hover { border-color: var(--line); background: var(--surface); }
-.title-input:focus { border-color: var(--ink); background: var(--surface); }
+
+
 .sub-head { margin-bottom: .5rem; }
 
 /* ---------- Liste vide ---------- */

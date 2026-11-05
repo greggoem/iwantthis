@@ -20,6 +20,7 @@ import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
+import ThemePicker from '../components/ThemePicker'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
 interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean }
@@ -327,6 +328,8 @@ type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; i
   | { kind: 'group' } | { kind: 'editGroup'; item: Item } | { kind: 'kids'; item: Item }
 
 export default function MyList() {
+  const [themeAsk, setThemeAsk] = useState(() => { try { return !localStorage.getItem('iwt-theme-asked') } catch { return false } })
+  const closeThemeAsk = () => { try { localStorage.setItem('iwt-theme-asked', '1') } catch { /* ignore */ } setThemeAsk(false) }
   const [params, setParams] = useSearchParams()
   const confirm = useConfirm()
   const [list, setList] = useState<Wishlist | null>(null)
@@ -334,7 +337,6 @@ export default function MyList() {
   const [claims, setClaims] = useState<Record<string, Claim>>({})
   const [opened, setOpened] = useState(false)   // cadeaux reçus découverts pendant cette visite
   const [modal, setModal] = useState<ModalState>(null)
-  const [title, setTitle] = useState('')
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -358,7 +360,7 @@ export default function MyList() {
     const { data, error } = await supabase.rpc('ensure_my_list')
     if (error) { setErr(errMsg(error)); setLoading(false); return }
     const l = (Array.isArray(data) ? data[0] : data) as Wishlist
-    setList(l); setTitle(l.title)
+    setList(l)
     const [it, cl] = await Promise.all([
       supabase.from('items').select('*').eq('list_id', l.id).order('created_at'),
       supabase.from('item_claims').select('*'),   // le serveur ne renvoie que les achats déjà « révélés »
@@ -533,12 +535,6 @@ export default function MyList() {
     load()
   }
 
-  const saveTitle = async () => {
-    if (!list || title.trim() === list.title || !title.trim()) return
-    const { error } = await supabase.from('wishlists').update({ title: title.trim() }).eq('id', list.id)
-    if (error) setErr(errMsg(error)); else setList({ ...list, title: title.trim() })
-  }
-
   const itemRow = (it: Item, kid: boolean) => (
     <Row
       key={it.id}
@@ -561,7 +557,7 @@ export default function MyList() {
   return (
     <div>
       <div className="page-head">
-        <input className="title-input" value={title} maxLength={100} onChange={e => setTitle(e.target.value)} onBlur={saveTitle} aria-label="Titre de la liste" />
+        <h1 className="title-input" style={{ margin: 0 }}>Ma liste d'envies</h1>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
           <button className="btn" onClick={() => setModal({ kind: 'group' })}><Icon name="plus" size={17} /> <span>Groupe</span></button>
@@ -570,6 +566,13 @@ export default function MyList() {
       </div>
 
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+
+      {themeAsk && (
+        <section className="card stack">
+          <ThemePicker compact />
+          <div><button className="btn btn-sm" onClick={closeThemeAsk}>OK, c'est choisi</button></div>
+        </section>
+      )}
 
       {fresh.length > 0 && (
         <section className="gifts-banner" aria-live="polite">

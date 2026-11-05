@@ -20,6 +20,7 @@ import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
+import ThemePicker from '../components/ThemePicker'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
 interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean }
@@ -327,6 +328,8 @@ type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; i
   | { kind: 'group' } | { kind: 'editGroup'; item: Item } | { kind: 'kids'; item: Item }
 
 export default function MyList() {
+  const [themeAsk, setThemeAsk] = useState(() => { try { return !localStorage.getItem('iwt-theme-asked') } catch { return false } })
+  const closeThemeAsk = () => { try { localStorage.setItem('iwt-theme-asked', '1') } catch { /* ignore */ } setThemeAsk(false) }
   const [params, setParams] = useSearchParams()
   const confirm = useConfirm()
   const [list, setList] = useState<Wishlist | null>(null)
@@ -570,6 +573,13 @@ export default function MyList() {
       </div>
 
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+
+      {themeAsk && (
+        <section className="card stack">
+          <ThemePicker compact />
+          <div><button className="btn btn-sm" onClick={closeThemeAsk}>OK, c'est choisi</button></div>
+        </section>
+      )}
 
       {fresh.length > 0 && (
         <section className="gifts-banner" aria-live="polite">

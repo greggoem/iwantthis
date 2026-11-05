@@ -20,16 +20,43 @@ import Notifications from './pages/Notifications'
 import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
 import Landing from './pages/Landing'
+import ThemePicker from './components/ThemePicker'
+import { getTheme } from './lib/theme'
 
 /** Connecté : l'application. Non connecté : page d'accueil sur « / », sinon connexion (en gardant la page voulue) */
 function Gate() {
   const { session, loading } = useAuth()
   const loc = useLocation()
   if (loading) return <Spinner />
-  if (session) return <Layout />
+  if (session) return <ThemeStep><Layout /></ThemeStep>
   if (loc.pathname === '/') return <Landing />
   sessionStorage.setItem('postLoginPath', loc.pathname + loc.search)
   return <Navigate to="/login" replace />
+}
+
+/** Nouveau compte (e-mail ou Google) : une fois connecté, étape « choix de l'apparence » avant d'entrer */
+function ThemeStep({ children }: { children: React.ReactNode }) {
+  const { session } = useAuth()
+  const u = session!.user
+  const isNew = Date.now() - new Date(u.created_at).getTime() < 2 * 86400000
+  const seen = (() => { try { return !!localStorage.getItem('iwt.themeStep.' + u.id) } catch { return true } })()
+  const [open, setOpen] = useState(isNew && !u.user_metadata?.theme && !seen)
+  if (!open) return <>{children}</>
+  const go = () => {
+    try { localStorage.setItem('iwt.themeStep.' + u.id, '1') } catch { /* ignore */ }
+    supabase.auth.updateUser({ data: { theme: getTheme() } }).catch(() => {})
+    setOpen(false)
+  }
+  return (
+    <div className="auth-wrap">
+      <div className="card auth-card stack">
+        <Logo name={APP_NAME} size={32} />
+        <h1>Bienvenue !</h1>
+        <ThemePicker compact />
+        <button className="btn btn-primary" onClick={go}>Continuer</button>
+      </div>
+    </div>
+  )
 }
 
 /** Après connexion (e-mail ou retour de Google) : retourner là où l'on allait (ex. un lien de partage) */

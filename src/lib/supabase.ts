@@ -30,6 +30,7 @@ export function errMsg(e: unknown): string {
     'User already registered': 'Un compte existe déjà avec cet e-mail.',
     'Email not confirmed': 'Confirmez d\'abord votre e-mail (lien reçu par courrier).',
     'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.',
+    'email rate limit exceeded': 'Trop d\'e-mails envoyés pour le moment. Réessayez dans une heure, ou continuez avec Google.',
   }
   for (const k of Object.keys(map)) if (m.includes(k)) return map[k]
   return m

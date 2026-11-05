@@ -531,3 +531,7 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .gifts-archive > summary::-webkit-details-marker { display: none; }
 .gifts-archive[open] > summary { border-bottom: 1px solid var(--line-soft, var(--line)); margin-bottom: .3rem; }
 .gifts-allgiven { padding: 1.2rem 0; }
+
+/* Choix de visibilité à l'achat : texte sur deux lignes */
+.claimbox .radio, .radio:has(> span) { align-items: flex-start; }
+.radio > input { margin-top: .22rem; flex: none; }

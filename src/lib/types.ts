@@ -38,6 +38,7 @@ export interface Claim {
   event_id: string | null
   reveal_on: string
   owner_seen_at?: string | null
+  discreet?: boolean
 }
 
 export interface EventRow {

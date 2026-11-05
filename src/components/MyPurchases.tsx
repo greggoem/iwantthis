@@ -14,12 +14,13 @@ interface ClaimRow {
   item_id: string
   reveal_on: string
   event_id: string | null
+  discreet: boolean
   items: { id: string; title: string; url: string | null; price: number | null; image_url: string | null; wishlists: { owner_id: string } | null } | null
   events: { name: string } | null
 }
 interface Purchase {
   id: string; title: string; url: string | null; price: number | null; image: string | null
-  owner: string; ownerId: string; revealOn: string; event: string | null; eventId: string | null
+  owner: string; ownerId: string; revealOn: string; event: string | null; eventId: string | null; discreet: boolean
 }
 
 /** Profil : les cadeaux que j'ai indiqué offrir (à venir), avec possibilité d'annuler en cas de changement d'avis */
@@ -35,7 +36,7 @@ export default function MyPurchases() {
   const load = useCallback(async () => {
     if (!session) return
     const { data, error } = await supabase.from('item_claims')
-      .select('item_id,reveal_on,event_id,items(id,title,url,price,image_url,wishlists(owner_id)),events(name)')
+      .select('item_id,reveal_on,event_id,discreet,items(id,title,url,price,image_url,wishlists(owner_id)),events(name)')
       .eq('claimed_by', session.user.id).order('reveal_on')
     if (error) { setErr(errMsg(error)); setRows([]); return }
     const claims = ((data as unknown as ClaimRow[]) ?? []).filter(c => c.items)
@@ -49,7 +50,7 @@ export default function MyPurchases() {
       id: c.item_id, title: c.items!.title, url: c.items!.url,
       price: c.items!.price === null ? null : Number(c.items!.price), image: c.items!.image_url,
       owner: names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche', ownerId: c.items!.wishlists?.owner_id ?? '',
-      revealOn: c.reveal_on, event: c.events?.name ?? null, eventId: c.event_id,
+      revealOn: c.reveal_on, event: c.events?.name ?? null, eventId: c.event_id, discreet: Boolean(c.discreet),
     })))
   }, [session])
 
@@ -79,6 +80,7 @@ export default function MyPurchases() {
         </p>
         <div className="row wrap gap">
           {p.price !== null && <span className="small">{formatPrice(p.price)}</span>}
+          {p.discreet && <span className="chip chip-quiet" title="Les autres invités ne voient pas cette envie">Discret</span>}
           <ItemLink url={p.url} />
         </div>
       </div>
@@ -102,7 +104,7 @@ export default function MyPurchases() {
 
       {editing && (
         <ClaimDateModal itemId={editing.id} title={editing.title} ownerId={editing.ownerId} ownerName={editing.owner}
-          eventId={editing.eventId} revealOn={editing.revealOn} onClose={() => setEditing(null)}
+          eventId={editing.eventId} revealOn={editing.revealOn} discreet={editing.discreet} onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); setMsg(`Date de remise de « ${editing.title} » mise à jour.`); load() }} />
       )}
 

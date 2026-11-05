@@ -30,6 +30,7 @@ export default function ListView() {
   const [claimingId, setClaimingId] = useState<string | null>(null)
   const [choice, setChoice] = useState('custom')
   const [customDate, setCustomDate] = useState(todayISO())
+  const [discreet, setDiscreet] = useState(false)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
@@ -65,6 +66,7 @@ export default function ListView() {
     const upcoming = events.find(e => e.event_date >= todayISO())
     setChoice(upcoming ? upcoming.id : events[0]?.id ?? 'custom')
     setCustomDate(todayISO())
+    setDiscreet(false)
   }
 
   const confirmClaim = async () => {
@@ -73,6 +75,7 @@ export default function ListView() {
       p_item: claimingId,
       p_event: choice === 'custom' ? null : choice,
       p_reveal: choice === 'custom' ? customDate : null,
+      p_discreet: discreet,
     })
     setBusy(false)
     if (error) setErr(errMsg(error)); else setClaimingId(null)
@@ -156,7 +159,7 @@ export default function ListView() {
         dim={obsolete}
         highlight={Boolean(c)}
         status={c
-          ? <span className="chip chip-ok" title={`Acheté par ${mine ? 'vous' : c.claimed_by_name}`}><Icon name="check" size={13} /><span className="ell">Acheté par {mine ? 'vous' : c.claimed_by_name}</span></span>
+          ? <span className="chip chip-ok" title={`Acheté par ${mine ? 'vous' : c.claimed_by_name}${mine && c.discreet ? ' · discret : les autres ne voient pas cette envie' : ''}`}><Icon name="check" size={13} /><span className="ell">Acheté par {mine ? 'vous' : c.claimed_by_name}{mine && c.discreet ? ' · discret' : ''}</span></span>
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>J'ai acheté</button>}
@@ -182,9 +185,18 @@ export default function ListView() {
               <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
             )}
             <p className="small muted">
-              {owner} ne verra l'achat qu'à partir du {revealDate ? formatDateShort(revealDate) : '…'}. Les autres invités le voient tout de suite.
+              {owner} ne verra l'achat qu'à partir du lendemain du {revealDate ? formatDateShort(revealDate) : '…'}.
               {group?.pick_one && ' Les autres options du groupe seront alors marquées « plus nécessaire ».'}
             </p>
+            <strong className="small">Pour les autres invités</strong>
+            <label className="radio">
+              <input type="radio" name="vis" checked={!discreet} onChange={() => setDiscreet(false)} />
+              <span>Montrer que c'est acheté <span className="muted">· évite les doublons ; l'envie disparaît de leur liste après la remise</span></span>
+            </label>
+            <label className="radio">
+              <input type="radio" name="vis" checked={discreet} onChange={() => setDiscreet(true)} />
+              <span>Rester discret : retirer l'envie de leur liste dès maintenant <span className="muted">· pour un beau cadeau ; ils ne sauront pas qu'il est pris</span></span>
+            </label>
             <div className="row">
               <button className="btn btn-primary btn-sm" disabled={busy || (choice === 'custom' && !customDate)} onClick={confirmClaim}>Confirmer</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setClaimingId(null)}>Annuler</button>
@@ -205,7 +217,7 @@ export default function ListView() {
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
       {editClaim && claims[editClaim.id] && (
         <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}
-          eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on}
+          eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on} discreet={claims[editClaim.id].discreet}
           onClose={() => setEditClaim(null)} onSaved={() => { setEditClaim(null); load() }} />
       )}
 

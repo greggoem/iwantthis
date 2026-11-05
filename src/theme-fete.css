@@ -108,3 +108,5 @@ html[data-theme="fete"] .chip { border-radius: 6px; min-height: 0; padding: 3px 
 html[data-theme="fete"] .chip.chip-quiet { padding-left: 8px; }
 html[data-theme="fete"] .is-claimed .chip.chip-ok { background: var(--f-mint); color: #053b2c; border-color: var(--ink); }
 html[data-theme="fete"] .tag { border-radius: 5px; border: 1.5px solid var(--ink); padding: 1px 6px; font-weight: 700; }
+html[data-theme="fete"] .claimed-ribbon { border-radius: 6px; background: var(--f-mint); color: #053b2c; border: 1.5px solid var(--ink); box-shadow: 0 1.5px 0 var(--ink); }
+html[data-theme="fete"] .claimed-ribbon svg { stroke: #053b2c; }

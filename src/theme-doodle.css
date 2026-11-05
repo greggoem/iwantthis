@@ -73,7 +73,13 @@ html[data-theme="doodle"] .itemlink{font-family:'Patrick Hand'}
   html[data-theme="doodle"] .sub-head, html[data-theme="doodle"] .viewbar { flex-wrap: wrap; gap: .5rem; }
 }
 
-/* Étiquettes « Doodle » : petits cartouches tracés à la main, coins légèrement irréguliers */
-html[data-theme="doodle"] .chip,html[data-theme="doodle"] .tag{border-radius:5px 8px 6px 9px / 8px 5px 9px 6px;border-width:1.8px;min-height:0;padding:1px 8px;font-size:1rem;letter-spacing:.01em;text-transform:none;transform:rotate(-.8deg)}
-html[data-theme="doodle"] .chip-quiet{border-style:dashed;padding-left:8px}
-html[data-theme="doodle"] .is-claimed .chip.chip-ok{background:#9fe0bd;color:#1a1a1a;border-color:#1a1a1a}
+/* Étiquettes « Doodle » : pas de cadre (ce serait un bouton) — traits de surligneur posés sous le texte */
+html[data-theme="doodle"] .chip,html[data-theme="doodle"] .tag{border:none;border-radius:3px 6px 4px 7px;min-height:0;padding:0 6px;font-size:1.05rem;letter-spacing:.01em;text-transform:none;background:linear-gradient(176deg,transparent 28%,#ffe27a 28%,#ffe27a 92%,transparent 92%);color:#1a1a1a;transform:rotate(-1deg)}
+html[data-theme="doodle"] .chip-ok{background:linear-gradient(176deg,transparent 28%,#9fe0bd 28%,#9fe0bd 92%,transparent 92%)}
+html[data-theme="doodle"] .chip-quiet{background:none;padding-left:0;text-decoration:underline wavy #b9a3ea;text-decoration-thickness:1.5px;text-underline-offset:4px}
+html[data-theme="doodle"] .tag{background:linear-gradient(176deg,transparent 28%,#bfe3f7 28%,#bfe3f7 92%,transparent 92%)}
+html[data-theme="doodle"] .is-claimed .chip.chip-ok{background:linear-gradient(176deg,transparent 22%,#6fd09b 22%,#6fd09b 94%,transparent 94%);color:#1a1a1a}
+html[data-theme="doodle"] .is-claimed .chip-ok svg{stroke:#1a1a1a}
+/* « Acheté » sur l'image : un tampon incliné, lisible sur toute photo */
+html[data-theme="doodle"] .claimed-ribbon{background:rgba(255,255,255,.94);color:#15803d;border:2.5px solid #15803d;border-radius:6px 9px 7px 10px / 9px 6px 10px 7px;padding:0 9px;font-family:'Caveat Brush','Patrick Hand',cursive;font-weight:400;font-size:1.25rem;letter-spacing:.04em;text-transform:uppercase;transform:rotate(-7deg);left:8px;top:12px}
+html[data-theme="doodle"] .claimed-ribbon svg{stroke:#15803d}

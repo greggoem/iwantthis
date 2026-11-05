@@ -5,7 +5,7 @@
 export const STORE_LINKS = {
   chrome: '',    // https://chromewebstore.google.com/detail/…
   edge: 'https://microsoftedge.microsoft.com/addons/detail/i-want-this/ieimbhjicpkcgahghhdhjhafbnifdpmj',
-  firefox: '',   // https://addons.mozilla.org/firefox/addon/…
+  firefox: 'https://addons.mozilla.org/addon/i-want-this/',
 } as const
 
 export const EXTENSION_ZIP = `${import.meta.env.BASE_URL}extension/iwt-extension.zip`

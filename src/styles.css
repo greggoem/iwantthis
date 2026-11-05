@@ -494,3 +494,6 @@ img, video, svg { max-width: 100%; }
 .imgmenu button.danger { color: var(--danger, #c0392b); }
 .imghint { text-align: center; line-height: 1.3; }
 @media (max-width: 560px) { .formthumb { width: 100%; flex-direction: row; flex-wrap: wrap; align-items: center; } .imgbox { width: 96px; } .imghint { display: none; } }
+
+.btn-social { gap: .6rem; }
+.btn-social svg { flex: none; }

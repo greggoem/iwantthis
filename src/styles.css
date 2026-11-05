@@ -471,3 +471,11 @@ body { position: relative; width: 100%; }
 #root, .app { max-width: 100%; overflow-x: clip; }
 .main { overflow-x: clip; }
 img, video, svg { max-width: 100%; }
+
+/* Capture d'écran : sélection de la zone */
+.cap-back { position: fixed; inset: 0; z-index: 300; background: rgba(15, 15, 16, .92); display: flex; flex-direction: column; }
+.cap-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: .7rem 1rem; background: var(--surface, #fff); }
+.cap-stage { flex: 1; overflow: auto; display: grid; place-items: center; padding: 1rem; }
+.cap-wrap { position: relative; display: inline-block; line-height: 0; cursor: crosshair; touch-action: none; user-select: none; }
+.cap-img { max-width: calc(100vw - 2rem); max-height: calc(100vh - 6rem); display: block; }
+.cap-sel { position: absolute; border: 2px solid #ff4d8d; background: rgba(255, 77, 141, .12); box-shadow: 0 0 0 9999px rgba(0, 0, 0, .55); pointer-events: none; }

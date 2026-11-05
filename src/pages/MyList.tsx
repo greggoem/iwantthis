@@ -4,6 +4,7 @@ import { supabase, errMsg, listShareUrl, APP_NAME } from '../lib/supabase'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
 import { fetchPreview, euroPrice } from '../lib/preview'
+import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
 import { deleteItemImage, uploadItemImage } from '../lib/itemImage'
 import { useAuth } from '../lib/auth'
 import { formatDateShort, formatPrice, todayISO } from '../lib/format'
@@ -35,6 +36,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   const [busy, setBusy] = useState(false)
   const [reading, setReading] = useState(false)
   const [sending, setSending] = useState(false)
+  const [shot, setShot] = useState<HTMLCanvasElement | null>(null)
   const { session } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const uploaded = useRef<string[]>([])   // images envoyées pendant cette saisie (nettoyées si abandon / remplacées)
@@ -92,6 +94,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   // capture d'écran : Ctrl+V / Cmd+V n'importe où dans le formulaire, ou glisser-déposer une image
   const imageFrom = (dt: DataTransfer | null): File | undefined =>
     Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
+  const capture = async () => { setErr(''); const c = await grabScreen(); if (c) setShot(c) }
   const onPasteForm = (e: React.ClipboardEvent) => {
     const f = imageFrom(e.clipboardData)
     if (f) { e.preventDefault(); pickImage(f) }
@@ -120,6 +123,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
 
   return (
     <form className="stack" onSubmit={submit} onPaste={onPasteForm}>
+      {shot && <CropCapture source={shot} onCancel={() => setShot(null)} onDone={f => { setShot(null); pickImage(f) }} />}
       <Notice>{err}</Notice>
       <label><span>Lien du produit <span className="muted">· image, prix et titre récupérés automatiquement</span></span>
         <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} onBlur={() => readLink()} placeholder="https://…" inputMode="url" autoFocus={!initial.url} />
@@ -133,7 +137,8 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
           <button type="button" className="btn btn-sm" disabled={sending} onClick={() => fileRef.current?.click()}>
             <Icon name="image" size={15} /> {sending ? 'Envoi…' : d.image ? 'Changer l\'image' : 'Ajouter une image'}
           </button>
-          <span className="small muted">ou collez une capture d'écran (Ctrl+V)</span>
+          {canCaptureScreen() && <button type="button" className="btn btn-sm" disabled={sending} onClick={capture} title="Choisissez l'onglet ou la fenêtre qui affiche le produit, puis entourez l'image">Capturer l'écran</button>}
+          <span className="small muted">ou collez une capture (Ctrl+V)</span>
           {d.image && <button type="button" className="link small" onClick={() => setD(prev => ({ ...prev, image: '' }))}>Retirer</button>}
         </div>
         <div className="stack grow">

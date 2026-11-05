@@ -5,7 +5,7 @@ import { useAuth } from '../lib/auth'
 
 const THEMES: { key: Theme; name: string; desc: string; colors: string[] }[] = [
   { key: 'classique', name: 'Classique', desc: 'Sobre et épuré : noir et blanc, touche de corail.', colors: ['#0f0f10', '#f4f4f5', '#ffffff', '#ff5a36'] },
-  { key: 'couleur', name: 'Classique couleur', desc: 'Comme Classique, avec plus de contraste : étiquettes colorées, fenêtres à bandeau.', colors: ['#0f0f10', '#ff5a36', '#4f46e5', '#15803d', '#fef3c7'] },
+  { key: 'menthe', name: 'Menthe', desc: 'Frais et contrasté : barre vert profond, fond menthe, étiquettes colorées.', colors: ['#0f4d36', '#bfe6d1', '#eef9f3', '#fef3c7', '#15803d'] },
   { key: 'fete', name: 'Fête', desc: 'Coloré et joyeux, cartes avec une ombre de couleur.', colors: ['#ff4d8d', '#ffc933', '#2dd4a7', '#38bdf8', '#8b5cf6'] },
   { key: 'doodle', name: 'Doodle', desc: 'Dessiné à la main : trait noir épais, cartes pastel, police manuscrite.', colors: ['#ffe9a8', '#fcd3d3', '#cfe6fa', '#e4d3f2', '#cdeedd'] },
 ]

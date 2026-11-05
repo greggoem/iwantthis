@@ -1,0 +1,48 @@
+/* Thème « Menthe » : barre vert profond, fond menthe, cartes à bordure teintée, étiquettes carrées colorées */
+html[data-theme="menthe"] {
+  --bg: #eef9f3; --ink: #0b3a29; --ink-2: #1f4a38; --muted: #5a7a6a; --line: #cfe8da; --line-soft: #e2f3ea; --fill: #e0f2e8;
+  --ok: #0f6b45; --ok-bg: #d9f2e5;
+}
+
+/* Barre du haut */
+html[data-theme="menthe"] .topbar { background: #0f4d36; border-bottom: 0; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html[data-theme="menthe"] .brand, html[data-theme="menthe"] .logo-name { color: #fff; }
+html[data-theme="menthe"] .nav a { color: rgba(255, 255, 255, .78); }
+html[data-theme="menthe"] .nav a:hover { color: #fff; background: rgba(255, 255, 255, .12); }
+html[data-theme="menthe"] .nav a.active { color: #fff; background: rgba(255, 255, 255, .2); }
+html[data-theme="menthe"] .topbar .icon-btn { color: rgba(255, 255, 255, .85); }
+html[data-theme="menthe"] .topbar .icon-btn:hover { color: #fff; background: rgba(255, 255, 255, .14); }
+html[data-theme="menthe"] .topbar .avatar { background: #fff; color: #0f4d36; }
+html[data-theme="menthe"] .tabbar { background: rgba(255, 255, 255, .96); }
+html[data-theme="menthe"] .tabbar a.active { color: #0f4d36; }
+
+/* Boutons */
+html[data-theme="menthe"] .btn-primary { background: #0f4d36; border-color: #0f4d36; color: #fff; }
+html[data-theme="menthe"] .btn-primary:hover { background: #0b3a29; border-color: #0b3a29; }
+html[data-theme="menthe"] .btn:hover { background: #e0f2e8; border-color: #a7dcc0; }
+html[data-theme="menthe"] .btn-primary:hover { color: #fff; }
+html[data-theme="menthe"] input:focus, html[data-theme="menthe"] textarea:focus, html[data-theme="menthe"] select:focus { border-color: #0f4d36; box-shadow: 0 0 0 3px rgba(15, 77, 54, .14); }
+html[data-theme="menthe"] input[type=checkbox], html[data-theme="menthe"] input[type=radio] { accent-color: #0f4d36; }
+
+/* Cartes, tableaux, galerie */
+html[data-theme="menthe"] .card, html[data-theme="menthe"] .gtable, html[data-theme="menthe"] .gcard { border: 1.5px solid #a7dcc0; }
+html[data-theme="menthe"] .gtable-row { border-color: #def2e7; }
+html[data-theme="menthe"] .gtable-row.is-claimed, html[data-theme="menthe"] .gcard.is-claimed { background: #fff8e1; border-color: #f2d27a; }
+html[data-theme="menthe"] .gtable-row.is-claimed { box-shadow: inset 4px 0 0 #0f4d36; }
+html[data-theme="menthe"] .linkcard:hover { border-color: #0f4d36; }
+
+/* Statuts : étiquettes carrées, petites majuscules */
+html[data-theme="menthe"] .chip { border-radius: 4px; min-height: 0; padding: 3px 7px; font-size: .68rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: #dbeafe; color: #1e40af; }
+html[data-theme="menthe"] .chip.chip-quiet { background: #fef3c7; color: #92400e; padding-left: 7px; }
+html[data-theme="menthe"] .chip.chip-ok, html[data-theme="menthe"] .is-claimed .chip-ok { background: #0f4d36; color: #fff; border-color: #0f4d36; }
+html[data-theme="menthe"] .chip.chip-ok svg { stroke: #fff; }
+html[data-theme="menthe"] .tag { border-radius: 4px; background: #d1fae5; color: #065f46; padding: 2px 6px; }
+
+/* Fenêtres */
+html[data-theme="menthe"] .modal-back { background: rgba(11, 58, 41, .55); }
+html[data-theme="menthe"] .modal { border: 1.5px solid #0f4d36; border-radius: 18px; overflow: hidden; }
+html[data-theme="menthe"] .modal-head { background: #dff3e8; border-bottom: 1.5px solid #a7dcc0; padding: .9rem 1.1rem; }
+html[data-theme="menthe"] .modal-foot { background: #eef9f3; border-top: 1px solid #cfe8da; margin: 1rem -1.25rem 0; padding: .8rem 1.25rem; }
+html[data-theme="menthe"] input, html[data-theme="menthe"] select, html[data-theme="menthe"] textarea { border-color: #b7d8c6; border-width: 1.5px; }
+html[data-theme="menthe"] .imgbox { border-color: #7fcba5; background: #e7f6ee; }
+@media (max-width: 760px) { html[data-theme="menthe"] .modal { border-radius: 22px 22px 0 0; } }

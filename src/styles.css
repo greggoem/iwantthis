@@ -615,3 +615,11 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .claimbox .row .btn { flex: 1 1 auto; min-width: 0; justify-content: center; }
 .claimbox input[type="date"] { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
 .claimbox .radio { min-width: 0; overflow-wrap: anywhere; }
+
+/* Groupe fermé en galerie : une carte « pile » */
+.gcard-group { cursor: pointer; position: relative; box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); margin: 0 10px 10px 0; }
+.gcard-group:hover { box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--ink-3, #999), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); }
+.gcard-group .gcard-img .count-badge { top: .55rem; right: .55rem; bottom: auto; font-size: .8rem; line-height: 22px; min-width: 26px; }
+.gcard-group .gcard-meta .link { display: inline-flex; align-items: center; gap: .15rem; }
+.gcard-group .gcard-meta .link svg { transform: rotate(-90deg); }
+.gcard-group .g-details .tag { margin-right: .2rem; }

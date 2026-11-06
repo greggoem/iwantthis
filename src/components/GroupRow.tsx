@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
 import Icon from './Icon'
-import { Thumb } from './GiftTable'
+import { Thumb, Pic } from './GiftTable'
 
 export interface GroupProps {
   group: Item
@@ -73,11 +73,36 @@ export default function GroupRow({ group, kids, image, status, actions, renderKi
 }
 
 /** Groupe en mode galerie : une section pleine largeur, ses éléments en cartes */
-export function GroupSection({ group, kids, status, actions, renderKid }: GroupProps) {
-  const [open, setOpen] = useState(true)
+export function GroupSection({ group, kids, image, status, actions, renderKid, defaultOpen = false }: GroupProps) {
+  const [open, setOpen] = useState(defaultOpen)
   const [all, setAll] = useState(false)
   const limit = PREVIEW * 2 - 4
   const shown = all ? kids : kids.slice(0, limit)
+
+  // Fermé : le groupe se présente comme une seule carte (pile), un clic l'ouvre
+  if (!open) return (
+    <article className="gcard gcard-group" onClick={() => setOpen(true)} role="button" tabIndex={0}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(true) } }}
+      aria-label={`Ouvrir le groupe ${group.title} (${kids.length} élément${kids.length > 1 ? 's' : ''})`}>
+      <div className="gcard-img">
+        <Pic src={image} alt={group.title} />
+        <span className="count-badge">{kids.length}</span>
+      </div>
+      <div className="gcard-body">
+        <div className="title-link"><strong>{group.title}</strong></div>
+        <p className="small g-details"><span className="tag">{group.pick_one ? 'un seul à choisir' : 'plusieurs possibles'}</span> {group.details ?? ''}</p>
+        <div className="gcard-meta">
+          <span className="g-price">{priceRange(kids)}</span>
+          <span className="small link">Voir les {kids.length} <Icon name="chevron" size={14} /></span>
+        </div>
+        <div className="gcard-foot" onClick={e => e.stopPropagation()}>
+          <div className="gcard-status">{status}</div>
+          <div className="gcard-actions">{actions}</div>
+        </div>
+      </div>
+    </article>
+  )
+
   return (
     <section className="gsection" data-open={open ? 1 : 0}>
       <header className="gsection-head" onClick={() => setOpen(o => !o)}>

@@ -54,7 +54,8 @@ const collator = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' })
  * `statusOf` donne un nombre par envie (0 = à offrir … 1 = pris) ; un groupe est valorisé par ses éléments.
  */
 export function sortItems(list: Item[], prefs: ViewPrefs, kidsOf: (g: Item) => Item[], statusOf: (it: Item) => number): Item[] {
-  if (!prefs.key) return list
+  // ordre d'ajout : les favoris d'abord
+  if (!prefs.key) return [...list].sort((a, b) => Number(!!b.is_favorite) - Number(!!a.is_favorite))
   const sign = prefs.dir === 'asc' ? 1 : -1
   const val = (it: Item): string | number | null => {
     const ks = it.is_group ? kidsOf(it) : []

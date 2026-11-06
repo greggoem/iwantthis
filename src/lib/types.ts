@@ -18,6 +18,7 @@ export interface Item {
   parent_id: string | null
   is_group: boolean
   pick_one: boolean
+  is_favorite?: boolean
   created_at: string
 }
 

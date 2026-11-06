@@ -534,6 +534,12 @@ export default function MyList() {
     load()
   }
 
+  const toggleFav = async (it: Item) => {
+    const v = !it.is_favorite
+    setItems(xs => xs.map(x => x.id === it.id ? { ...x, is_favorite: v } : x))
+    const { error } = await supabase.from('items').update({ is_favorite: v }).eq('id', it.id)
+    if (error) { setItems(xs => xs.map(x => x.id === it.id ? { ...x, is_favorite: !v } : x)); setErr(errMsg(error)) }
+  }
   const itemRow = (it: Item, kid: boolean) => (
     <Row
       key={it.id}
@@ -544,6 +550,7 @@ export default function MyList() {
         ? <span className="chip chip-ok" title={`Offert par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">Offert par {claims[it.id].claimed_by_name}</span></span>
         : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
       actions={<>
+        <IconButton icon="star" label={it.is_favorite ? 'Retirer des favoris' : 'Marquer comme favori'} className={`icon-btn fav-toggle ${it.is_favorite ? 'on' : ''}`} aria-pressed={!!it.is_favorite} onClick={() => toggleFav(it)} />
         <IconButton icon="pencil" label="Modifier" onClick={() => setModal({ kind: 'edit', item: it })} />
         {it.url && <IconButton icon="refresh" label="Actualiser image et prix" disabled={busyId === it.id} onClick={() => refresh(it)} />}
         <IconButton icon="trash" label="Supprimer" danger onClick={() => remove(it)} />

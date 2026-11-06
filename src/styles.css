@@ -623,3 +623,10 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .gcard-group .gcard-meta .link { display: inline-flex; align-items: center; gap: .15rem; }
 .gcard-group .gcard-meta .link svg { transform: rotate(-90deg); }
 .gcard-group .g-details .tag { margin-right: .2rem; }
+
+/* Favoris */
+.fav-star { color: #f5a524; display: inline-flex; vertical-align: -2px; margin-right: .3rem; }
+.fav-star svg, .fav-ribbon svg, .fav-toggle.on svg { fill: currentColor; }
+.fav-ribbon { position: absolute; right: 10px; top: 10px; display: inline-flex; align-items: center; gap: .25rem; background: #f5a524; color: #fff; font-weight: 700; font-size: .72rem; padding: 3px 8px; border-radius: 4px; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 2px 6px rgba(0,0,0,.2); pointer-events: none; }
+.gcard .title-link .fav-star { display: none; }
+.fav-toggle.on { color: #f5a524; }

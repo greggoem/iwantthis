@@ -137,7 +137,7 @@ export function GiftRow({ item, status, actions, children, highlight, kid, dim }
     <div className={`gtable-row ${highlight ? 'is-claimed' : ''} ${kid ? 'kid' : ''} ${dim ? 'dim' : ''}`} role="row">
       <ItemAnchor url={item.url} className="thumb-link"><Thumb src={item.image_url} alt={item.title} zoom />{highlight && <span className="claimed-badge" aria-hidden><Icon name="check" size={12} /></span>}</ItemAnchor>
       <div className="g-main" role="cell">
-        <ItemAnchor url={item.url} className="title-link"><strong>{item.title}</strong></ItemAnchor>
+        <ItemAnchor url={item.url} className="title-link">{item.is_favorite && <span className="fav-star" title="Favori"><Icon name="star" size={15} /></span>}<strong>{item.title}</strong></ItemAnchor>
         {item.details && <p className="small g-details">{item.details}</p>}
       </div>
       <div className={`g-price ${item.price === null ? 'is-none' : ''}`} role="cell">{item.price !== null ? formatPrice(item.price) : <span className="muted">—</span>}</div>
@@ -154,9 +154,9 @@ export function GiftRow({ item, status, actions, children, highlight, kid, dim }
 export function GiftCard({ item, status, actions, children, highlight, dim }: GiftProps) {
   return (
     <article className={`gcard ${highlight ? 'is-claimed' : ''} ${dim ? 'dim' : ''}`}>
-      <ItemAnchor url={item.url} className="gcard-img"><Pic src={item.image_url} alt={item.title} />{highlight && <span className="claimed-ribbon"><Icon name="check" size={14} /> Acheté</span>}</ItemAnchor>
+      <ItemAnchor url={item.url} className="gcard-img"><Pic src={item.image_url} alt={item.title} />{highlight && <span className="claimed-ribbon"><Icon name="check" size={14} /> Acheté</span>}{item.is_favorite && <span className="fav-ribbon"><Icon name="star" size={13} /> Favori</span>}</ItemAnchor>
       <div className="gcard-body">
-        <ItemAnchor url={item.url} className="title-link"><strong>{item.title}</strong></ItemAnchor>
+        <ItemAnchor url={item.url} className="title-link">{item.is_favorite && <span className="fav-star" title="Favori"><Icon name="star" size={15} /></span>}<strong>{item.title}</strong></ItemAnchor>
         {item.details && <p className="small g-details">{item.details}</p>}
         <div className="gcard-meta">
           {item.price !== null && <span className="g-price">{formatPrice(item.price)}</span>}

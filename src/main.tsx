@@ -15,6 +15,13 @@ import './theme-nuit.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 
+// Liens partagés « ?l=TOKEN » / « ?e=CODE » → routes internes #/l/TOKEN, #/e/CODE
+{
+  const q = new URLSearchParams(window.location.search)
+  const l = q.get('l'), e = q.get('e')
+  if (l || e) window.history.replaceState(null, '', window.location.pathname + (l ? `#/l/${l}` : `#/e/${e}`))
+}
+
 applyTheme(getTheme())   // avant le premier affichage : pas de clignotement
 consumeShareTarget()   // « Partager vers I Want This » depuis un téléphone : convertit en lien d'ajout
 

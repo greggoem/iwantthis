@@ -1,0 +1,56 @@
+/* Thème « Nuit » : sombre et doux, accent corail, images sur fond clair pour rester lisibles */
+html[data-theme="nuit"] {
+  color-scheme: dark;
+  --bg: #121216; --surface: #1c1c22; --ink: #f2f2f5; --ink-2: #c9c9d1; --muted: #8e8e99;
+  --line: #2e2e37; --line-soft: #25252c; --fill: #26262e;
+  --accent: #ff7a59; --ok: #4ade80; --ok-bg: #12301f; --danger: #f87171;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+}
+html[data-theme="nuit"] a { text-decoration-color: #55555f; }
+html[data-theme="nuit"] .topbar { background: rgba(18, 18, 22, .85); }
+html[data-theme="nuit"] .tabbar { background: rgba(22, 22, 27, .94); }
+html[data-theme="nuit"] .avatar, html[data-theme="nuit"] .count-badge, html[data-theme="nuit"] .land-num { background: var(--accent); color: #fff; }
+html[data-theme="nuit"] .count-badge { border-color: var(--surface); }
+
+/* Boutons */
+html[data-theme="nuit"] .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+html[data-theme="nuit"] .btn-primary:hover { background: #ff8f73; border-color: #ff8f73; color: #fff; }
+html[data-theme="nuit"] .btn:hover { border-color: #3d3d48; }
+html[data-theme="nuit"] .icon-btn.danger:hover, html[data-theme="nuit"] .danger-btn:hover { background: #3a1d1d; }
+html[data-theme="nuit"] .tab.on, html[data-theme="nuit"] .seg-view button.on { background: #34343e; color: var(--ink); box-shadow: none; }
+html[data-theme="nuit"] .settings-menu button.on { background: var(--accent); color: #fff; }
+html[data-theme="nuit"] .wl-num { background: var(--accent); color: #fff; }
+
+/* Champs */
+html[data-theme="nuit"] input::placeholder, html[data-theme="nuit"] textarea::placeholder { color: #6b6b76; }
+html[data-theme="nuit"] input:hover, html[data-theme="nuit"] textarea:hover, html[data-theme="nuit"] select:hover { border-color: #3d3d48; }
+html[data-theme="nuit"] input:focus, html[data-theme="nuit"] textarea:focus, html[data-theme="nuit"] select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 122, 89, .18); }
+html[data-theme="nuit"] input[type=checkbox], html[data-theme="nuit"] input[type=radio] { accent-color: var(--accent); }
+html[data-theme="nuit"] input[type=date] { color-scheme: dark; }
+
+/* Messages */
+html[data-theme="nuit"] .notice-error { background: #3a1d1d; color: #fecaca; border-color: #5c2a2a; }
+
+/* Listes, galerie : les photos de produit gardent un fond blanc (souvent détourées) */
+html[data-theme="nuit"] .gtable-row:hover { background: #202027; }
+html[data-theme="nuit"] .g-kids { background: #18181d; }
+html[data-theme="nuit"] .pic, html[data-theme="nuit"] .thumb img { background: #f4f4f6; }
+html[data-theme="nuit"] .gcard:hover { box-shadow: 0 8px 26px rgba(0, 0, 0, .45); }
+html[data-theme="nuit"] .gtable-row.is-claimed, html[data-theme="nuit"] .mock-done { background: #14261c; box-shadow: inset 4px 0 0 #22c55e; }
+html[data-theme="nuit"] .gcard.is-claimed { background: #14261c; border-color: #1f5a37; }
+html[data-theme="nuit"] .gcard-group { box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); }
+html[data-theme="nuit"] .zoom-pop { background: var(--surface); }
+html[data-theme="nuit"] .modal-back { background: rgba(0, 0, 0, .6); }
+
+/* Bloc « résultat du tirage », appel à l'action : inversés en clair */
+html[data-theme="nuit"] .reveal, html[data-theme="nuit"] .land-cta { background: #26262e; }
+html[data-theme="nuit"] .target-card { border-color: var(--accent); }
+
+/* Étiquettes carrées (forme du Classique, couleurs sombres) */
+html[data-theme="nuit"] .chip { background: #2a2a33; border-color: #393944; color: var(--ink-2); }
+html[data-theme="nuit"] .chip.chip-ok { background: var(--ok-bg); color: var(--ok); border-color: #1f5a37; }
+html[data-theme="nuit"] .chip.chip-quiet { background: transparent; border-color: transparent; color: var(--muted); }
+html[data-theme="nuit"] .is-claimed .chip.chip-ok { background: #16a34a; color: #fff; border-color: #16a34a; }
+html[data-theme="nuit"] .tag { border-color: #393944; }
+html[data-theme="nuit"] .themecard.on { border-color: var(--accent); }
+html[data-theme="nuit"] .logo-bg { fill: #2c2c35; }

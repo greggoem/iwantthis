@@ -2,7 +2,7 @@
 export function LogoMark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden focusable="false">
-      <rect width="32" height="32" rx="9" fill="#0f0f10" />
+      <rect width="32" height="32" rx="9" className="logo-bg" fill="#0f0f10" />
       <rect x="8" y="15" width="16" height="11" rx="2" fill="#fff" />
       <rect x="6.5" y="11.5" width="19" height="5" rx="1.6" fill="#fff" />
       <rect x="14.5" y="11.5" width="3" height="14.5" fill="#ff5a36" />

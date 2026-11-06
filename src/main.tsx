@@ -11,6 +11,7 @@ import '@fontsource/caveat-brush/400.css'
 import '@fontsource/patrick-hand/400.css'
 import './theme-doodle.css'
 import './theme-menthe.css'
+import './theme-nuit.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 

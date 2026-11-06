@@ -608,3 +608,10 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
   .settings-menu{flex-direction:row;overflow-x:auto;position:static;gap:.3rem;padding-bottom:.2rem}
   .settings-menu button{white-space:nowrap;border:1px solid var(--line)}
 }
+
+/* Formulaire « Acheté » : rien ne dépasse dans une carte étroite (iOS) */
+.claimbox { min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden; }
+.claimbox .row { flex-wrap: wrap; }
+.claimbox .row .btn { flex: 1 1 auto; min-width: 0; justify-content: center; }
+.claimbox input[type="date"] { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+.claimbox .radio { min-width: 0; overflow-wrap: anywhere; }

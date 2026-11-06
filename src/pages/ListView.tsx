@@ -163,7 +163,7 @@ export default function ListView() {
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>Acheté</button>}
           {mine && <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditClaim(it)} />}
-          {mine && <button className="btn btn-ghost btn-sm" onClick={() => unclaim(it.id)}>Annuler</button>}
+          {mine && <IconButton icon="x" label="Annuler mon achat" danger onClick={() => unclaim(it.id)} />}
           {!obsolete && <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />}
         </>}
       >

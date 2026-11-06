@@ -56,3 +56,6 @@ html[data-theme="nuit"] .tag { border-color: #393944; }
 html[data-theme="nuit"] .themecard.on { border-color: var(--accent); }
 html[data-theme="nuit"] .logo-bg { fill: #2c2c35; }
 html[data-theme="nuit"] .gtable-head { background: #222229; }
+html[data-theme="nuit"] .land-top { background: rgba(18, 18, 22, .85); }
+html[data-theme="nuit"] .land-cta { background: #1c1c22; }
+html[data-theme="nuit"] .land-cta-btn { background: var(--accent); border-color: var(--accent); color: #fff; }

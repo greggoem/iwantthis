@@ -55,3 +55,4 @@ html[data-theme="nuit"] .is-claimed .chip.chip-ok { background: #16a34a; color: 
 html[data-theme="nuit"] .tag { border-color: #393944; }
 html[data-theme="nuit"] .themecard.on { border-color: var(--accent); }
 html[data-theme="nuit"] .logo-bg { fill: #2c2c35; }
+html[data-theme="nuit"] .gtable-head { background: #222229; }

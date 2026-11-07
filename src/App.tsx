@@ -28,7 +28,8 @@ function Gate() {
   const loc = useLocation()
   if (loading) return <Spinner />
   if (session) return <Layout />
-  if (loc.pathname === '/') return <Landing />
+  // « Ajouter à ma liste » depuis un guide d'idées cadeaux (#/?add=1&u=…) : connexion d'abord, puis le formulaire pré-rempli
+  if (loc.pathname === '/' && !new URLSearchParams(loc.search).has('add')) return <Landing />
   sessionStorage.setItem('postLoginPath', loc.pathname + loc.search)
   return <Navigate to="/login" replace />
 }

@@ -179,6 +179,22 @@ Quand l'organisateur ajoute quelqu'un à un événement par son e-mail (`supabas
 2. Supabase → *Edge Functions* → *Secrets*, ajoutez : `BREVO_API_KEY` (la clé), `MAIL_FROM` (par exemple `I Want This <invitations@votre-domaine.be>`, l'adresse validée) et, facultatif, `SITE_URL`.
 3. Alternative : **Resend** avec `RESEND_API_KEY` (le domaine d'envoi doit être vérifié).
 
+## 5 quattuordecies. Tests automatiques
+
+Tests de bout en bout avec Playwright (dossier `e2e/`), sur 4 navigateurs : Chrome et Firefox (ordinateur), Safari (iPhone), Chrome (Android).
+
+- **Visiteur** (`e2e/public.spec.ts`) : accueil dans les 5 thèmes, connexion / inscription / mot de passe oublié, redirections, lien de partage sans compte, confidentialité, manifeste PWA, icônes et extensions téléchargeables.
+- **Connecté** (`e2e/connecte.spec.ts`) avec deux comptes de test (`iwt-test-a@iwantthis.gift` = propriétaire, `iwt-test-b@iwantthis.gift` = proche) : toutes les pages, ajout/modification/suppression d'une envie, vue galerie, partage → achat par B → **A ne voit pas l'achat, ni à l'écran ni en interrogeant la base**, un visiteur sans compte ne lit aucune table, B ne peut pas toucher aux envies de A. Les envies créées commencent par `[test auto]` et sont supprimées à la fin.
+- Sur chaque page : erreurs JavaScript, erreurs de console, requêtes en échec (4xx/5xx), images cassées, débordement horizontal (mobile), accessibilité (axe-core, bloque sur les problèmes critiques). Captures d'écran pleine page jointes au rapport.
+
+Quand ça tourne : à chaque push sur `main` (code du dépôt), chaque nuit à 4 h 17 (site en ligne), ou à la main (Actions → « Tests du site » → Run workflow). Un échec nocturne ouvre une issue `tests-nuit`. Le rapport (captures, vidéos, traces) est l'artefact « rapport-tests » de chaque exécution.
+
+Secret GitHub requis pour les tests connectés : `IWT_TEST_PASSWORD` (mot de passe commun aux deux comptes de test). Sans lui, ces tests sont ignorés.
+
+En local : `npx playwright install` puis `npm test` (code du dépôt) ou `IWT_TEST_PASSWORD=… npm run test:en-ligne`, et `npm run test:rapport` pour ouvrir le rapport.
+
+Revue complète par Claude (visuel + technique) : agent `.claude/agents/testeur-iwt.md`.
+
 ## 6. Limites connues / pistes
 
 - Les invités doivent avoir un compte (c'est ce qui permet de masquer les achats au propriétaire).

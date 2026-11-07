@@ -1,0 +1,71 @@
+name: Tests du site
+
+# - À chaque push / pull request : teste le code du dépôt (avant le déploiement manuel sur ordiman).
+# - Chaque nuit (04:17 à Bruxelles) : teste le site en ligne https://iwantthis.gift.
+# - À la demande : onglet Actions → « Tests du site » → Run workflow.
+# En cas d'échec la nuit, une issue GitHub est ouverte (ou complétée) : GitHub prévient par e-mail.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      cible:
+        description: 'Version à tester'
+        type: choice
+        options: [en-ligne, depot]
+        default: en-ligne
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      BASE_URL: ${{ (github.event_name == 'schedule' || inputs.cible == 'en-ligne') && 'https://iwantthis.gift/' || '' }}
+      IWT_TEST_PASSWORD: ${{ secrets.IWT_TEST_PASSWORD }}
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://enycxafzvcgprfsfkvvc.supabase.co' }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVueWN4YWZ6dmNncHJmc2ZrdnZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NjYyNzcsImV4cCI6MjEwOTA0MjI3N30.8xX21a9UEUeF2_S66zes0zZmQ9HLInJZCaCVxzfIzPU' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Vérification TypeScript et build
+        run: npm run build
+      - name: Navigateurs (Chrome, Firefox, Safari/WebKit)
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Tests
+        run: npx playwright test
+      - name: Rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-tests
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+      - name: Signaler l'échec (nuit)
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const body = `Les tests nocturnes de https://iwantthis.gift ont échoué.\n\nRapport et captures : ${run} (artefact « rapport-tests »).`
+            const { data: open } = await github.rest.issues.listForRepo({ ...context.repo, state: 'open', labels: 'tests-nuit' })
+            if (open.length) await github.rest.issues.createComment({ ...context.repo, issue_number: open[0].number, body })
+            else await github.rest.issues.create({ ...context.repo, title: 'Tests nocturnes en échec', body, labels: ['tests-nuit'] })

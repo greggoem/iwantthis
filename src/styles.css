@@ -52,7 +52,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: .5rem 0; width: 100%;
 .topbar-in { max-width: 1040px; margin: 0 auto; padding: .65rem 1.25rem; display: flex; align-items: center; gap: 1.5rem; }
 .brand { text-decoration: none; color: var(--ink); }
 .logo { display: inline-flex; align-items: center; gap: .55rem; }
-.logo-name { font-weight: 700; letter-spacing: -0.03em; font-size: 1.02rem; }
+.logo-name { font-weight: 700; letter-spacing: -0.03em; font-size: 1.02rem; white-space: nowrap; }
 .nav { display: flex; gap: .15rem; flex: 1; }
 .nav a { color: var(--muted); text-decoration: none; padding: .4rem .8rem; border-radius: 999px; font-weight: 500; font-size: .92rem; transition: background .15s, color .15s; }
 .nav a:hover { color: var(--ink); background: var(--fill); }
@@ -606,7 +606,7 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .settings-body>.mt:first-child,.settings-body>section:first-child{margin-top:0}
 @media(max-width:700px){
   .settings-layout{grid-template-columns:1fr;gap:.8rem}
-  .settings-menu{flex-direction:row;overflow-x:auto;position:static;gap:.3rem;padding-bottom:.2rem}
+  .settings-menu{flex-direction:row;flex-wrap:wrap;position:static;gap:.3rem;padding-bottom:.2rem}
   .settings-menu button{white-space:nowrap;border:1px solid var(--line)}
 }
 
@@ -680,3 +680,16 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .dash-table td { padding: .35rem .4rem; border-bottom: 1px solid var(--line-soft, var(--line)); }
 .dash-table th:not(:first-child), .dash-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; width: 70px; }
 @media (max-width: 860px) { .dash-cols { grid-template-columns: 1fr; } }
+
+/* Accueil sur petit écran : logo sur une ligne, boutons du haut plus compacts */
+@media (max-width: 420px) {
+  .land-top .row { gap: .35rem; }
+  .land-top .btn { padding: .45rem .7rem; font-size: .88rem; }
+}
+/* Lien « retour à l'accueil » de la page de connexion */
+.auth-back { position: absolute; top: 1rem; left: 1rem; font-size: .9rem; color: var(--muted); text-decoration: none; }
+.auth-back:hover { color: var(--ink); }
+.auth-wrap { position: relative; }
+/* Image d'événement : sur écran tactile, pas de glisser-déposer ni de Ctrl+V */
+.cover-hint-touch { display: none; }
+@media (pointer: coarse) { .cover-hint-desk { display: none; } .cover-hint-touch { display: inline; } }

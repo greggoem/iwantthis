@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
 import Logo from '../components/Logo'
 import { Notice } from '../components/ui'
@@ -72,6 +72,7 @@ export default function Login() {
 
   return (
     <div className="auth-wrap">
+      <Link to="/" className="auth-back">← Accueil</Link>
       <form className="card auth-card" onSubmit={submit}>
         <Logo name={APP_NAME} size={32} />
         <p className="muted">Partagez vos envies, offrez sans doublon, tirez au sort en famille.</p>

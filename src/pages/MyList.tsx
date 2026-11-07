@@ -393,6 +393,7 @@ export default function MyList() {
   }
 
   const { tops, kids } = groupTree(activeItems)
+  const nGifts = activeItems.filter(i => !i.is_group).length
   const groupList = activeItems.filter(i => i.is_group)
   const gallery = prefs.view === 'gallery'
   const Row = gallery ? GiftCard : GiftRow
@@ -602,7 +603,7 @@ export default function MyList() {
 
       {items.length > 0 && (
         <ViewBar prefs={prefs} onChange={setPrefs} left={<>
-          <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${activeItems.filter(i => !i.is_group).length} cadeaux au total` : ''}</span>
+          <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${nGifts} cadeau${nGifts > 1 ? 'x' : ''} au total` : ''}</span>
           {withUrl.length > 0 && (
             <button className="btn btn-sm" disabled={bulk} onClick={refreshAll} title="Relire tous les liens : met à jour les images et les prix">
               <Icon name="refresh" size={15} /> {bulk ? `Actualisation… ${progress}/${withUrl.length}` : 'Tout actualiser'}
@@ -637,7 +638,7 @@ export default function MyList() {
                   group={it}
                   kids={ks}
                   image={it.image_url ?? ks.find(k => k.image_url)?.image_url ?? null}
-                  status={given > 0
+                  status={ks.length === 0 ? null : given > 0
                     ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} offert{given > 1 ? 's' : ''}</span>
                     : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
                   actions={<>

@@ -16,6 +16,9 @@ export interface GroupProps {
 
 const PREVIEW = 8
 
+/** « 3 éléments », ou une invitation à compléter un groupe vide */
+const countLabel = (n: number) => n === 0 ? 'Vide · ajoutez des éléments avec +' : `${n} élément${n > 1 ? 's' : ''}`
+
 /** Fourchette de prix des éléments : « 99 € à 149 € » */
 export function priceRange(kids: Item[]): string {
   const p = kids.map(k => k.price).filter((x): x is number => x !== null)
@@ -40,14 +43,14 @@ export default function GroupRow({ group, kids, image, status, actions, renderKi
       <div className="gtable-row g-head" role="row" onClick={toggle}>
         <div className="thumb-link g-groupthumb">
           <Thumb src={image} alt={group.title} zoom />
-          <span className="count-badge">{kids.length}</span>
+          {kids.length > 0 && <span className="count-badge">{kids.length}</span>}
         </div>
         <div className="g-main" role="cell">
           <strong>{group.title}</strong>
           <span className="tag">{group.pick_one ? 'un seul à choisir' : 'plusieurs possibles'}</span>
-          <p className="small g-details">{kids.length} élément{kids.length > 1 ? 's' : ''}{group.details ? ` · ${group.details}` : group.pick_one ? ' · dès que l\'un est acheté, les autres sont inutiles' : ''}</p>
+          <p className="small g-details">{countLabel(kids.length)}{group.details ? ` · ${group.details}` : group.pick_one ? ' · dès que l\'un est acheté, les autres sont inutiles' : ''}</p>
         </div>
-        <div className="g-price" role="cell">{priceRange(kids)}</div>
+        <div className="g-price" role="cell">{kids.length ? priceRange(kids) : ''}</div>
         <div className="g-link is-none" role="cell" />
         <div className="g-status" role="cell">
           {status}
@@ -86,14 +89,14 @@ export function GroupSection({ group, kids, image, status, actions, renderKid, d
       aria-label={`Ouvrir le groupe ${group.title} (${kids.length} élément${kids.length > 1 ? 's' : ''})`}>
       <div className="gcard-img">
         <Pic src={image} alt={group.title} />
-        <span className="count-badge">{kids.length}</span>
+        {kids.length > 0 && <span className="count-badge">{kids.length}</span>}
       </div>
       <div className="gcard-body">
         <div className="title-link"><strong>{group.title}</strong></div>
         <p className="small g-details"><span className="tag">{group.pick_one ? 'un seul à choisir' : 'plusieurs possibles'}</span> {group.details ?? ''}</p>
         <div className="gcard-meta">
-          <span className="g-price">{priceRange(kids)}</span>
-          <span className="small link">Voir les {kids.length} <Icon name="chevron" size={14} /></span>
+          <span className="g-price">{kids.length ? priceRange(kids) : ''}</span>
+          <span className="small link">{kids.length ? <>Voir {kids.length > 1 ? `les ${kids.length}` : 'l\'élément'} <Icon name="chevron" size={14} /></> : 'Groupe vide'}</span>
         </div>
         <div className="gcard-foot" onClick={e => e.stopPropagation()}>
           <div className="gcard-status">{status}</div>
@@ -109,7 +112,7 @@ export function GroupSection({ group, kids, image, status, actions, renderKid, d
         <div className="gsection-title">
           <strong>{group.title}</strong>
           <span className="tag">{group.pick_one ? 'un seul à choisir' : 'plusieurs possibles'}</span>
-          <p className="small g-details">{kids.length} élément{kids.length > 1 ? 's' : ''} · {priceRange(kids)}{group.details ? ` · ${group.details}` : ''}</p>
+          <p className="small g-details">{countLabel(kids.length)}{kids.length ? ` · ${priceRange(kids)}` : ''}{group.details ? ` · ${group.details}` : ''}</p>
         </div>
         <div className="gsection-side" onClick={e => e.stopPropagation()}>
           {status}

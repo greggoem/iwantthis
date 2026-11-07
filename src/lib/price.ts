@@ -2,7 +2,8 @@
 export function parsePrice(raw: unknown): number | undefined {
   if (raw === null || raw === undefined) return undefined
   if (typeof raw === 'number') return raw > 0 && raw < 1e6 ? Math.round(raw * 100) / 100 : undefined
-  let s = String(raw).replace(/[\s  ]/g, '').replace(/[^\d.,]/g, '')
+  // « 21€89 » (affichage d'Amazon.fr) : le symbole tient lieu de virgule
+  let s = String(raw).replace(/[\s\u00a0\u202f]/g, '').replace(/(\d)(?:€|EUR|\$|£)(\d{2})(?!\d)/gi, '$1,$2').replace(/[^\d.,]/g, '')
   if (!s || !/\d/.test(s)) return undefined
   const lastComma = s.lastIndexOf(',')
   const lastDot = s.lastIndexOf('.')

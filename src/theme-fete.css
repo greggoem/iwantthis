@@ -23,6 +23,10 @@ html:is([data-theme="fete"], [data-theme="doodle"]) body::before {
   -webkit-mask-image: linear-gradient(#000, transparent); mask-image: linear-gradient(#000, transparent);
 }
 html:is([data-theme="fete"], [data-theme="doodle"]) .app { position: relative; z-index: 1; }
+/* sur mobile, les confettis restent derrière l'en-tête et ne gênent pas la lecture */
+@media (max-width: 760px) {
+  html:is([data-theme="fete"], [data-theme="doodle"]) body::before { height: 130px; opacity: .35; }
+}
 
 /* Barre du haut et navigation */
 html:is([data-theme="fete"], [data-theme="doodle"]) .topbar { background: rgba(255, 250, 241, .92); border-bottom: 1.5px solid var(--f-edge); }

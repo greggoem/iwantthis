@@ -248,7 +248,7 @@ export default function EventDetail() {
           onDrop={isOrg ? e => { const f = imageFrom(e.dataTransfer); if (f) { e.preventDefault(); onPickImage(f) } } : undefined}>
           {ev.image_url
             ? <img src={ev.image_url} alt="" referrerPolicy="no-referrer" />
-            : <div className="cover-empty"><Icon name="image" size={22} /><span>Aucune image · glissez-en une ici ou collez-la (Ctrl+V)</span></div>}
+            : <div className="cover-empty"><Icon name="image" size={22} /><span>Aucune image<span className="cover-hint-desk"> · glissez-en une ici ou collez-la (Ctrl+V)</span><span className="cover-hint-touch"> · touchez « Ajouter une image »</span></span></div>}
           {isOrg && (
             <div className={`cover-actions ${ev.image_url ? '' : 'in-flow'}`}>
               <div className="imgmenu-wrap">
@@ -474,7 +474,7 @@ export default function EventDetail() {
             <hr />
             <div className="row wrap gap">
               <button className="btn btn-primary" disabled={inDraw.length < 2} onClick={doDraw}>
-                {ev.draw_done_at ? 'Refaire le tirage' : `Lancer le tirage (${inDraw.length} participants)`}
+                {ev.draw_done_at ? 'Refaire le tirage' : `Lancer le tirage (${inDraw.length} participant${inDraw.length > 1 ? 's' : ''})`}
               </button>
               {ev.draw_done_at && <button className="btn btn-ghost" onClick={resetDraw}>Annuler le tirage</button>}
             </div>

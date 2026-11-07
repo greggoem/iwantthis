@@ -3,7 +3,7 @@
  * la page « Mon profil » propose alors l'installation manuelle (archive à télécharger).
  */
 export const STORE_LINKS = {
-  chrome: '',    // https://chromewebstore.google.com/detail/…
+  chrome: 'https://chromewebstore.google.com/detail/flieedooclbbhihafmimamgphhilgedb',
   edge: 'https://microsoftedge.microsoft.com/addons/detail/i-want-this/ieimbhjicpkcgahghhdhjhafbnifdpmj',
   firefox: 'https://addons.mozilla.org/addon/i-want-this/',
 } as const

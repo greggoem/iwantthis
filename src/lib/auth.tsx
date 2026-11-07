@@ -39,8 +39,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = async () => {
     if (!session) { setProfile(null); return }
-    const { data } = await supabase.from('profiles').select('id,display_name').eq('id', session.user.id).maybeSingle()
-    setProfile(data as Profile | null)
+    try {
+      const { data } = await supabase.from('profiles').select('id,display_name').eq('id', session.user.id).maybeSingle()
+      setProfile(data as Profile | null)
+    } catch { /* requête interrompue (changement de page, réseau) : on garde le profil actuel */ }
   }
 
   // le thème choisi est enregistré dans le compte : on le retrouve sur tous les appareils

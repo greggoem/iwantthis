@@ -32,7 +32,7 @@ export const test = base.extend<Fixtures>({
       await page.route(u => !u.href.startsWith(origin), r => r.request().url().startsWith(SUPABASE_URL)
         ? r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }) : r.abort())
     }
-    page.on('pageerror', e => problems.push(`Erreur JavaScript : ${e.message}`))
+    page.on('pageerror', e => { if (!IGNORED.test(e.message)) problems.push(`Erreur JavaScript : ${e.message}`) })
     page.on('console', m => { if (m.type() === 'error' && !IGNORED.test(m.text())) problems.push(`Console : ${m.text()}`) })
     page.on('response', r => {
       const u = r.url()

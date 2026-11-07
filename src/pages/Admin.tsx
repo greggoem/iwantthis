@@ -38,6 +38,11 @@ interface Series {
   list_sizes: { label: string; n: number }[]
   favorites: number
 }
+interface Links {
+  total: number; sponsored: number; sponsored_claimed: number; pending: number; fallback_active: boolean
+  by_partner: { label: string; network: string; status: string; enabled: boolean; n: number; claimed: number }[]
+  top_free: { host: string; n: number; claimed: number }[]
+}
 const cumul = (s: { new: number[]; before: number }) => { let t = s.before; return s.new.map(v => (t += v)) }
 const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
 const UNIT_TXT: Record<Unit, string> = { day: '30 derniers jours', week: '16 dernières semaines', month: '12 derniers mois' }
@@ -61,21 +66,22 @@ function Panel({ title, children, wide }: { title: string; children: React.React
 function StatsTab({ onDenied }: { onDenied: () => void }) {
   const [s, setS] = useState<Stats | null>(null)
   const [ser, setSer] = useState<Series | null>(null)
+  const [lk, setLk] = useState<Links | null>(null)
   const [unit, setUnit] = useState<Unit>('day')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
     setBusy(true); setErr('')
-    const [a, b] = await Promise.all([supabase.rpc('admin_stats'), supabase.rpc('admin_series', { p_unit: unit })])
+    const [a, b, c] = await Promise.all([supabase.rpc('admin_stats'), supabase.rpc('admin_series', { p_unit: unit }), supabase.rpc('admin_links')])
     setBusy(false)
-    const error = a.error ?? b.error
+    const error = a.error ?? b.error ?? c.error
     if (error) { if (/refus/i.test(error.message)) onDenied(); else setErr(errMsg(error)); return }
-    setS(a.data as Stats); setSer(b.data as Series)
+    setS(a.data as Stats); setSer(b.data as Series); setLk(c.data as Links)
   }, [unit])
   useEffect(() => { load() }, [load])
 
-  if (!s || !ser) return err ? <Notice>{err}</Notice> : <Spinner />
+  if (!s || !ser || !lk) return err ? <Notice>{err}</Notice> : <Spinner />
 
   const u = s.users, S = ser.series, B = ser.buckets
   const when = new Date(s.generated_at).toLocaleString('fr-BE', { dateStyle: 'medium', timeStyle: 'short' })
@@ -167,6 +173,33 @@ function StatsTab({ onDenied }: { onDenied: () => void }) {
             <Tile label="Invitations par e-mail" value={s.invites.total} hint={`${s.invites.emailed} envoyées`} />
             <Tile label="Accès API" value={s.other.api_tokens} />
           </div>
+        </Panel>
+
+        <Panel title="Liens sponsorisés" wide>
+          <div className="stat-grid">
+            <Tile label="Envies avec un lien" value={lk.total} />
+            <Tile label="Liens sponsorisés" value={pct(lk.sponsored, lk.total)} hint={`${lk.sponsored} liens`} />
+            <Tile label="Achetées via un lien sponsorisé" value={lk.sponsored_claimed} hint="cadeaux marqués achetés" />
+            <Tile label="En attente d'un partenaire" value={lk.pending} hint="deviendront sponsorisés si acceptés" />
+            <Tile label="Lien par défaut (Skimlinks)" value={lk.fallback_active ? 'Actif' : 'Inactif'} hint={lk.fallback_active ? 'couvre les autres magasins' : 'les autres magasins ne rapportent rien'} />
+          </div>
+          <div className="dash-cols">
+            <div>
+              <h3>Liens par partenaire actif</h3>
+              {lk.by_partner.length ? <HBars rows={lk.by_partner.map(p => ({ label: p.label, n: p.n }))} /> : <p className="small muted">Aucun partenaire actif.</p>}
+            </div>
+            <div>
+              <h3>Magasins sans partenariat (les plus fréquents)</h3>
+              {lk.top_free.length ? (
+                <table className="dash-table">
+                  <thead><tr><th>Magasin</th><th>Envies</th><th>Achetées</th></tr></thead>
+                  <tbody>{lk.top_free.map(h => <tr key={h.host}><td>{h.host}</td><td>{h.n}</td><td>{h.claimed}</td></tr>)}</tbody>
+                </table>
+              ) : <p className="small muted">Tous les liens sont couverts.</p>}
+              <p className="small muted">Pistes pour de nouvelles candidatures (Awin, programmes en direct).</p>
+            </div>
+          </div>
+          <p className="small muted">Les clics sur les liens ne sont pas encore comptés : les revenus réels se consultent chez Amazon Partenaires et Awin.</p>
         </Panel>
       </div>
     </div>

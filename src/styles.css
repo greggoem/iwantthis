@@ -673,3 +673,10 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .hbar-fill { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
 .hbar-val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 @media (max-width: 860px) { .dash-grid { grid-template-columns: 1fr; } }
+.dash-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.dash-panel .hbar { grid-template-columns: 130px 1fr 40px; }
+.dash-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.dash-table th { text-align: left; font-weight: 600; color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; padding: .3rem .4rem; border-bottom: 1px solid var(--line); }
+.dash-table td { padding: .35rem .4rem; border-bottom: 1px solid var(--line-soft, var(--line)); }
+.dash-table th:not(:first-child), .dash-table td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; width: 70px; }
+@media (max-width: 860px) { .dash-cols { grid-template-columns: 1fr; } }

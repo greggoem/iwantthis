@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
+import { SeriesChart, Sparkline, HBars, type Unit } from '../components/AdminCharts'
 
 interface Stats {
   generated_at: string
@@ -18,7 +19,7 @@ interface Stats {
 }
 
 const pct = (a: number, b: number) => (b > 0 ? `${Math.round((a / b) * 100)} %` : '–')
-const THEME_LABELS: Record<string, string> = { classique: 'Classique', menthe: 'Menthe', fete: 'Fête', doodle: 'Doodle' }
+const THEME_LABELS: Record<string, string> = { classique: 'Classique', menthe: 'Menthe', fete: 'Fête', doodle: 'Doodle', nuit: 'Nuit' }
 
 function Tile({ label, value, hint }: { label: string; value: number | string; hint?: string }) {
   return (
@@ -30,109 +31,143 @@ function Tile({ label, value, hint }: { label: string; value: number | string; h
   )
 }
 
-function SignupChart({ days }: { days: { day: string; n: number }[] }) {
-  const max = Math.max(1, ...days.map(d => d.n))
-  const W = 600, H = 120, bw = W / days.length
+interface Series {
+  unit: Unit
+  buckets: string[]
+  series: Record<'users' | 'lists' | 'items' | 'claims' | 'shares' | 'events', { new: number[]; before: number }>
+  list_sizes: { label: string; n: number }[]
+  favorites: number
+}
+const cumul = (s: { new: number[]; before: number }) => { let t = s.before; return s.new.map(v => (t += v)) }
+const sum = (a: number[]) => a.reduce((x, y) => x + y, 0)
+const UNIT_TXT: Record<Unit, string> = { day: '30 derniers jours', week: '16 dernières semaines', month: '12 derniers mois' }
+const PER: Record<Unit, string> = { day: 'par jour', week: 'par semaine', month: 'par mois' }
+
+function Kpi({ label, value, added, spark }: { label: string; value: number; added: number; spark: number[] }) {
   return (
-    <figure className="stat-chart">
-      <svg viewBox={`0 0 ${W} ${H + 18}`} role="img" aria-label="Inscriptions par jour sur les 30 derniers jours">
-        {days.map((d, i) => {
-          const h = (d.n / max) * H
-          return (
-            <g key={d.day}>
-              <rect x={i * bw + 2} y={H - h} width={Math.max(1, bw - 4)} height={Math.max(h, d.n ? 2 : 0)} rx="2" className="stat-bar">
-                <title>{new Date(d.day).toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' })} : {d.n} inscription{d.n > 1 ? 's' : ''}</title>
-              </rect>
-            </g>
-          )
-        })}
-        <line x1="0" y1={H} x2={W} y2={H} className="stat-axis" />
-        <text x="0" y={H + 14} className="stat-axis-text">{new Date(days[0].day).toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' })}</text>
-        <text x={W} y={H + 14} textAnchor="end" className="stat-axis-text">{new Date(days[days.length - 1].day).toLocaleDateString('fr-BE', { day: 'numeric', month: 'short' })}</text>
-      </svg>
-      <figcaption className="small muted">Inscriptions par jour, 30 derniers jours (pic : {max})</figcaption>
-    </figure>
+    <div className="kpi">
+      <span className="kpi-label">{label}</span>
+      <span className="kpi-value">{value}</span>
+      <span className="kpi-delta">{added > 0 ? `+${added}` : '0'} sur la période</span>
+      <Sparkline values={spark} />
+    </div>
   )
+}
+
+function Panel({ title, children, wide }: { title: string; children: React.ReactNode; wide?: boolean }) {
+  return <section className={`dash-panel ${wide ? 'wide' : ''}`}><h2>{title}</h2>{children}</section>
 }
 
 function StatsTab({ onDenied }: { onDenied: () => void }) {
   const [s, setS] = useState<Stats | null>(null)
-    const [err, setErr] = useState('')
+  const [ser, setSer] = useState<Series | null>(null)
+  const [unit, setUnit] = useState<Unit>('day')
+  const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
   const load = useCallback(async () => {
     setBusy(true); setErr('')
-    const { data, error } = await supabase.rpc('admin_stats')
+    const [a, b] = await Promise.all([supabase.rpc('admin_stats'), supabase.rpc('admin_series', { p_unit: unit })])
     setBusy(false)
+    const error = a.error ?? b.error
     if (error) { if (/refus/i.test(error.message)) onDenied(); else setErr(errMsg(error)); return }
-    setS(data as Stats)
-  }, [])
+    setS(a.data as Stats); setSer(b.data as Series)
+  }, [unit])
   useEffect(() => { load() }, [load])
 
-  if (!s) return err ? <Notice>{err}</Notice> : <Spinner />
+  if (!s || !ser) return err ? <Notice>{err}</Notice> : <Spinner />
 
-  const u = s.users
+  const u = s.users, S = ser.series, B = ser.buckets
   const when = new Date(s.generated_at).toLocaleString('fr-BE', { dateStyle: 'medium', timeStyle: 'short' })
+  const chart = (k: keyof Series['series'], label: string, kind: 'bar' | 'line' = 'bar') =>
+    <SeriesChart buckets={B} unit={unit} label={label} kind={kind} values={kind === 'line' ? cumul(S[k]) : S[k].new} />
   return (
-    <div>
-      <div className="admin-actions">
-        <button className="btn" onClick={load} disabled={busy}><Icon name="refresh" size={16} /> <span>{busy ? 'Actualisation…' : 'Actualiser'}</span></button>
+    <div className="dash">
+      <div className="dash-bar">
+        <div className="seg-unit" role="group" aria-label="Période">
+          {(['day', 'week', 'month'] as Unit[]).map(x => (
+            <button key={x} type="button" className={x === unit ? 'on' : ''} aria-pressed={x === unit} onClick={() => setUnit(x)}>
+              {x === 'day' ? 'Jour' : x === 'week' ? 'Semaine' : 'Mois'}</button>
+          ))}
+        </div>
+        <span className="small muted">{UNIT_TXT[unit]} · mis à jour le {when}</span>
+        <button className="btn btn-sm" onClick={load} disabled={busy}><Icon name="refresh" size={15} /> <span>{busy ? 'Actualisation…' : 'Actualiser'}</span></button>
       </div>
-      <p className="small muted">Chiffres globaux uniquement : aucun contenu de liste ni adresse n'apparaît ici. Mis à jour le {when}.</p>
       <Notice>{err}</Notice>
 
-      <h2>Inscrits</h2>
-      <div className="stat-grid">
-        <Tile label="Inscrits" value={u.total} />
-        <Tile label="Nouveaux (7 jours)" value={u.last7} />
-        <Tile label="Nouveaux (30 jours)" value={u.last30} />
-        <Tile label="Actifs (7 jours)" value={u.active7} hint={pct(u.active7, u.total)} />
-        <Tile label="Actifs (30 jours)" value={u.active30} hint={pct(u.active30, u.total)} />
-        <Tile label="Jamais connectés" value={u.never_signed_in} hint="compte créé, jamais ouvert" />
-      </div>
-      <div className="card"><SignupChart days={s.signups_by_day} /></div>
-      <div className="stat-grid">
-        <Tile label="Via Google" value={u.google} />
-        <Tile label="Via e-mail" value={u.email} />
-        <Tile label="Via Apple" value={u.apple} />
-        {Object.entries(s.themes).sort((a, b) => b[1] - a[1]).map(([t, n]) => <Tile key={t} label={`Thème ${THEME_LABELS[t] ?? t}`} value={n} />)}
+      <div className="kpis">
+        <Kpi label="Inscrits" value={u.total} added={sum(S.users.new)} spark={cumul(S.users)} />
+        <Kpi label="Listes" value={s.lists.total} added={sum(S.lists.new)} spark={cumul(S.lists)} />
+        <Kpi label="Envies" value={s.items.total} added={sum(S.items.new)} spark={cumul(S.items)} />
+        <Kpi label="Achats" value={s.claims.total} added={sum(S.claims.new)} spark={cumul(S.claims)} />
+        <Kpi label="Événements" value={s.events.total} added={sum(S.events.new)} spark={cumul(S.events)} />
       </div>
 
-      <h2>Listes et envies</h2>
-      <div className="stat-grid">
-        <Tile label="Listes" value={s.lists.total} />
-        <Tile label="Listes avec au moins une envie" value={s.lists.with_items} hint={pct(s.lists.with_items, s.lists.total)} />
-        <Tile label="Listes ouvertes par un proche" value={s.lists.shared_with_someone} hint="via un lien" />
-        <Tile label="Envies" value={s.items.total} hint={`+${s.items.last7} sur 7 jours`} />
-        <Tile label="Groupes" value={s.items.groups} />
-        <Tile label="Envies par liste" value={s.lists.with_items ? (s.items.total / s.lists.with_items).toFixed(1) : '–'} hint="listes non vides" />
-        <Tile label="Avec lien" value={pct(s.items.with_link, s.items.total)} />
-        <Tile label="Avec image" value={pct(s.items.with_image, s.items.total)} />
-        <Tile label="Avec prix" value={pct(s.items.with_price, s.items.total)} />
-      </div>
+      <div className="dash-grid">
+        <Panel title="Listes">
+          <h3>Nouvelles listes {PER[unit]}</h3>
+          {chart('lists', `Nouvelles listes ${PER[unit]}`)}
+          <h3>Listes ouvertes par un proche {PER[unit]}</h3>
+          {chart('shares', `Listes ouvertes par un proche ${PER[unit]}`)}
+          <div className="stat-grid">
+            <Tile label="Avec au moins une envie" value={pct(s.lists.with_items, s.lists.total)} hint={`${s.lists.with_items} listes`} />
+            <Tile label="Ouvertes par un proche" value={pct(s.lists.shared_with_someone, s.lists.total)} hint={`${s.lists.shared_with_someone} listes`} />
+            <Tile label="Envies par liste" value={s.lists.with_items ? (s.items.total / s.lists.with_items).toFixed(1) : '–'} hint="listes non vides" />
+          </div>
+          <h3>Taille des listes (nombre d'envies)</h3>
+          <HBars rows={ser.list_sizes} />
+        </Panel>
 
-      <h2>Achats</h2>
-      <div className="stat-grid">
-        <Tile label="Cadeaux marqués achetés" value={s.claims.total} />
-        <Tile label="Dont discrets" value={s.claims.discreet} />
-        <Tile label="Révélés au propriétaire" value={s.claims.revealed} />
-        <Tile label="Découverts (archivés)" value={s.claims.seen_by_owner} />
-      </div>
+        <Panel title="Envies">
+          <h3>Nouvelles envies {PER[unit]}</h3>
+          {chart('items', `Nouvelles envies ${PER[unit]}`)}
+          <h3>Total des envies</h3>
+          {chart('items', 'Total cumulé des envies', 'line')}
+          <div className="stat-grid">
+            <Tile label="Groupes" value={s.items.groups} />
+            <Tile label="Favoris" value={ser.favorites} />
+            <Tile label="Achetées" value={pct(s.claims.total, s.items.total)} hint={`${s.claims.total} envie${s.claims.total > 1 ? "s" : ""}`} />
+          </div>
+          <h3>Qualité des fiches</h3>
+          <HBars total={s.items.total} rows={[
+            { label: 'Avec lien', n: s.items.with_link },
+            { label: 'Avec image', n: s.items.with_image },
+            { label: 'Avec prix', n: s.items.with_price },
+          ]} />
+        </Panel>
 
-      <h2>Événements</h2>
-      <div className="stat-grid">
-        <Tile label="Événements" value={s.events.total} />
-        <Tile label="À venir" value={s.events.upcoming} />
-        <Tile label="Participations" value={s.events.memberships} />
-        <Tile label="Tirages effectués" value={s.events.draws_done} />
-        <Tile label="Tirages annoncés par e-mail" value={s.events.draw_mails_sent} />
-        <Tile label="Invitations par e-mail" value={s.invites.total} hint={`${s.invites.emailed} envoyées`} />
-      </div>
+        <Panel title="Inscrits">
+          <h3>Inscriptions {PER[unit]}</h3>
+          {chart('users', `Inscriptions ${PER[unit]}`)}
+          <div className="stat-grid">
+            <Tile label="Actifs (7 jours)" value={u.active7} hint={pct(u.active7, u.total)} />
+            <Tile label="Actifs (30 jours)" value={u.active30} hint={pct(u.active30, u.total)} />
+            <Tile label="Jamais connectés" value={u.never_signed_in} hint="compte non ouvert" />
+          </div>
+          <h3>Mode de connexion</h3>
+          <HBars total={u.total} rows={[{ label: 'Google', n: u.google }, { label: 'E-mail', n: u.email }, { label: 'Apple', n: u.apple }]} />
+          <h3>Apparence choisie</h3>
+          <HBars total={u.total} rows={Object.entries(s.themes).sort((a, b) => b[1] - a[1]).map(([t, n]) => ({ label: THEME_LABELS[t] ?? t, n }))} />
+        </Panel>
 
-      <h2>Divers</h2>
-      <div className="stat-grid">
-        <Tile label="Accès API créés" value={s.other.api_tokens} />
-        <Tile label="Notifications" value={s.other.notifications} />
+        <Panel title="Achats et événements">
+          <h3>Cadeaux marqués achetés {PER[unit]}</h3>
+          {chart('claims', `Achats ${PER[unit]}`)}
+          <div className="stat-grid">
+            <Tile label="Révélés au propriétaire" value={s.claims.revealed} />
+            <Tile label="Découverts (archivés)" value={s.claims.seen_by_owner} />
+            <Tile label="Discrets" value={s.claims.discreet} />
+          </div>
+          <h3>Nouveaux événements {PER[unit]}</h3>
+          {chart('events', `Nouveaux événements ${PER[unit]}`)}
+          <div className="stat-grid">
+            <Tile label="À venir" value={s.events.upcoming} />
+            <Tile label="Participations" value={s.events.memberships} />
+            <Tile label="Tirages effectués" value={s.events.draws_done} hint={`${s.events.draw_mails_sent} annoncés par e-mail`} />
+            <Tile label="Invitations par e-mail" value={s.invites.total} hint={`${s.invites.emailed} envoyées`} />
+            <Tile label="Accès API" value={s.other.api_tokens} />
+          </div>
+        </Panel>
       </div>
     </div>
   )

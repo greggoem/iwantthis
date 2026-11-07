@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:en-ligne": "BASE_URL=https://iwantthis.gift/ playwright test",
-    "test:rapport": "playwright show-report"
+    "test:rapport": "playwright show-report",
+    "start": "node server/server.mjs"
   },
   "dependencies": {
     "@fontsource/caveat-brush": "^5.3.0",
@@ -27,5 +28,8 @@
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.4",
     "vite": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

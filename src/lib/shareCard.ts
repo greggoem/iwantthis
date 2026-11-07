@@ -15,8 +15,8 @@ export function occasionEmoji(name: string): string {
 }
 
 export function eventMessage(name: string, dateLong: string, url: string, appName: string): string {
-  return `${occasionEmoji(name)} ${name} · ${dateLong}\n\n` +
-    `Je t'invite à rejoindre l'événement sur ${appName} ! Chacun y met ses envies de cadeaux : on voit les listes des uns et des autres, et on évite les doublons (et les mauvaises surprises 😉).\n\n` +
+  return `💌 Invitation : ${occasionEmoji(name)} ${name}\n📅 ${dateLong}\n\n` +
+    `Je t'invite à « ${name} » ! Rejoins l'événement sur ${appName} : chacun y met ses envies de cadeaux : on voit les listes des uns et des autres, et on évite les doublons (et les mauvaises surprises 😉).\n\n` +
     `👉 ${url}`
 }
 
@@ -73,7 +73,7 @@ function drawGift(ctx: CanvasRenderingContext2D, x: number, y: number, s: number
 }
 
 /** Dessine la carte : image de l'événement en fond (si elle existe), titre et sous-titre en surimpression */
-export async function makeShareCard(opts: { heading: string; sub?: string; imageUrl?: string | null; appName: string }): Promise<Blob | null> {
+export async function makeShareCard(opts: { heading: string; sub?: string; kicker?: string; imageUrl?: string | null; appName: string }): Promise<Blob | null> {
   try { await document.fonts?.ready } catch { /* polices indisponibles : repli système */ }
   const W = 1200, H = 630
   const canvas = document.createElement('canvas')
@@ -112,6 +112,16 @@ export async function makeShareCard(opts: { heading: string; sub?: string; image
   ctx.font = `600 28px ${FONT}`
   ctx.fillStyle = img ? 'rgba(255,255,255,.8)' : '#6b6b73'
   ctx.fillText(opts.appName, 80, 88)
+  if (opts.kicker) {
+    // pastille « INVITATION » au-dessus du titre
+    ctx.font = `700 26px ${FONT}`
+    const t = opts.kicker.toUpperCase(), tw = ctx.measureText(t).width + 36
+    const ky = baseY - 74 - 44
+    ctx.fillStyle = '#ff5a36'
+    ctx.beginPath(); ctx.roundRect?.(80, ky, tw, 44, 8); if (!ctx.roundRect) ctx.rect(80, ky, tw, 44); ctx.fill()
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(t, 98, ky + 31)
+  }
 
   return await new Promise<Blob | null>(res => {
     try { canvas.toBlob(b => res(b), 'image/jpeg', 0.9) } catch { res(null) }

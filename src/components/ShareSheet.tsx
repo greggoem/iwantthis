@@ -6,9 +6,9 @@ import Icon from './Icon'
 import Modal from './Modal'
 
 /** Fenêtre de partage : carte image (reprend l'image de l'événement), message sympa modifiable, boutons d'envoi */
-export default function ShareSheet({ title, intro, message, subject, heading, sub, imageUrl, fileName, onClose, children }: {
+export default function ShareSheet({ title, intro, message, subject, heading, sub, kicker, imageUrl, fileName, onClose, children }: {
   title: string; intro: string; message: string; subject: string
-  heading: string; sub?: string; imageUrl?: string | null; fileName: string; onClose: () => void; children?: ReactNode
+  heading: string; sub?: string; kicker?: string; imageUrl?: string | null; fileName: string; onClose: () => void; children?: ReactNode
 }) {
   const [text, setText] = useState(message)
   const [card, setCard] = useState<Blob | null>(null)
@@ -17,12 +17,12 @@ export default function ShareSheet({ title, intro, message, subject, heading, su
 
   useEffect(() => {
     let alive = true, obj = ''
-    makeShareCard({ heading, sub, imageUrl, appName: APP_NAME }).then(b => {
+    makeShareCard({ heading, sub, kicker, imageUrl, appName: APP_NAME }).then(b => {
       if (!alive || !b) return
       obj = URL.createObjectURL(b); setCard(b); setCardUrl(obj)
     })
     return () => { alive = false; if (obj) URL.revokeObjectURL(obj) }
-  }, [heading, sub, imageUrl])
+  }, [heading, sub, kicker, imageUrl])
 
   const canNative = typeof navigator !== 'undefined' && typeof navigator.share === 'function'
   const nativeShare = async () => {

@@ -371,7 +371,7 @@ export default function EventDetail() {
           intro="Envoyez l'invitation avec un message sympa et l'image de l'événement."
           message={eventMessage(ev.name, formatDate(ev.event_date), eventInviteUrl(ev.invite_code), APP_NAME)}
           subject={`Invitation : ${ev.name}`}
-          heading={ev.name} sub={formatDate(ev.event_date)} imageUrl={ev.image_url}
+          heading={ev.name} sub={formatDate(ev.event_date)} kicker="Invitation" imageUrl={ev.image_url}
           fileName={`invitation-${ev.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'evenement'}`}
           onClose={() => setShareOpen(false)}
         />

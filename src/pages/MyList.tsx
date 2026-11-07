@@ -7,7 +7,7 @@ import { fetchPreview, euroPrice } from '../lib/preview'
 import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
 import { deleteItemImage, uploadItemImage } from '../lib/itemImage'
 import { useAuth } from '../lib/auth'
-import { formatDateShort, formatPrice, todayISO } from '../lib/format'
+import { formatDateShort, formatPrice } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
 import { GiftCard, GiftCollection, GiftRow, Thumb, ViewBar } from '../components/GiftTable'
@@ -302,20 +302,13 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
   const { profile } = useAuth()
   const shareTitle = profile?.display_name ? `La liste d'envies de ${profile.display_name}` : list.title
   const url = listShareUrl(list.share_token)
-  // l'image du prochain événement qui en a une est reprise sur la carte de partage
-  const [ev, setEv] = useState<{ name: string; event_date: string; image_url: string } | null | undefined>(undefined)
-  useEffect(() => {
-    supabase.from('events').select('name,event_date,image_url').not('image_url', 'is', null).gte('event_date', todayISO()).order('event_date').limit(1)
-      .then(({ data }) => setEv(((data as { name: string; event_date: string; image_url: string }[]) ?? [])[0] ?? null))
-  }, [])
-  if (ev === undefined) return <Modal title="Partager ma liste" onClose={onClose}><Spinner /></Modal>
   return (
     <ShareSheet
       title="Partager ma liste"
       intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant le lendemain de la date de remise."
       message={listMessage(shareTitle, url, APP_NAME)}
       subject={shareTitle}
-      heading={shareTitle} sub={ev ? `${ev.name} · ${formatDateShort(ev.event_date)}` : undefined} imageUrl={ev?.image_url}
+      heading={shareTitle} imageUrl={null}
       fileName="ma-liste-de-cadeaux"
       onClose={onClose}
     >

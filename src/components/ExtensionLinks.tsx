@@ -32,6 +32,9 @@ export default function ExtensionLinks() {
           </li>
         ))}
       </ul>
+      {STORE_LINKS.chrome && (
+        <p className="small muted">Sur Chrome, si la « protection renforcée » est activée, un message « Soyez prudent » peut s'afficher : il concerne les extensions récentes, que Google met quelques mois à reconnaître. Vous pouvez cliquer sur <em>Poursuivre l'installation</em>.</p>
+      )}
 
       <details className="bm">
         <summary>Installer à la main dès maintenant</summary>

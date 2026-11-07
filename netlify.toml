@@ -1,0 +1,8 @@
+# Relais d'aperçu des liens partagés (invit.iwantthis.gift) — hébergé sur Netlify.
+# Le site lui-même reste chez ordiman ; ce dossier « relay » ne sert qu'aux aperçus WhatsApp / réseaux.
+[build]
+  base = "relay"
+  publish = "public"
+  command = "echo relais"
+
+# la fonction relay/netlify/edge-functions/share.ts déclare elle-même son chemin (/*)

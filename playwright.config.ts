@@ -15,7 +15,8 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,               // mêmes comptes de test partout : pas de tests en parallèle
   retries: process.env.CI ? 1 : 0,
-  reporter: [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/results.json' }]],
+  // en CI : « github » crée une annotation par échec (lisible sur la page de l'exécution, même sans connexion)
+  reporter: [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'resultats-tests.json' }], ...(process.env.CI ? [['github'] as ['github']] : [])],
   use: {
     baseURL: BASE_URL,
     locale: 'fr-BE',

@@ -50,6 +50,17 @@ jobs:
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Tests
         run: npx playwright test
+      - name: Résumé des échecs
+        if: always()
+        run: |
+          node -e '
+          const r = require("./resultats-tests.json"); const out = [];
+          const walk = (s, path) => { for (const x of s.suites ?? []) walk(x, [...path, x.title]);
+            for (const sp of s.specs ?? []) for (const t of sp.tests) { const last = t.results.at(-1);
+              if (t.status === "unexpected") out.push(`- **${t.projectName}** › ${[...path, sp.title].filter(Boolean).join(" › ")}\n  \`${(last?.error?.message ?? "").replace(/\u001b\[[0-9;]*m/g, "").split("\n").slice(0, 4).join(" ").slice(0, 400)}\``) } };
+          walk(r, []);
+          const st = r.stats; console.log(`## Tests : ${st.expected} réussis, ${st.unexpected} en échec, ${st.flaky} instables, ${st.skipped} ignorés\n\n${out.join("\n")}`)
+          ' >> "$GITHUB_STEP_SUMMARY" || true
       - name: Rapport
         if: always()
         uses: actions/upload-artifact@v4
@@ -58,6 +69,7 @@ jobs:
           path: |
             playwright-report/
             test-results/
+            resultats-tests.json
           retention-days: 14
       - name: Signaler l'échec (nuit)
         if: failure() && github.event_name == 'schedule'

@@ -13,7 +13,9 @@ export const USER_B = { email: 'iwt-test-b@iwantthis.gift', name: 'Testeur B' }
 export const TEST_PREFIX = '[test auto]'
 
 /** Bruit de scripts tiers (mesure d'audience, affiliation) : ne fait pas échouer les tests */
-const IGNORED = /skimresources|skimlinks|umami|ERR_FAILED|ResizeObserver loop|Download the React DevTools/i
+// « due to access control checks » : message de Safari/WebKit pour une requête annulée par un changement de page
+// (un vrai problème CORS apparaîtrait aussi dans Chrome et Firefox, qui restent surveillés).
+const IGNORED = /skimresources|skimlinks|umami|ERR_FAILED|due to access control checks|ResizeObserver loop|Download the React DevTools/i
 
 type Fixtures = { problems: string[] }
 

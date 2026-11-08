@@ -2,7 +2,7 @@
 // - Sert le site construit (dossier dist/) comme un hébergement classique.
 // - Pour les liens partagés (?e=CODE, ?l=TOKEN), écrit dans la page des balises Open Graph
 //   propres à l'événement ou à la liste : WhatsApp & co affichent le nom, la date, l'image.
-// Démarrage : node server/server.mjs   (variables : PORT, STATIC_DIR, SUPABASE_URL, SUPABASE_ANON_KEY)
+// Démarrage : node server/server.mjs   (variables : PORT, HOST, STATIC_DIR, SITE_URL, SUPABASE_URL, SUPABASE_ANON_KEY)
 
 import http from 'node:http'
 import { readFile, stat } from 'node:fs/promises'
@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url'
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(process.env.STATIC_DIR || path.join(HERE, '..', 'dist'))
 const PORT = Number(process.env.PORT || 3000)
+// HOST facultatif : « 172.17.0.1 » pour n'écouter que sur le pont Docker (derrière Caddy)
+const HOST = process.env.HOST || undefined
 const SITE = (process.env.SITE_URL || 'https://iwantthis.gift/').replace(/\/?$/, '/')
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://enycxafzvcgprfsfkvvc.supabase.co'
 // clé publique « anon » : la même que celle du site, visible par tous
@@ -153,4 +155,4 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => console.log(`I Want This : http://localhost:${PORT}  (fichiers : ${ROOT})`))
+server.listen(PORT, HOST, () => console.log(`I Want This : http://${HOST || 'localhost'}:${PORT}  (fichiers : ${ROOT})`))

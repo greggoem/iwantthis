@@ -20,7 +20,7 @@ npm run build      # produit dist/
 npm start          # = node server/server.mjs
 ```
 
-Variables facultatives : `PORT` (défaut 3000), `STATIC_DIR` (défaut `dist/`),
+Variables facultatives : `PORT` (défaut 3000), `HOST` (adresse d'écoute, par ex. `172.17.0.1` pour n'écouter que sur le pont Docker derrière Caddy ; défaut : toutes), `STATIC_DIR` (défaut `dist/`),
 `SITE_URL` (défaut `https://iwantthis.gift/`), `SUPABASE_URL`, `SUPABASE_ANON_KEY`
 (défauts : le projet de production ; la clé anon est publique).
 

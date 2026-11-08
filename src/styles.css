@@ -724,3 +724,11 @@ a.ev-place:hover { border-color: var(--ink-3, #999); background: var(--fill); }
 .ev-maps { display: inline-flex; align-items: center; gap: .2rem; font-size: .78rem; font-weight: 600; color: var(--muted); margin-left: .2rem; white-space: nowrap; }
 button.ev-add { font: inherit; font-size: .88rem; color: var(--muted); border-style: dashed; background: none; cursor: pointer; }
 button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
+.place-input { position: relative; }
+.place-input input { width: 100%; }
+.place-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 50; list-style: none; margin: 0; padding: .3rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 28px rgba(0,0,0,.15); font-weight: 400; }
+.place-list li { display: flex; gap: .6rem; align-items: flex-start; padding: .5rem .6rem; border-radius: 8px; cursor: pointer; }
+.place-list li svg { color: var(--accent, var(--ink)); margin-top: .15rem; flex: none; }
+.place-list li > span { display: grid; min-width: 0; }
+.place-list li.on { background: var(--fill); }
+.place-list li.place-credit { cursor: default; font-size: .7rem; color: var(--muted); padding: .2rem .6rem; justify-content: flex-end; }

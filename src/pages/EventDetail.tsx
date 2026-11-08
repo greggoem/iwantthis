@@ -7,6 +7,7 @@ import type { EventRow, MemberRow } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/ui'
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
+import PlaceInput from '../components/PlaceInput'
 import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { eventMessage, occasionEmoji } from '../lib/shareCard'
@@ -279,10 +280,10 @@ export default function EventDetail() {
         <form className="card stack" onSubmit={saveEvent}>
           <label>Nom<input required value={eName} maxLength={120} onChange={e => setEName(e.target.value)} /></label>
           <div className="row gap wrap">
-            <label style={{ flex: '1 1 160px' }}>Date de remise<input required type="date" value={eDate} onChange={e => setEDate(e.target.value)} /></label>
-            <label style={{ flex: '1 1 120px' }}>Heure <span className="muted small">(facultatif)</span><input type="time" value={eTime} onChange={e => setETime(e.target.value)} /></label>
+            <label style={{ flex: '1 1 160px' }}><span>Date de remise</span><input required type="date" value={eDate} onChange={e => setEDate(e.target.value)} /></label>
+            <label style={{ flex: '1 1 120px' }}><span>Heure <span className="muted small">(facultatif)</span></span><input type="time" value={eTime} onChange={e => setETime(e.target.value)} /></label>
           </div>
-          <label>Lieu <span className="muted small">(facultatif)</span><input value={ePlace} maxLength={200} placeholder="Ex. Chez Maminou, rue des Lilas 12, 1180 Uccle" onChange={e => setEPlace(e.target.value)} /></label>
+          <label><span>Lieu <span className="muted small">(facultatif)</span></span><PlaceInput value={ePlace} onChange={setEPlace} placeholder="Restaurant, salle, adresse… (ex. La Branche d'Olivier)" /></label>
           <div className="row">
             <button className="btn btn-primary">Enregistrer</button>
             <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Annuler</button>

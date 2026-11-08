@@ -28,7 +28,9 @@ function Gate() {
   const loc = useLocation()
   if (loading) return <Spinner />
   if (session) return <Layout />
-  if (loc.pathname === '/') return <Landing />
+  // Lien d'ajout (#/?add=1&u=… : raccourci, partage mobile, lien externe) : connexion d'abord, puis le formulaire pré-rempli
+  // (sans cela, la page d'accueil s'affichait et le cadeau était perdu)
+  if (loc.pathname === '/' && !new URLSearchParams(loc.search).has('add')) return <Landing />
   sessionStorage.setItem('postLoginPath', loc.pathname + loc.search)
   return <Navigate to="/login" replace />
 }

@@ -60,3 +60,4 @@ html[data-theme="nuit"] .land-top { background: rgba(18, 18, 22, .85); }
 html[data-theme="nuit"] .land-cta { background: #1c1c22; }
 html[data-theme="nuit"] .land-cta-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
 html[data-theme="nuit"] .pic:has(svg) { background: var(--fill); }
+html[data-theme="nuit"] .btn-primary:hover { border-color: #ff8f73; }

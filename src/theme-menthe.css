@@ -20,7 +20,7 @@ html[data-theme="menthe"] .tabbar a.active { color: #0f4d36; }
 html[data-theme="menthe"] .btn-primary { background: #0f4d36; border-color: #0f4d36; color: #fff; }
 html[data-theme="menthe"] .btn-primary:hover { background: #0b3a29; border-color: #0b3a29; }
 html[data-theme="menthe"] .btn:hover { background: #e0f2e8; border-color: #a7dcc0; }
-html[data-theme="menthe"] .btn-primary:hover { color: #fff; }
+html[data-theme="menthe"] .btn-primary:hover { background: #0b3a29; border-color: #0b3a29; color: #fff; }
 html[data-theme="menthe"] input:focus, html[data-theme="menthe"] textarea:focus, html[data-theme="menthe"] select:focus { border-color: #0f4d36; box-shadow: 0 0 0 3px rgba(15, 77, 54, .14); }
 html[data-theme="menthe"] input[type=checkbox], html[data-theme="menthe"] input[type=radio] { accent-color: #0f4d36; }
 

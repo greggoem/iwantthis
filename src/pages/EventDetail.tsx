@@ -51,6 +51,8 @@ export default function EventDetail() {
   const [editing, setEditing] = useState(false)
   const [eName, setEName] = useState('')
   const [eDate, setEDate] = useState('')
+  const [eTime, setETime] = useState('')
+  const [ePlace, setEPlace] = useState('')
   const [exGiver, setExGiver] = useState('')
   const [exReceiver, setExReceiver] = useState('')
   const [exBoth, setExBoth] = useState(true)
@@ -78,6 +80,7 @@ export default function EventDetail() {
   useEffect(() => { load() }, [load])
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
+  const whenTxt = ev ? formatDate(ev.event_date) + (ev.event_time ? ` à ${ev.event_time.slice(0, 5).replace(':', 'h')}` : '') : ''
   const isOrg = ev?.created_by === me
   // capture d'écran : Ctrl+V / Cmd+V n'importe où sur la page de l'événement (organisateur)
   useEffect(() => {
@@ -101,7 +104,7 @@ export default function EventDetail() {
 
   const saveEvent = async (e: FormEvent) => {
     e.preventDefault()
-    await run(() => supabase.from('events').update({ name: eName.trim(), event_date: eDate }).eq('id', id!), 'Événement mis à jour.')
+    await run(() => supabase.from('events').update({ name: eName.trim(), event_date: eDate, event_time: eTime || null, location: ePlace.trim() || null }).eq('id', id!), 'Événement mis à jour.')
     setEditing(false)
   }
   const deleteEvent = async () => {
@@ -154,7 +157,7 @@ export default function EventDetail() {
     await run(() => supabase.from('event_invites').delete().eq('id', i.id))
   }
   const inviteText = (i: Invite) =>
-    `Bonjour ${i.name} 👋\n\n${occasionEmoji(ev!.name)} Je t'invite à « ${ev!.name} » le ${formatDate(ev!.event_date)} sur ${APP_NAME} : chacun y met ses envies de cadeaux, on voit les listes des uns et des autres et on évite les doublons 😉\n\n👉 Rejoins l'événement ici : ${eventInviteUrl(ev!.invite_code)}\n(Connecte-toi ou crée ton compte avec cette adresse e-mail : ${i.email})\n\nÀ bientôt !`
+    `Bonjour ${i.name} 👋\n\n${occasionEmoji(ev!.name)} Je t'invite à « ${ev!.name} » le ${formatDate(ev!.event_date)}${ev!.event_time ? ` à ${ev!.event_time.slice(0, 5).replace(':', 'h')}` : ''}${ev!.location ? ` (${ev!.location})` : ''} sur ${APP_NAME} : chacun y met ses envies de cadeaux, on voit les listes des uns et des autres et on évite les doublons 😉\n\n👉 Rejoins l'événement ici : ${eventInviteUrl(ev!.invite_code)}\n(Connecte-toi ou crée ton compte avec cette adresse e-mail : ${i.email})\n\nÀ bientôt !`
   const onPickImage = async (file: File | undefined) => {
     if (!file || !ev) return
     setErr(''); setMsg(''); setImgBusy(true)
@@ -275,7 +278,11 @@ export default function EventDetail() {
       {editing ? (
         <form className="card stack" onSubmit={saveEvent}>
           <label>Nom<input required value={eName} maxLength={120} onChange={e => setEName(e.target.value)} /></label>
-          <label>Date de remise<input required type="date" value={eDate} onChange={e => setEDate(e.target.value)} /></label>
+          <div className="row gap wrap">
+            <label style={{ flex: '1 1 160px' }}>Date de remise<input required type="date" value={eDate} onChange={e => setEDate(e.target.value)} /></label>
+            <label style={{ flex: '1 1 120px' }}>Heure <span className="muted small">(facultatif)</span><input type="time" value={eTime} onChange={e => setETime(e.target.value)} /></label>
+          </div>
+          <label>Lieu <span className="muted small">(facultatif)</span><input value={ePlace} maxLength={200} placeholder="Ex. Chez Maminou, rue des Lilas 12, 1180 Uccle" onChange={e => setEPlace(e.target.value)} /></label>
           <div className="row">
             <button className="btn btn-primary">Enregistrer</button>
             <button type="button" className="btn btn-ghost" onClick={() => setEditing(false)}>Annuler</button>
@@ -285,9 +292,21 @@ export default function EventDetail() {
         <>
           <div className="row gap" style={{ alignItems: 'center' }}>
             <h1 style={{ margin: 0 }}>{ev.name}</h1>
-            {isOrg && <IconButton icon="pencil" label="Modifier le nom ou la date" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setEditing(true) }} />}
+            {isOrg && <IconButton icon="pencil" label="Modifier le nom, la date, l'heure ou le lieu" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }} />}
           </div>
-          <p className="muted">{formatDate(ev.event_date)}</p>
+          <div className="ev-facts">
+            <span className="ev-fact"><Icon name="calendar" size={18} /><span>{formatDate(ev.event_date)}{ev.event_time && <> · <strong>{ev.event_time.slice(0, 5).replace(':', 'h')}</strong></>}</span></span>
+            {ev.location && (
+              <a className="ev-fact ev-place" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" title="Ouvrir dans Google Maps">
+                <Icon name="pin" size={18} /><span>{ev.location}</span><span className="ev-maps">Itinéraire <Icon name="external" size={13} /></span>
+              </a>
+            )}
+            {isOrg && !ev.location && !ev.event_time && (
+              <button type="button" className="ev-fact ev-add" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(''); setEPlace(''); setEditing(true) }}>
+                <Icon name="plus" size={16} /> Ajouter une heure ou un lieu
+              </button>
+            )}
+          </div>
         </>
       )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
@@ -369,9 +388,9 @@ export default function EventDetail() {
         <ShareSheet
           title="Partager l'événement"
           intro="Envoyez l'invitation avec un message sympa et l'image de l'événement."
-          message={eventMessage(ev.name, formatDate(ev.event_date), eventInviteUrl(ev.invite_code), APP_NAME)}
+          message={eventMessage(ev.name, whenTxt, eventInviteUrl(ev.invite_code), APP_NAME, ev.location)}
           subject={`Invitation : ${ev.name}`}
-          heading={ev.name} sub={formatDate(ev.event_date)} kicker="Invitation" imageUrl={ev.image_url}
+          heading={ev.name} sub={whenTxt} kicker="Invitation" imageUrl={ev.image_url}
           fileName={`invitation-${ev.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'evenement'}`}
           onClose={() => setShareOpen(false)}
         />

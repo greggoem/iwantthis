@@ -67,7 +67,7 @@ async function shareMeta(kind, code, pageUrl) {
     const d = data.date ? new Date(data.date + 'T12:00:00').toLocaleDateString('fr-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : ''
     return {
       title: `💌 Invitation : ${emoji(data.name)}${data.name}`,
-      desc: `${d ? d.charAt(0).toUpperCase() + d.slice(1) + ' · ' : ''}Rejoins l'événement sur I Want This : chacun partage ses envies de cadeaux, sans doublon.`,
+      desc: `${d ? d.charAt(0).toUpperCase() + d.slice(1) + (data.time ? ` à ${data.time.replace(':', 'h')}` : '') + ' · ' : ''}Rejoins l'événement sur I Want This : chacun partage ses envies de cadeaux, sans doublon.`,
       image: data.image || SITE + 'og.png', url: pageUrl,
     }
   }

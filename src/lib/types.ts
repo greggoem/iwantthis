@@ -51,6 +51,8 @@ export interface EventRow {
   draw_done_at: string | null
   draw_count: number | null
   image_url: string | null
+  event_time?: string | null
+  location?: string | null
 }
 
 export interface MemberRow {

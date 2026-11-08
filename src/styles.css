@@ -714,3 +714,13 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .umenu-out svg { color: var(--danger) !important; }
 html[data-theme="menthe"] .topbar .umenu-btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.3); color: #fff; }
 html[data-theme="menthe"] .topbar .umenu-panel .avatar { background: #0f4d36; color: #fff; }
+
+/* Événement : date, heure, lieu */
+.ev-facts { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 .3rem; }
+.ev-fact { display: inline-flex; align-items: center; gap: .5rem; padding: .45rem .8rem; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); color: var(--ink); font-size: .95rem; text-decoration: none; max-width: 100%; }
+.ev-fact > svg { color: var(--accent, var(--ink)); flex: none; }
+.ev-fact > span { min-width: 0; overflow-wrap: anywhere; }
+a.ev-place:hover { border-color: var(--ink-3, #999); background: var(--fill); }
+.ev-maps { display: inline-flex; align-items: center; gap: .2rem; font-size: .78rem; font-weight: 600; color: var(--muted); margin-left: .2rem; white-space: nowrap; }
+button.ev-add { font: inherit; font-size: .88rem; color: var(--muted); border-style: dashed; background: none; cursor: pointer; }
+button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }

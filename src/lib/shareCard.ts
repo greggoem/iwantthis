@@ -14,8 +14,8 @@ export function occasionEmoji(name: string): string {
   return '🎁'
 }
 
-export function eventMessage(name: string, dateLong: string, url: string, appName: string): string {
-  return `💌 Invitation : ${occasionEmoji(name)} ${name}\n📅 ${dateLong}\n\n` +
+export function eventMessage(name: string, dateLong: string, url: string, appName: string, place?: string | null): string {
+  return `💌 Invitation : ${occasionEmoji(name)} ${name}\n📅 ${dateLong}\n${place ? `📍 ${place}\n` : ''}\n` +
     `Je t'invite à « ${name} » ! Rejoins l'événement sur ${appName} : chacun y met ses envies de cadeaux : on voit les listes des uns et des autres, et on évite les doublons (et les mauvaises surprises 😉).\n\n` +
     `👉 ${url}`
 }

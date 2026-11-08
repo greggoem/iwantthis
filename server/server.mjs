@@ -129,7 +129,8 @@ const server = http.createServer(async (req, res) => {
       if (kind && code) {
         const m = await shareMeta(kind, code, SITE + `?${kind}=${encodeURIComponent(code)}`)
         if (m) html = injectMeta(html, m)
-        if (short) html = html.replace('<head>', `<head>\n    <script>history.replaceState(null,'',${JSON.stringify(`/?${kind}=${code}`)})</script>`)
+        // forme courte /l/TOKEN : les fichiers du site sont en chemins relatifs (./assets/…) → <base href="/">
+        if (short) html = html.replace('<head>', `<head>\n    <base href="/" />\n    <script>history.replaceState(null,'',${JSON.stringify(`/?${kind}=${code}`)})</script>`)
       }
       const body = Buffer.from(html)
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': body.length, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' })

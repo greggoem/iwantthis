@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useAuth } from '../lib/auth'
 import { supabase, APP_NAME } from '../lib/supabase'
 import { useAffiliates } from '../lib/affiliate'
 import Icon, { type IconName } from './Icon'
 import Logo from './Logo'
+import UserMenu from './UserMenu'
 
 const NAV: { to: string; label: string; short: string; icon: IconName; end?: boolean }[] = [
   { to: '/', label: 'Ma liste', short: 'Ma liste', icon: 'gift', end: true },
@@ -14,7 +14,6 @@ const NAV: { to: string; label: string; short: string; icon: IconName; end?: boo
 ]
 
 export default function Layout() {
-  const { profile } = useAuth()
   const programs = useAffiliates()
   const loc = useLocation()
   const [pending, setPending] = useState(0)
@@ -32,7 +31,6 @@ export default function Layout() {
     return () => { window.clearInterval(t); window.removeEventListener('focus', load); window.removeEventListener('iwt-notifications', load) }
   }, [loc.pathname])
   const amazon = programs.some(p => /amazon/i.test(p.domain))
-  const initial = (profile?.display_name ?? '?').trim().charAt(0).toUpperCase()
 
   return (
     <div className="app">
@@ -44,9 +42,7 @@ export default function Layout() {
           </nav>
           <div className="who">
             <NavLink to="/notifications" className="icon-btn bell" aria-label={unread > 0 ? `Notifications (${unread} non lue${unread > 1 ? 's' : ''})` : 'Notifications'} title="Notifications"><Icon name="bell" />{unread > 0 && <span className="bell-count">{unread > 9 ? '9+' : unread}</span>}</NavLink>
-            <NavLink to="/reglages" className="icon-btn" aria-label="Réglages" title="Réglages"><Icon name="settings" /></NavLink>
-            <NavLink to="/profil" className="avatar" title={profile?.display_name ?? 'Mon profil'} aria-label="Mon profil">{initial}</NavLink>
-            <button className="icon-btn" onClick={() => supabase.auth.signOut()} aria-label="Déconnexion" title="Déconnexion"><Icon name="logout" /></button>
+            <UserMenu />
           </div>
         </div>
       </header>

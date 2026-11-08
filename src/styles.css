@@ -693,3 +693,24 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 /* Image d'événement : sur écran tactile, pas de glisser-déposer ni de Ctrl+V */
 .cover-hint-touch { display: none; }
 @media (pointer: coarse) { .cover-hint-desk { display: none; } .cover-hint-touch { display: inline; } }
+
+/* Menu du compte (hamburger) */
+.umenu { position: relative; }
+.umenu-btn { display: inline-flex; align-items: center; gap: .35rem; padding: 3px 8px 3px 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; }
+.umenu-btn:hover, .umenu-btn.on { border-color: var(--ink-3, #999); }
+.umenu-btn .avatar { width: 30px; height: 30px; }
+.umenu-panel { position: absolute; right: 0; top: calc(100% + 8px); width: 270px; max-width: calc(100vw - 1.5rem); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 34px rgba(0,0,0,.18); padding: .4rem; z-index: 60; display: flex; flex-direction: column; }
+.umenu-head { display: flex; gap: .7rem; align-items: center; padding: .55rem .6rem .7rem; }
+.avatar-lg { width: 40px; height: 40px; font-size: 1rem; flex: none; }
+.umenu-id { display: grid; min-width: 0; }
+.umenu-id .ell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.umenu-panel a, .umenu-panel button.umenu-out { display: flex; align-items: center; gap: .65rem; padding: .55rem .65rem; border-radius: 9px; color: var(--ink); text-decoration: none; font: inherit; font-size: .93rem; background: none; border: 0; cursor: pointer; text-align: left; }
+.umenu-panel a svg, .umenu-panel button svg { color: var(--muted); }
+.umenu-panel a:hover, .umenu-panel button.umenu-out:hover { background: var(--fill); }
+.umenu-panel a.on { background: var(--fill); font-weight: 600; }
+.umenu-title { font-size: .7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; padding: .35rem .65rem .15rem; }
+.umenu-sep { height: 1px; background: var(--line); margin: .35rem .3rem; }
+.umenu-out { color: var(--danger) !important; }
+.umenu-out svg { color: var(--danger) !important; }
+html[data-theme="menthe"] .topbar .umenu-btn { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.3); color: #fff; }
+html[data-theme="menthe"] .topbar .umenu-panel .avatar { background: #0f4d36; color: #fff; }

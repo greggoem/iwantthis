@@ -9,7 +9,7 @@ import { deleteItemImage, uploadItemImage } from '../lib/itemImage'
 import { useAuth } from '../lib/auth'
 import { formatDateShort, formatPrice } from '../lib/format'
 import type { Claim, Item, Wishlist } from '../lib/types'
-import { CopyField, IconButton, Notice, Spinner } from '../components/ui'
+import { CopyField, Notice, Spinner } from '../components/ui'
 import { GiftCard, GiftCollection, GiftRow, Thumb, ViewBar } from '../components/GiftTable'
 import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
@@ -20,6 +20,7 @@ import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
+import ActionMenu from '../components/ActionMenu'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
 interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean }
@@ -543,12 +544,12 @@ export default function MyList() {
       status={claims[it.id]
         ? <span className="chip chip-ok" title={`Offert par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">Offert par {claims[it.id].claimed_by_name}</span></span>
         : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
-      actions={<>
-        <IconButton icon="star" label={it.is_favorite ? 'Retirer des favoris' : 'Marquer comme favori'} className={`icon-btn fav-toggle ${it.is_favorite ? 'on' : ''}`} aria-pressed={!!it.is_favorite} onClick={() => toggleFav(it)} />
-        <IconButton icon="pencil" label="Modifier" onClick={() => setModal({ kind: 'edit', item: it })} />
-        {it.url && <IconButton icon="refresh" label="Actualiser image et prix" disabled={busyId === it.id} onClick={() => refresh(it)} />}
-        <IconButton icon="trash" label="Supprimer" danger onClick={() => remove(it)} />
-      </>}
+      actions={<ActionMenu label={`Actions pour « ${it.title} »`} actions={[
+        { icon: 'star', label: it.is_favorite ? 'Retirer des favoris' : 'Marquer comme favori', active: !!it.is_favorite, onClick: () => toggleFav(it) },
+        { icon: 'pencil', label: 'Modifier', onClick: () => setModal({ kind: 'edit', item: it }) },
+        !!it.url && { icon: 'refresh', label: 'Actualiser image et prix', disabled: busyId === it.id, onClick: () => refresh(it) },
+        { icon: 'trash', label: 'Supprimer', danger: true, onClick: () => remove(it) },
+      ]} />}
     />
   )
 
@@ -634,11 +635,11 @@ export default function MyList() {
                   status={ks.length === 0 ? null : given > 0
                     ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} offert{given > 1 ? 's' : ''}</span>
                     : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
-                  actions={<>
-                    <IconButton icon="plus" label="Ajouter des éléments" onClick={() => setModal({ kind: 'kids', item: it })} />
-                    <IconButton icon="pencil" label="Modifier le groupe" onClick={() => setModal({ kind: 'editGroup', item: it })} />
-                    <IconButton icon="trash" label="Supprimer le groupe" danger onClick={() => remove(it)} />
-                  </>}
+                  actions={<ActionMenu label={`Actions pour le groupe « ${it.title} »`} actions={[
+                    { icon: 'plus', label: 'Ajouter des éléments', onClick: () => setModal({ kind: 'kids', item: it }) },
+                    { icon: 'pencil', label: 'Modifier le groupe', onClick: () => setModal({ kind: 'editGroup', item: it }) },
+                    { icon: 'trash', label: 'Supprimer le groupe', danger: true, onClick: () => remove(it) },
+                  ]} />}
                   renderKid={k => itemRow(k, true)}
                 />
               )

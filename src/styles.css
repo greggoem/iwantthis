@@ -747,3 +747,18 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gcard-meta .itemlink svg { flex: none; }
 .itemlink-host { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .gcard-meta .hide-sm { display: none; } }
+
+/* Menu « ⋯ » des actions d'une envie */
+.amenu-btn.on { background: var(--fill); color: var(--ink); }
+.amenu-panel { position: fixed; z-index: 80; min-width: 220px; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.2); padding: .3rem; display: flex; flex-direction: column; }
+.amenu-panel button { display: flex; align-items: center; gap: .6rem; padding: .55rem .65rem; border: 0; background: none; border-radius: 8px; font: inherit; font-size: .92rem; color: var(--ink); text-align: left; cursor: pointer; }
+.amenu-panel button svg { color: var(--muted); flex: none; }
+.amenu-panel button:hover:not(:disabled) { background: var(--fill); }
+.amenu-panel button:disabled { opacity: .5; cursor: default; }
+.amenu-panel button.danger, .amenu-panel button.danger svg { color: var(--danger); }
+.amenu-panel button.active svg { color: #f5a524; fill: #f5a524; }
+
+/* Galerie : statut et actions sur la même ligne */
+.gcard-foot { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
+.gcard-foot .gcard-status { flex: 1 1 auto; min-width: 0; }
+.gcard-foot .gcard-actions { flex: none; margin-left: auto; }

@@ -765,9 +765,9 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .wish-count { margin-left: .2rem; white-space: nowrap; }
 
 /* Événement : en-tête (titre + inviter) et outils */
-.ev-head { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-top: .4rem; }
-.ev-head h1 { overflow-wrap: anywhere; }
-.ev-head > .btn { flex: none; }
+.evd-head { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-top: .4rem; }
+.evd-head h1 { overflow-wrap: anywhere; }
+.evd-head > .btn { flex: none; }
 .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .7rem; }
 .tool-card { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: .35rem .75rem; align-items: start; padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
 .tool-card > .btn, .tool-card > .chip, .tool-card > .small { grid-column: 2; justify-self: start; }
@@ -776,3 +776,17 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .tool-card.on { border-color: var(--accent, var(--ink)); }
 .tool-card.soon { opacity: .65; }
 .tool-card.soon .tool-ic { color: var(--muted); }
+
+/* Événement (proposition B) : nom + date/lieu en texte simple, Inviter et ⋯ à droite */
+.evd-head { align-items: flex-start; flex-wrap: nowrap; }
+.ev-id { min-width: 0; display: grid; gap: .25rem; }
+.ev-id h1 { margin: 0 0 .25rem; overflow-wrap: anywhere; }
+.ev-line { display: flex; align-items: flex-start; gap: .5rem; margin: 0; color: var(--ink-2); font-size: .97rem; line-height: 1.45; }
+.ev-line svg { flex: none; margin-top: .15rem; color: var(--accent, var(--ink)); }
+.ev-line a { font-weight: 600; white-space: nowrap; }
+.ev-btns { display: flex; align-items: center; gap: .3rem; flex: none; padding-top: .3rem; }
+@media (max-width: 560px) {
+  .evd-head { flex-wrap: wrap; }
+  .ev-btns { width: 100%; justify-content: flex-start; padding-top: .2rem; }
+}
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; justify-self: start; }

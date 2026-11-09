@@ -8,6 +8,7 @@ import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/
 import { useConfirm } from '../components/Confirm'
 import Icon from '../components/Icon'
 import PlaceInput from '../components/PlaceInput'
+import ActionMenu from '../components/ActionMenu'
 import Modal from '../components/Modal'
 import ShareSheet from '../components/ShareSheet'
 import { eventMessage, occasionEmoji } from '../lib/shareCard'
@@ -86,6 +87,7 @@ export default function EventDetail() {
   useEffect(() => { load() }, [load])
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
+  const openEdit = () => { if (!ev) return; setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }
   const drawOn = !!ev && (!!ev.draw_enabled || !!ev.draw_done_at)
   const setDrawEnabled = async (v: boolean) => {
     setErr('')
@@ -304,25 +306,32 @@ export default function EventDetail() {
         </form>
       ) : (
         <>
-          <div className="ev-head">
-            <div className="row gap" style={{ alignItems: 'center', minWidth: 0 }}>
-              <h1 style={{ margin: 0 }}>{ev.name}</h1>
-              {isOrg && <IconButton icon="pencil" label="Modifier le nom, la date, l'heure ou le lieu" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }} />}
+          <div className="evd-head">
+            <div className="ev-id">
+              <h1>{ev.name}</h1>
+              <p className="ev-line"><Icon name="calendar" size={17} /><span>{whenTxt.charAt(0).toUpperCase() + whenTxt.slice(1)}</span></p>
+              {ev.location && (
+                <p className="ev-line"><Icon name="pin" size={17} /><span>{ev.location} · <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer">Itinéraire</a></span></p>
+              )}
+              {isOrg && !ev.location && !ev.event_time && (
+                <button type="button" className="linklike small" onClick={openEdit}>+ Ajouter une heure ou un lieu</button>
+              )}
             </div>
-            <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter des proches</button>
-          </div>
-          <div className="ev-facts">
-            <span className="ev-fact"><Icon name="calendar" size={18} /><span>{formatDate(ev.event_date)}{ev.event_time && <> · <strong>{ev.event_time.slice(0, 5).replace(':', 'h')}</strong></>}</span></span>
-            {ev.location && (
-              <a className="ev-fact ev-place" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ev.location)}`} target="_blank" rel="noopener noreferrer" title="Ouvrir dans Google Maps">
-                <Icon name="pin" size={18} /><span>{ev.location}</span><span className="ev-maps">Itinéraire <Icon name="external" size={13} /></span>
-              </a>
-            )}
-            {isOrg && !ev.location && !ev.event_time && (
-              <button type="button" className="ev-fact ev-add" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(''); setEPlace(''); setEditing(true) }}>
-                <Icon name="plus" size={16} /> Ajouter une heure ou un lieu
-              </button>
-            )}
+            <div className="ev-btns">
+              <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter</button>
+              <ActionMenu label="Options de l'événement" actions={[
+                isOrg && { icon: 'pencil', label: 'Modifier nom, date, lieu', onClick: openEdit },
+                isOrg && { icon: 'image', label: ev.image_url ? "Changer l'image" : 'Ajouter une image', onClick: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setImgMenu(true) } },
+                isOrg && !drawOn && { icon: 'dice', label: 'Activer le tirage au sort', onClick: () => setDrawEnabled(true) },
+                drawOn && { icon: 'dice', label: ev.draw_done_at ? 'Voir le tirage au sort' : 'Configurer le tirage au sort', onClick: () => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }) },
+                isOrg && drawOn && !ev.draw_done_at && { icon: 'x', label: 'Désactiver le tirage au sort', onClick: () => setDrawEnabled(false) },
+                { icon: 'coins', label: 'Comptes partagés · bientôt', disabled: true, onClick: () => {} },
+                { icon: 'camera', label: 'Photos partagées · bientôt', disabled: true, onClick: () => {} },
+                { icon: 'chat', label: 'Discussion · bientôt', disabled: true, onClick: () => {} },
+                isOrg ? { icon: 'trash', label: "Supprimer l'événement", danger: true, onClick: deleteEvent }
+                      : { icon: 'logout', label: "Quitter l'événement", danger: true, onClick: leave },
+              ]} />
+            </div>
           </div>
         </>
       )}
@@ -344,33 +353,6 @@ export default function EventDetail() {
           )}
         </section>
       )}
-
-      <h2 className="mt row"><Icon name="sparkles" size={20} /> Outils de l'événement</h2>
-      <div className="tools-grid">
-        <div className={`tool-card ${drawOn ? 'on' : ''}`}>
-          <span className="tool-ic"><Icon name="dice" size={22} /></span>
-          <div className="tool-txt">
-            <strong>Tirage au sort</strong>
-            <span className="small muted">Chacun tire en secret la personne à qui il offre un cadeau.</span>
-          </div>
-          {drawOn ? (
-            <a className="btn btn-sm" href="#tirage" onClick={e => { e.preventDefault(); document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }) }}>{ev.draw_done_at ? 'Voir' : 'Configurer'}</a>
-          ) : isOrg ? (
-            <button className="btn btn-sm btn-primary" onClick={() => setDrawEnabled(true)}>Activer</button>
-          ) : <span className="small muted">Non activé</span>}
-        </div>
-        {[
-          { icon: 'coins' as const, name: 'Comptes partagés', desc: 'Qui a payé quoi, qui doit combien (façon Tricount).' },
-          { icon: 'camera' as const, name: 'Photos partagées', desc: 'Un album commun pour les photos de la fête.' },
-          { icon: 'chat' as const, name: 'Discussion', desc: 'Un fil de discussion entre les invités.' },
-        ].map(t => (
-          <div key={t.name} className="tool-card soon" aria-disabled="true">
-            <span className="tool-ic"><Icon name={t.icon} size={22} /></span>
-            <div className="tool-txt"><strong>{t.name}</strong><span className="small muted">{t.desc}</span></div>
-            <span className="chip chip-quiet">Bientôt</span>
-          </div>
-        ))}
-      </div>
 
       {isOrg && invites.length > 0 && (
         <>
@@ -541,10 +523,6 @@ export default function EventDetail() {
       </section>
       </>}
 
-      <div className="row gap mt">
-        {!isOrg && <button className="btn btn-ghost danger" onClick={leave}>Quitter l'événement</button>}
-        {isOrg && <button className="btn btn-ghost danger" onClick={deleteEvent}>Supprimer l'événement</button>}
-      </div>
     </div>
   )
 }

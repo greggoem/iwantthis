@@ -38,7 +38,12 @@ html[data-theme="nuit"] .g-kids { background: #18181d; }
 html[data-theme="nuit"] .pic, html[data-theme="nuit"] .thumb img { background: #f4f4f6; }
 html[data-theme="nuit"] .gcard:hover { box-shadow: 0 8px 26px rgba(0, 0, 0, .45); }
 html[data-theme="nuit"] .gtable-row.is-claimed, html[data-theme="nuit"] .mock-done { background: #14261c; box-shadow: inset 4px 0 0 #22c55e; }
-html[data-theme="nuit"] .gcard.is-claimed { background: #14261c; border-color: #1f5a37; }
+/* Envie achetée (galerie) : carte sombre normale, photo estompée, liseré et étiquette verts discrets */
+html[data-theme="nuit"] .gcard.is-claimed { background: var(--surface); border-color: rgba(74, 222, 128, .35); box-shadow: inset 0 3px 0 #22c55e; }
+html[data-theme="nuit"] .gcard.is-claimed .gcard-img img { filter: grayscale(.6) brightness(.75); opacity: .7; }
+html[data-theme="nuit"] .gcard.is-claimed .gcard-img, html[data-theme="nuit"] .gcard.is-claimed .gcard-img .pic, html[data-theme="nuit"] .gcard.is-claimed .gcard-img img { background: #2a2a31; }
+html[data-theme="nuit"] .gcard.is-claimed .title-link strong { text-decoration: none; opacity: 1; color: var(--muted); }
+html[data-theme="nuit"] .gcard.is-claimed .g-price, html[data-theme="nuit"] .gcard.is-claimed .itemlink { color: var(--muted); }
 html[data-theme="nuit"] .gcard-group { box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); }
 html[data-theme="nuit"] .zoom-pop { background: var(--surface); }
 html[data-theme="nuit"] .modal-back { background: rgba(0, 0, 0, .6); }
@@ -51,7 +56,8 @@ html[data-theme="nuit"] .target-card { border-color: var(--accent); }
 html[data-theme="nuit"] .chip { background: #2a2a33; border-color: #393944; color: var(--ink-2); }
 html[data-theme="nuit"] .chip.chip-ok { background: var(--ok-bg); color: var(--ok); border-color: #1f5a37; }
 html[data-theme="nuit"] .chip.chip-quiet { background: transparent; border-color: transparent; color: var(--muted); }
-html[data-theme="nuit"] .is-claimed .chip.chip-ok { background: #16a34a; color: #fff; border-color: #16a34a; }
+html[data-theme="nuit"] .is-claimed .chip.chip-ok.chip-ok.chip-ok { background: rgba(74, 222, 128, .12); color: #4ade80; border-color: rgba(74, 222, 128, .4); }
+html[data-theme="nuit"] .is-claimed .chip.chip-ok svg { stroke: #4ade80; }
 html[data-theme="nuit"] .tag { border-color: #393944; }
 html[data-theme="nuit"] .themecard.on { border-color: var(--accent); }
 html[data-theme="nuit"] .logo-bg { fill: #2c2c35; }

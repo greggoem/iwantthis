@@ -190,7 +190,9 @@ export async function refreshGift(c: Ctx, id: string) {
   }
   if (!p.found) return { updated: false, reason: p.reason ?? 'Lecture impossible', gift: giftOut(it, undefined, c.uid) }
   const patch: any = {}
-  if (p.image) patch.image_url = p.image
+  // une image ajoutée à la main (stockée dans item-images) n'est jamais remplacée
+  const ownImage = typeof it.image_url === 'string' && it.image_url.includes('/storage/v1/object/public/item-images/')
+  if (p.image && !ownImage) patch.image_url = p.image
   if (euro(p) !== undefined) patch.price = euro(p)
   if (!Object.keys(patch).length) return { updated: false, reason: 'Le site ne donne ni image ni prix', gift: giftOut(it, undefined, c.uid) }
   const rows = ok(await c.sb.from('items').update(patch).eq('id', id).select()) as any[]

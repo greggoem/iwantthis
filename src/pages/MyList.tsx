@@ -494,7 +494,10 @@ export default function MyList() {
   }
 
   /** Relit le lien d'un cadeau : met à jour l'image et le prix si le site les donne */
-  const refreshOne = async (it: Item, quiet = false): Promise<boolean> => {
+  // Image ajoutée à la main (envoi, capture, collage) : stockée chez nous, jamais remplacée par l'actualisation
+  const isOwnImage = (u: string | null) => !!u && u.includes('/storage/v1/object/public/item-images/')
+  /** keepImage : ne remplace pas une image existante (seulement si l'envie n'en a pas) */
+  const refreshOne = async (it: Item, quiet = false, keepImage = false): Promise<boolean> => {
     if (!it.url) return false
     const p = await fetchPreview(it.url)
     const better = p.url && p.url !== it.url && safeUrl(p.url) ? p.url : undefined
@@ -502,9 +505,9 @@ export default function MyList() {
     if (!p.found) { if (!quiet) setErr(`« ${it.title} » : ${p.reason ?? 'lecture impossible'}`); return !!better }
     const price = euroPrice(p)
     const patch: { image_url?: string; price?: number } = {}
-    if (p.image) patch.image_url = p.image
+    if (p.image && p.image !== it.image_url && !isOwnImage(it.image_url) && !(keepImage && it.image_url)) patch.image_url = p.image
     if (price !== undefined) patch.price = price
-    if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : le site ne donne ni image ni prix.`); return !!better }
+    if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : rien de nouveau (prix inchangé ou absent, image conservée).`); return !!better }
     const { error } = await supabase.from('items').update(patch).eq('id', it.id)
     if (error) { setErr(errMsg(error)); return false }
     if (!quiet) setMsg(`« ${it.title} » mis à jour${price !== undefined ? ` (${formatPrice(price)})` : ''}.`)
@@ -520,7 +523,7 @@ export default function MyList() {
     const worker = async () => {
       while (next < withUrl.length) {
         const it = withUrl[next++]
-        await refreshOne(it, true)
+        await refreshOne(it, true, true)
         setProgress(++done)
       }
     }
@@ -599,7 +602,7 @@ export default function MyList() {
         <ViewBar prefs={prefs} onChange={setPrefs} left={<>
           <span className="muted small">{tops.length} envie{tops.length > 1 ? 's' : ''}{tops.some(t => t.is_group) ? ` · ${nGifts} cadeau${nGifts > 1 ? 'x' : ''} au total` : ''}</span>
           {withUrl.length > 0 && (
-            <button className="btn btn-sm" disabled={bulk} onClick={refreshAll} title="Relire tous les liens : met à jour les images et les prix">
+            <button className="btn btn-sm" disabled={bulk} onClick={refreshAll} title="Relire tous les liens : met à jour les prix et ajoute les images manquantes (vos images restent)">
               <Icon name="refresh" size={15} /> {bulk ? `Actualisation… ${progress}/${withUrl.length}` : 'Tout actualiser'}
             </button>
           )}

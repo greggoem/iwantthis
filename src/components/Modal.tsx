@@ -8,10 +8,12 @@ export default function Modal({ title, onClose, children, wide = false }: { titl
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    // bloque le défilement de la page derrière (html ET body : selon le navigateur, c'est l'un ou l'autre qui défile)
+    const html = document.documentElement, body = document.body
+    const prev = [html.style.overflow, body.style.overflow]
+    html.style.overflow = 'hidden'; body.style.overflow = 'hidden'
     ref.current?.focus()
-    return () => { document.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+    return () => { document.removeEventListener('keydown', onKey); html.style.overflow = prev[0]; body.style.overflow = prev[1] }
   }, [onClose])
 
   return (

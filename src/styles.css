@@ -801,3 +801,6 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .ev-chip { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; background: var(--fill); border: 1px solid var(--line); color: var(--ink-2); font-size: .8rem; text-decoration: none; }
 .ev-chip:hover { border-color: var(--ink-3, #999); color: var(--ink); }
 .ev-chip svg { color: var(--accent, var(--ink)); }
+/* Fenêtres : le défilement reste dans la fenêtre, jamais transmis à la page derrière */
+.modal-back { overscroll-behavior: contain; overflow: hidden; }
+.modal { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }

@@ -791,3 +791,13 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
   .ev-btns { width: 100%; justify-content: flex-start; padding-top: .2rem; }
 }
 .linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; justify-self: start; }
+
+/* Listes de mes proches : carte entière cliquable, événements en capsules cliquables */
+.pcard { position: relative; }
+.pcard-name { margin: 0; display: flex; align-items: baseline; flex-wrap: wrap; }
+.pcard-link { font-weight: 700; color: inherit; text-decoration: none; }
+.pcard-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.pcard-evs { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+.ev-chip { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; background: var(--fill); border: 1px solid var(--line); color: var(--ink-2); font-size: .8rem; text-decoration: none; }
+.ev-chip:hover { border-color: var(--ink-3, #999); color: var(--ink); }
+.ev-chip svg { color: var(--accent, var(--ink)); }

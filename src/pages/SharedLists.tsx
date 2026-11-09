@@ -115,14 +115,21 @@ export default function SharedLists() {
   const card = (r: Row, withEvents: boolean) => {
     const ev = evOf[r.owner_id] ?? []
     return (
-      <Link className="card item linkcard" to={`/listes/${r.id}`}>
+      <div className="card item linkcard pcard">
         <div className="item-main">
-          <strong>{names[r.owner_id] ?? 'Quelqu\'un'}</strong>
-          <p className="small muted">{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items[0]?.count ?? 0)}</p>
-          {withEvents && ev.length > 0 && <p className="small muted">{ev.slice(0, 3).map(e => e.name).join(' · ')}{ev.length > 3 ? ` +${ev.length - 3}` : ''}</p>}
+          <p className="pcard-name">
+            <Link className="pcard-link" to={`/listes/${r.id}`}>{names[r.owner_id] ?? 'Quelqu\'un'}</Link>
+            <span className="small muted wish-count">{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}</span>
+          </p>
+          {withEvents && ev.length > 0 && (
+            <div className="pcard-evs">
+              {ev.slice(0, 4).map(e => <Link key={e.id} className="ev-chip" to={`/evenements/${e.id}`}><Icon name="calendar" size={13} /> {e.name}</Link>)}
+              {ev.length > 4 && <span className="small muted">+{ev.length - 4}</span>}
+            </div>
+          )}
         </div>
         <span aria-hidden>→</span>
-      </Link>
+      </div>
     )
   }
 

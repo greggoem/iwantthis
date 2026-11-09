@@ -96,7 +96,7 @@ export function GroupSection({ group, kids, image, status, actions, renderKid, d
         <p className="small g-details"><span className="tag">{group.pick_one ? 'un seul à choisir' : 'plusieurs possibles'}</span> {group.details ?? ''}</p>
         <div className="gcard-meta">
           <span className="g-price">{kids.length ? priceRange(kids) : ''}</span>
-          <span className="small link">{kids.length ? <>Voir {kids.length > 1 ? `les ${kids.length}` : 'l\'élément'} <Icon name="chevron" size={14} /></> : 'Groupe vide'}</span>
+          <span className="small link">{kids.length ? <>Voir<span className="hide-sm">{kids.length > 1 ? ` les ${kids.length}` : ' l\'élément'}</span> <Icon name="chevron" size={14} /></> : 'Groupe vide'}</span>
         </div>
         <div className="gcard-foot" onClick={e => e.stopPropagation()}>
           <div className="gcard-status">{status}</div>

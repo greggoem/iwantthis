@@ -10,8 +10,8 @@ export default function ItemLink({ url }: { url: string | null }) {
   const link = buildLink(url, programs)
   if (!link) return null
   return (
-    <a className="itemlink" href={link.href} target="_blank" rel="noopener noreferrer sponsored nofollow">
-      {link.host}<Icon name="external" size={13} />
+    <a className="itemlink" title={link.host} href={link.href} target="_blank" rel="noopener noreferrer sponsored nofollow">
+      <span className="itemlink-host">{link.host}</span><Icon name="external" size={13} />
     </a>
   )
 }

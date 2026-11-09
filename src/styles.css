@@ -738,3 +738,12 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gcard-meta + .gcard-foot { margin-top: 0; }
 .clamp-more { align-self: flex-start; background: none; border: 0; padding: 0; margin: -.1rem 0 .1rem; font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .clamp-more:hover { color: var(--ink); }
+/* Galerie : prix + magasin toujours sur une seule ligne (le nom du magasin se coupe avec « … ») */
+.gcard-meta { flex-wrap: nowrap; }
+.gcard-meta .g-price { flex: none; white-space: nowrap; }
+.gcard-meta .itemlink { min-width: 0; display: inline-flex; align-items: center; gap: .2rem; overflow: hidden; }
+.gcard-meta .itemlink { white-space: nowrap; flex-wrap: nowrap; }
+.gcard-meta .link { white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gcard-meta .itemlink svg { flex: none; }
+.itemlink-host { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 480px) { .gcard-meta .hide-sm { display: none; } }

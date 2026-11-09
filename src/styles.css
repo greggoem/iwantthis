@@ -372,8 +372,8 @@ select { width: auto; max-width: 100%; }
 .pic:has(svg) { background: var(--fill); }
 .pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: .6rem; box-sizing: border-box; display: block; }
 .gcard-body { padding: .8rem .9rem .9rem; display: flex; flex-direction: column; gap: .3rem; flex: 1; }
-.gcard .title-link strong, .gcard .g-details { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; }
-.gcard .title-link { min-height: 2.9em; }
+.gcard .title-link strong.clamp:not(.open), .gcard .g-details.clamp:not(.open) { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 2; }
+.gcard .title-link { min-height: 0; }
 .gcard .g-details { min-height: 2.5em; margin: 0; }
 .gcard-meta { min-height: 1.6rem; }
 .gcard .title-link strong { font-weight: 600; overflow-wrap: anywhere; }
@@ -618,7 +618,7 @@ html:not([data-theme="menthe"]):not([data-theme="fete"]):not([data-theme="doodle
 .claimbox .radio { min-width: 0; overflow-wrap: anywhere; }
 
 /* Groupe fermé en galerie : une carte « pile » */
-.gcard-group { cursor: pointer; position: relative; box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); margin: 0 10px 10px 0; }
+.gcard-group { cursor: pointer; position: relative; box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--line), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); margin: 0 10px 0 0; }
 .gcard-group:hover { box-shadow: 5px 5px 0 -1px var(--surface), 5px 5px 0 0 var(--ink-3, #999), 10px 10px 0 -1px var(--surface), 10px 10px 0 0 var(--line); }
 .gcard-group .gcard-img .count-badge { top: .55rem; right: .55rem; bottom: auto; font-size: .8rem; line-height: 22px; min-width: 26px; }
 .gcard-group .gcard-meta .link { display: inline-flex; align-items: center; gap: .15rem; }
@@ -732,3 +732,9 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .place-list li > span { display: grid; min-width: 0; }
 .place-list li.on { background: var(--fill); }
 .place-list li.place-credit { cursor: default; font-size: .7rem; color: var(--muted); padding: .2rem .6rem; justify-content: flex-end; }
+
+/* Galerie : prix alignés en bas, fine ligne au-dessus ; texte coupé dépliable */
+.gcard-meta { margin-top: auto; border-top: 1px solid var(--line); padding-top: .55rem; }
+.gcard-meta + .gcard-foot { margin-top: 0; }
+.clamp-more { align-self: flex-start; background: none; border: 0; padding: 0; margin: -.1rem 0 .1rem; font: inherit; font-size: .78rem; font-weight: 600; color: var(--muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.clamp-more:hover { color: var(--ink); }

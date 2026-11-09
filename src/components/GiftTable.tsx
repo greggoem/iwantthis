@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
@@ -151,13 +151,37 @@ export function GiftRow({ item, status, actions, children, highlight, kid, dim }
   )
 }
 
+/** Texte coupé à 2 lignes ; un bouton « … plus » apparaît seulement s'il est réellement coupé */
+function Clamp({ text, as = 'strong', className = '', wrap }: { text: string; as?: 'strong' | 'p'; className?: string; wrap?: (el: ReactNode) => ReactNode }) {
+  const ref = useRef<HTMLElement>(null)
+  const [cut, setCut] = useState(false)
+  const [open, setOpen] = useState(false)
+  useLayoutEffect(() => {
+    const el = ref.current; if (!el || open) return
+    const check = () => setCut(el.scrollHeight > el.clientHeight + 1)
+    check()
+    const ro = new ResizeObserver(check); ro.observe(el)
+    return () => ro.disconnect()
+  }, [text, open])
+  const Tag = as as 'strong'
+  return (
+    <>
+      {(wrap ?? (x => x))(<Tag ref={ref as React.RefObject<HTMLElement>} className={`clamp ${open ? 'open' : ''} ${className}`} title={cut && !open ? text : undefined}>{text}</Tag>)}
+      {(cut || open) && (
+        <button type="button" className="clamp-more" aria-expanded={open}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); setOpen(o => !o) }}>{open ? 'Réduire' : 'Lire la suite'}</button>
+      )}
+    </>
+  )
+}
+
 export function GiftCard({ item, status, actions, children, highlight, dim }: GiftProps) {
   return (
     <article className={`gcard ${highlight ? 'is-claimed' : ''} ${dim ? 'dim' : ''}`}>
       <ItemAnchor url={item.url} className="gcard-img"><Pic src={item.image_url} alt={item.title} />{highlight && <span className="claimed-ribbon"><Icon name="check" size={14} /> Acheté</span>}{item.is_favorite && <span className="fav-ribbon"><Icon name="star" size={13} /> Favori</span>}</ItemAnchor>
       <div className="gcard-body">
-        <ItemAnchor url={item.url} className="title-link">{item.is_favorite && <span className="fav-star" title="Favori"><Icon name="star" size={15} /></span>}<strong>{item.title}</strong></ItemAnchor>
-        {item.details && <p className="small g-details">{item.details}</p>}
+        <Clamp text={item.title} wrap={el => <ItemAnchor url={item.url} className="title-link">{item.is_favorite && <span className="fav-star" title="Favori"><Icon name="star" size={15} /></span>}{el}</ItemAnchor>} />
+        {item.details && <Clamp as="p" className="small g-details" text={item.details} />}
         <div className="gcard-meta">
           {item.price !== null && <span className="g-price">{formatPrice(item.price)}</span>}
           {item.url && <ItemLink url={item.url} />}

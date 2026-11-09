@@ -15,6 +15,9 @@ import './theme-nuit.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 
+// Le titre personnalisé (aperçu des liens partagés) ne sert qu'aux robots : l'onglet reprend le nom du site
+document.title = 'I Want This'
+
 // Liens partagés « ?l=TOKEN » / « ?e=CODE » → routes internes #/l/TOKEN, #/e/CODE
 {
   const q = new URLSearchParams(window.location.search)

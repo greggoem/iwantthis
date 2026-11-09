@@ -91,7 +91,9 @@ function injectMeta(html, m) {
     html = re.test(html) ? html.replace(re, tag) : html.replace('</head>', `    ${tag}\n  </head>`)
   }
   html = html.replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${esc(m.desc)}" />`)
-  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(m.title)}</title>`)
+  // onglet du navigateur : sans emoji (l'icône du site est déjà un cadeau)
+  const plain = m.title.replace(/^[^\p{L}\p{N}]+/u, '').replace(/\s*:\s*[^\p{L}\p{N}]+/u, ' : ')
+  html = html.replace(/<title>[^<]*<\/title>/, `<title>${esc(plain)} · I Want This</title>`)
   html = html.replace(/<meta property="og:image:width"[^>]*>\s*|<meta property="og:image:height"[^>]*>\s*/g, '')
   return html
 }

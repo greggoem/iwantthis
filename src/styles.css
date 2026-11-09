@@ -763,3 +763,16 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gcard-foot .gcard-status { flex: 1 1 auto; min-width: 0; }
 .gcard-foot .gcard-actions { flex: none; margin-left: auto; }
 .wish-count { margin-left: .2rem; white-space: nowrap; }
+
+/* Événement : en-tête (titre + inviter) et outils */
+.ev-head { display: flex; align-items: center; justify-content: space-between; gap: .8rem; flex-wrap: wrap; margin-top: .4rem; }
+.ev-head h1 { overflow-wrap: anywhere; }
+.ev-head > .btn { flex: none; }
+.tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .7rem; }
+.tool-card { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; gap: .35rem .75rem; align-items: start; padding: .9rem 1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.tool-card > .btn, .tool-card > .chip, .tool-card > .small { grid-column: 2; justify-self: start; }
+.tool-ic { grid-row: span 2; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: var(--fill); color: var(--accent, var(--ink)); }
+.tool-txt { display: grid; gap: .1rem; }
+.tool-card.on { border-color: var(--accent, var(--ink)); }
+.tool-card.soon { opacity: .65; }
+.tool-card.soon .tool-ic { color: var(--muted); }

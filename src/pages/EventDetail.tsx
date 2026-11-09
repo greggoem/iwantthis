@@ -86,6 +86,14 @@ export default function EventDetail() {
   useEffect(() => { load() }, [load])
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
+  const drawOn = !!ev && (!!ev.draw_enabled || !!ev.draw_done_at)
+  const setDrawEnabled = async (v: boolean) => {
+    setErr('')
+    const { error } = await supabase.from('events').update({ draw_enabled: v }).eq('id', id!)
+    if (error) { setErr(errMsg(error)); return }
+    setEv(e => e ? { ...e, draw_enabled: v } : e)
+    if (v) setTimeout(() => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }), 100)
+  }
   const whenTxt = ev ? formatDate(ev.event_date) + (ev.event_time ? ` à ${ev.event_time.slice(0, 5).replace(':', 'h')}` : '') : ''
   const isOrg = ev?.created_by === me
   // capture d'écran : Ctrl+V / Cmd+V n'importe où sur la page de l'événement (organisateur)
@@ -296,9 +304,12 @@ export default function EventDetail() {
         </form>
       ) : (
         <>
-          <div className="row gap" style={{ alignItems: 'center' }}>
-            <h1 style={{ margin: 0 }}>{ev.name}</h1>
-            {isOrg && <IconButton icon="pencil" label="Modifier le nom, la date, l'heure ou le lieu" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }} />}
+          <div className="ev-head">
+            <div className="row gap" style={{ alignItems: 'center', minWidth: 0 }}>
+              <h1 style={{ margin: 0 }}>{ev.name}</h1>
+              {isOrg && <IconButton icon="pencil" label="Modifier le nom, la date, l'heure ou le lieu" onClick={() => { setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }} />}
+            </div>
+            <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter des proches</button>
           </div>
           <div className="ev-facts">
             <span className="ev-fact"><Icon name="calendar" size={18} /><span>{formatDate(ev.event_date)}{ev.event_time && <> · <strong>{ev.event_time.slice(0, 5).replace(':', 'h')}</strong></>}</span></span>
@@ -334,13 +345,31 @@ export default function EventDetail() {
         </section>
       )}
 
-      <div className="row wrap gap mt event-actions">
-        <button className="btn btn-primary" onClick={() => { setErr(''); setMsg(''); setInviteOpen(true) }}><Icon name="users" size={16} /> Inviter des proches</button>
-        {isOrg && (
-          <button className="btn" disabled={inDraw.length < 2} onClick={doDraw} title={inDraw.length < 2 ? 'Il faut au moins 2 participants' : undefined}>
-            <Icon name="dice" size={16} /> {ev.draw_done_at ? 'Refaire le tirage' : 'Lancer le tirage au sort'}
-          </button>
-        )}
+      <h2 className="mt row"><Icon name="sparkles" size={20} /> Outils de l'événement</h2>
+      <div className="tools-grid">
+        <div className={`tool-card ${drawOn ? 'on' : ''}`}>
+          <span className="tool-ic"><Icon name="dice" size={22} /></span>
+          <div className="tool-txt">
+            <strong>Tirage au sort</strong>
+            <span className="small muted">Chacun tire en secret la personne à qui il offre un cadeau.</span>
+          </div>
+          {drawOn ? (
+            <a className="btn btn-sm" href="#tirage" onClick={e => { e.preventDefault(); document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }) }}>{ev.draw_done_at ? 'Voir' : 'Configurer'}</a>
+          ) : isOrg ? (
+            <button className="btn btn-sm btn-primary" onClick={() => setDrawEnabled(true)}>Activer</button>
+          ) : <span className="small muted">Non activé</span>}
+        </div>
+        {[
+          { icon: 'coins' as const, name: 'Comptes partagés', desc: 'Qui a payé quoi, qui doit combien (façon Tricount).' },
+          { icon: 'camera' as const, name: 'Photos partagées', desc: 'Un album commun pour les photos de la fête.' },
+          { icon: 'chat' as const, name: 'Discussion', desc: 'Un fil de discussion entre les invités.' },
+        ].map(t => (
+          <div key={t.name} className="tool-card soon" aria-disabled="true">
+            <span className="tool-ic"><Icon name={t.icon} size={22} /></span>
+            <div className="tool-txt"><strong>{t.name}</strong><span className="small muted">{t.desc}</span></div>
+            <span className="chip chip-quiet">Bientôt</span>
+          </div>
+        ))}
       </div>
 
       {isOrg && invites.length > 0 && (
@@ -450,7 +479,8 @@ export default function EventDetail() {
         ))}
       </ul>
 
-      <h2 className="mt row"><Icon name="dice" size={20} /> Tirage au sort</h2>
+      {drawOn && <>
+      <h2 className="mt row" id="tirage"><Icon name="dice" size={20} /> Tirage au sort</h2>
       <section className="card stack">
         {ev.draw_done_at ? (
           <>
@@ -503,11 +533,13 @@ export default function EventDetail() {
                 {ev.draw_done_at ? 'Refaire le tirage' : `Lancer le tirage (${inDraw.length} participant${inDraw.length > 1 ? 's' : ''})`}
               </button>
               {ev.draw_done_at && <button className="btn btn-ghost" onClick={resetDraw}>Annuler le tirage</button>}
+              {!ev.draw_done_at && <button className="btn btn-ghost" onClick={() => setDrawEnabled(false)}>Désactiver le tirage</button>}
             </div>
             {inDraw.length < 2 && <p className="small muted">Il faut au moins 2 participants.</p>}
           </>
         )}
       </section>
+      </>}
 
       <div className="row gap mt">
         {!isOrg && <button className="btn btn-ghost danger" onClick={leave}>Quitter l'événement</button>}

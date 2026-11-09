@@ -40,7 +40,7 @@ html[data-theme="menthe"] .tag { border-radius: 4px; background: #d1fae5; color:
 
 /* Fenêtres */
 html[data-theme="menthe"] .modal-back { background: rgba(11, 58, 41, .55); }
-html[data-theme="menthe"] .modal { border: 1.5px solid #0f4d36; border-radius: 18px; overflow: hidden; }
+html[data-theme="menthe"] .modal { border: 1.5px solid #0f4d36; border-radius: 18px; overflow: auto; }
 html[data-theme="menthe"] .modal-head { background: #dff3e8; border-bottom: 1.5px solid #a7dcc0; padding: .9rem 1.1rem; }
 html[data-theme="menthe"] .modal-foot { background: #eef9f3; border-top: 1px solid #cfe8da; margin: 1rem -1.25rem 0; padding: .8rem 1.25rem; }
 html[data-theme="menthe"] input, html[data-theme="menthe"] select, html[data-theme="menthe"] textarea { border-color: #b7d8c6; border-width: 1.5px; }

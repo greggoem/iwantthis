@@ -20,6 +20,8 @@ interface Invite { id: string; name: string; email: string }
 const imageFrom = (dt: DataTransfer | null): File | undefined =>
   Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
 
+const envies = (n: number) => n === 0 ? 'aucune envie' : `${n} envie${n > 1 ? 's' : ''}`
+
 export default function EventDetail() {
   const { id } = useParams()
   const { session } = useAuth()
@@ -30,6 +32,7 @@ export default function EventDetail() {
   const [ev, setEv] = useState<EventRow | null>(null)
   const [members, setMembers] = useState<MemberRow[]>([])
   const [lists, setLists] = useState<Record<string, string>>({})
+  const [counts, setCounts] = useState<Record<string, number>>({})
   const [excl, setExcl] = useState<Excl[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [editInv, setEditInv] = useState<Invite | null>(null)
@@ -66,13 +69,15 @@ export default function EventDetail() {
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
     const [w, x, a, inv] = await Promise.all([
-      supabase.from('wishlists').select('id,owner_id').in('owner_id', mem.map(k => k.user_id)),
+      supabase.from('wishlists').select('id,owner_id,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
       supabase.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id!),
       supabase.from('draw_assignments').select('receiver_id').eq('event_id', id!).maybeSingle(),
       supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
     ])
     setInvites((inv.data as Invite[]) ?? [])
-    setLists(Object.fromEntries(((w.data as { id: string; owner_id: string }[]) ?? []).map(l => [l.owner_id, l.id])))
+    const wl = (w.data as { id: string; owner_id: string; items?: { count: number }[] }[]) ?? []
+    setLists(Object.fromEntries(wl.map(l => [l.owner_id, l.id])))
+    setCounts(Object.fromEntries(wl.map(l => [l.owner_id, l.items?.[0]?.count ?? 0])))
     setExcl((x.data as Excl[]) ?? [])
     setMyTarget((a.data as { receiver_id: string } | null)?.receiver_id ?? null)
     setLoading(false)
@@ -423,6 +428,7 @@ export default function EventDetail() {
               <strong>{m.profiles?.display_name ?? '—'}</strong>
               {m.user_id === ev.created_by && <span className="tag">organisateur</span>}
               {m.user_id === me && <span className="tag">vous</span>}
+              {lists[m.user_id] && <span className="small muted wish-count">{envies(counts[m.user_id] ?? 0)}</span>}
               {isOrg && (
                 <label className="radio small">
                   <input type="checkbox" checked={m.in_draw}

@@ -36,7 +36,7 @@ export default function SharedLists() {
   useEffect(() => {
     (async () => {
       const [{ data }, ev] = await Promise.all([
-        supabase.from('wishlists').select('id,owner_id,title,items(count)').neq('owner_id', session!.user.id),
+        supabase.from('wishlists').select('id,owner_id,title,items(count)').eq('items.is_group', false).neq('owner_id', session!.user.id),
         supabase.from('events').select('id,name,event_date,event_members(user_id)'),
       ])
       const r = (data as unknown as Row[]) ?? []
@@ -118,7 +118,7 @@ export default function SharedLists() {
       <Link className="card item linkcard" to={`/listes/${r.id}`}>
         <div className="item-main">
           <strong>{names[r.owner_id] ?? 'Quelqu\'un'}</strong>
-          <p className="small muted">{r.title} · {r.items[0]?.count ?? 0} cadeau(x)</p>
+          <p className="small muted">{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items[0]?.count ?? 0)}</p>
           {withEvents && ev.length > 0 && <p className="small muted">{ev.slice(0, 3).map(e => e.name).join(' · ')}{ev.length > 3 ? ` +${ev.length - 3}` : ''}</p>}
         </div>
         <span aria-hidden>→</span>

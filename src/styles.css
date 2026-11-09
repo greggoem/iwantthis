@@ -762,3 +762,4 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gcard-foot { display: flex; align-items: center; justify-content: space-between; gap: .4rem; flex-wrap: wrap; }
 .gcard-foot .gcard-status { flex: 1 1 auto; min-width: 0; }
 .gcard-foot .gcard-actions { flex: none; margin-left: auto; }
+.wish-count { margin-left: .2rem; white-space: nowrap; }

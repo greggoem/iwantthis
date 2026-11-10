@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { APP_NAME } from '../lib/supabase'
 import ThemePicker from '../components/ThemePicker'
-import { HowItWorks, ExtensionGuide } from '../components/HowItWorks'
+import { HowItWorks, ExtensionGuide, MobileGuide } from '../components/HowItWorks'
 import Icon from '../components/Icon'
 import { LogoMark } from '../components/Logo'
 
@@ -39,6 +39,7 @@ export default function Welcome() {
         <div className="wl-body">
           <h2>Ajoutez une envie en un clic</h2>
           <ExtensionGuide />
+          <MobileGuide />
         </div>
       </section>
 

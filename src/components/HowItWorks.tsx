@@ -103,6 +103,45 @@ export function HowItWorks() {
   )
 }
 
+/** Lien d'installation du Raccourci iOS (iCloud). Vide tant qu'il n'est pas publié : le bouton reste caché. */
+export const IOS_SHORTCUT_URL = ''
+
+/** Ajouter une envie depuis l'application d'une marque (Zara, H&M, Amazon…) sur téléphone */
+export function MobileGuide() {
+  return (
+    <div className="mob-guide">
+      <h3>Depuis l'appli d'une marque (Zara, H&amp;M, Amazon…)</h3>
+      <p className="muted">Sur téléphone, l'extension ne fonctionne pas dans les applications des marques. Utilisez le bouton <strong>Partager</strong> de la fiche produit :</p>
+      <div className="mob-cols">
+        <article>
+          <h4>Android</h4>
+          <ol>
+            <li>Installez {APP_NAME} sur votre écran d'accueil (menu ⋮ du navigateur → « Installer l'application »).</li>
+            <li>Dans l'appli de la marque, sur le produit : <strong>Partager</strong> → <strong>{APP_NAME}</strong>.</li>
+            <li>Le formulaire s'ouvre, déjà rempli : il ne reste qu'à enregistrer.</li>
+          </ol>
+        </article>
+        <article>
+          <h4>iPhone</h4>
+          {IOS_SHORTCUT_URL ? (
+            <ol>
+              <li><a href={IOS_SHORTCUT_URL} target="_blank" rel="noopener">Installez le raccourci {APP_NAME}</a> (une seule fois).</li>
+              <li>Dans l'appli de la marque, sur le produit : <strong>Partager</strong> → <strong>{APP_NAME}</strong>.</li>
+              <li>Le formulaire s'ouvre, déjà rempli : il ne reste qu'à enregistrer.</li>
+            </ol>
+          ) : (
+            <ol>
+              <li>Dans l'appli de la marque, sur le produit : <strong>Partager</strong> → <strong>Copier le lien</strong>.</li>
+              <li>Sur {APP_NAME} : <strong>Ajouter une envie</strong>, puis collez le lien.</li>
+              <li>Le nom, l'image et le prix se remplissent tout seuls. Si la marque bloque la lecture, ajoutez une capture d'écran.</li>
+            </ol>
+          )}
+        </article>
+      </div>
+    </div>
+  )
+}
+
 /** Explication + illustration de l'extension, suivies des liens d'installation */
 export function ExtensionGuide() {
   return (

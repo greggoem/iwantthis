@@ -804,3 +804,11 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 /* Fenêtres : le défilement reste dans la fenêtre, jamais transmis à la page derrière */
 .modal-back { overscroll-behavior: contain; overflow: hidden; }
 .modal { overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+/* Guide : ajouter depuis l'appli d'une marque */
+.mob-guide{margin-top:1.4rem}
+.mob-guide h3{margin:0 0 .3rem}
+.mob-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin-top:.8rem}
+.mob-cols article{background:var(--surface,#fff);border:1px solid var(--line,#e5e5e5);border-radius:14px;padding:.8rem 1rem}
+.mob-cols h4{margin:0 0 .4rem}
+.mob-cols ol{margin:0;padding-left:1.2rem;font-size:.92rem;color:var(--muted,#555)}
+.mob-cols li+li{margin-top:.35rem}

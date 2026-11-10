@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import ThemePicker from '../components/ThemePicker'
 import ApiAccess from '../components/ApiAccess'
-import { HowItWorks, ExtensionGuide } from '../components/HowItWorks'
+import { HowItWorks, ExtensionGuide, MobileGuide } from '../components/HowItWorks'
 import Icon from '../components/Icon'
 
 type Section = 'apparence' | 'guide' | 'extension' | 'api' | 'admin'
@@ -40,9 +40,10 @@ export default function Settings() {
             <section className="card stack mt">
               <h2>Comment ça marche</h2>
               <HowItWorks />
+              <MobileGuide />
             </section>
           )}
-          {current === 'extension' && <section className="stack mt"><h2>Extension et raccourci</h2><ExtensionGuide /></section>}
+          {current === 'extension' && <section className="stack mt"><h2>Extension et raccourci</h2><ExtensionGuide /><MobileGuide /></section>}
           {current === 'api' && <ApiAccess />}
           {current === 'admin' && (
             <section className="card stack mt">

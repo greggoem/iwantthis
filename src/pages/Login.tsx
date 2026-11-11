@@ -49,7 +49,7 @@ export default function Login() {
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })
         if (error) throw error
-        setInfo('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé.')
+        setInfo('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pensez à regarder dans les indésirables (spam).')
       }
     } catch (x) {
       setErr(errMsg(x))

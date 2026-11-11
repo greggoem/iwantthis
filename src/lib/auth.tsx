@@ -9,13 +9,14 @@ interface AuthState {
   profile: Profile | null
   loading: boolean
   recovery: boolean
+  startRecovery: () => void
   endRecovery: () => void
   refreshProfile: () => Promise<void>
 }
 
 const Ctx = createContext<AuthState>({
   session: null, profile: null, loading: true, recovery: false,
-  endRecovery: () => {}, refreshProfile: async () => {},
+  startRecovery: () => {}, endRecovery: () => {}, refreshProfile: async () => {},
 })
 export const useAuth = () => useContext(Ctx)
 
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session?.user.id])
 
   return (
-    <Ctx.Provider value={{ session, profile, loading, recovery, endRecovery: () => setRecovery(false), refreshProfile }}>
+    <Ctx.Provider value={{ session, profile, loading, recovery, startRecovery: () => setRecovery(true), endRecovery: () => setRecovery(false), refreshProfile }}>
       {children}
     </Ctx.Provider>
   )

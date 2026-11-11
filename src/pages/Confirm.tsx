@@ -4,6 +4,7 @@ import type { EmailOtpType } from '@supabase/supabase-js'
 import { supabase, errMsg, APP_NAME } from '../lib/supabase'
 import Logo from '../components/Logo'
 import { Notice, Spinner } from '../components/ui'
+import { useAuth } from '../lib/auth'
 
 /**
  * Page ouverte depuis le lien des e-mails (confirmation d'inscription, mot de passe oublié).
@@ -12,6 +13,7 @@ import { Notice, Spinner } from '../components/ui'
 export default function Confirm() {
   const [params] = useSearchParams()
   const nav = useNavigate()
+  const { startRecovery } = useAuth()
   const [err, setErr] = useState('')
   const done = useRef(false)
 
@@ -27,9 +29,10 @@ export default function Confirm() {
         supabase.auth.getUser().then(({ data }) => { try { if (data.user) localStorage.setItem('iwt.welcomed.' + data.user.id, '1') } catch { /* ignore */ } })
         nav('/bienvenue', { replace: true })
       }
-      else if (type !== 'recovery') nav('/', { replace: true })
-      // type = recovery : le formulaire « Nouveau mot de passe » s'affiche tout seul
+      else if (type === 'recovery') { startRecovery(); nav('/', { replace: true }) }   // affiche « Nouveau mot de passe »
+      else nav('/', { replace: true })
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, nav])
 
   return (

@@ -28,10 +28,15 @@ const NEW_GROUP = '__new__'
 const empty: Draft = { title: '', url: '', details: '', price: '', image: '', groupId: '', newGroup: '', newPickOne: false }
 
 /* ---------- Formulaire cadeau (ajout et modification) ---------- */
-function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
+function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = false, linkFooter }: {
   initial: Draft; groups: Item[]; onSubmit: (d: Draft) => Promise<string | null>; onCancel: () => void; submitLabel: string
+  /** ajout : d'abord le lien (collé ou partagé), puis le formulaire déjà rempli */
+  stepped?: boolean; linkFooter?: React.ReactNode
 }) {
   const [d, setD] = useState<Draft>(initial)
+  // lien reçu sans image (bouton Partager d'une appli) : on lit la fiche avant d'afficher le formulaire
+  const needsRead = stepped && Boolean(safeUrl(initial.url)) && !initial.image
+  const [step, setStep] = useState<'link' | 'form'>(stepped && (needsRead || !initial.title.trim()) ? 'link' : 'form')
   const [err, setErr] = useState('')
   const [hint, setHint] = useState('')
   const [busy, setBusy] = useState(false)
@@ -42,7 +47,8 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   const { session } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const uploaded = useRef<string[]>([])   // images envoyées pendant cette saisie (nettoyées si abandon / remplacées)
-  const lastUrl = useRef(initial.url.trim())
+  const lastUrl = useRef(needsRead ? '' : initial.url.trim())
+  const preferRead = useRef(needsRead)
   const set = (k: keyof Draft) => (e: { target: { value: string } }) => setD(prev => ({ ...prev, [k]: e.target.value }))
 
   // Dès que le lien est saisi : lecture de la fiche produit (image, prix, titre)
@@ -57,14 +63,17 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
       lastUrl.current = p.url
       setD(prev => ({ ...prev, url: p.url! }))
     }
-    if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Saisissez le prix à la main, ou utilisez le raccourci ci-dessous.`); return }
+    if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Complétez les champs à la main, et ajoutez une image si besoin.`); return }
     const price = euroPrice(p)
+    const fromShare = preferRead.current
     setD(prev => ({
       ...prev,
       image: prev.image || (p.image ?? ''),   // une image choisie à la main n'est pas écrasée
-      title: prev.title.trim() ? prev.title : (p.title ?? ''),
+      // texte venu du bouton Partager d'une appli : le titre de la fiche produit est en général plus précis
+      title: fromShare && p.title ? p.title : prev.title.trim() ? prev.title : (p.title ?? ''),
       price: prev.price === '' && price !== undefined ? String(price) : prev.price,
     }))
+    preferRead.current = false
     const bits = [p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
     setHint(bits.length ? `Trouvé sur ${p.site} : ${bits.join(' et ')}. Modifiable.` : `Rien de plus trouvé sur ${p.site} : renseignez le prix si vous le connaissez.`)
   }
@@ -79,8 +88,24 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
   }, [d.url])
   const onPasteUrl = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData('text').trim()
-    if (safeUrl(text)) { e.preventDefault(); setD(prev => ({ ...prev, url: text })); readLink(text) }
+    if (safeUrl(text)) { e.preventDefault(); setD(prev => ({ ...prev, url: text })); if (step === 'link') next(text); else readLink(text) }
   }
+  // étape 1 → 2 : on lit la fiche produit puis on montre le formulaire prérempli
+  const next = async (raw: string = d.url) => {
+    if (raw.trim() && !safeUrl(raw)) { setErr('Ce lien ne semble pas valide (il doit commencer par http:// ou https://).'); return }
+    setErr('')
+    if (raw.trim()) await readLink(raw)
+    setStep('form')
+  }
+  const pasteFromClipboard = async () => {
+    try {
+      const text = (await navigator.clipboard.readText()).trim()
+      const link = text.match(/https?:\/\/[^\s<>"']+/i)?.[0]
+      if (!link) { setErr('Le presse-papiers ne contient pas de lien. Copiez d\'abord le lien du produit.'); return }
+      setD(prev => ({ ...prev, url: link })); next(link)
+    } catch { setErr('Collez le lien dans le champ (appui long → Coller).') }
+  }
+  useEffect(() => { if (needsRead) next(initial.url) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [])
 
   const pickImage = async (file: File | undefined) => {
     if (!file || !session) return
@@ -123,14 +148,43 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
     for (const u of [...uploaded.current, initial.image]) if (u && u !== d.image) await deleteItemImage(u)
   }
 
+  if (step === 'link') return (
+    <form className="stack add-step" onSubmit={e => { e.preventDefault(); next() }}>
+      <Notice>{err}</Notice>
+      {reading ? (
+        <div className="add-reading"><Spinner label="Lecture de la fiche produit…" /></div>
+      ) : (
+        <>
+          <label><span>Lien du produit</span>
+            <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} placeholder="https://…" inputMode="url" type="url" autoFocus />
+          </label>
+          <p className="small muted" style={{ margin: 0 }}>Le nom, l'image et le prix sont récupérés automatiquement. Vous pourrez les modifier ensuite.</p>
+          <div className="add-step-btns">
+            {'clipboard' in navigator && 'readText' in navigator.clipboard && (
+              <button type="button" className="btn" onClick={pasteFromClipboard}><Icon name="copy" size={16} /> Coller le lien</button>
+            )}
+            <button className="btn btn-primary" disabled={!safeUrl(d.url)}>Continuer</button>
+          </div>
+          <button type="button" className="btn btn-ghost btn-sm add-nolink" onClick={() => setStep('form')}>Pas de lien ? Remplir à la main</button>
+          {linkFooter}
+        </>
+      )}
+    </form>
+  )
+
+  const urlField = (
+    <>
+      <label><span>Lien du produit <span className="muted">· image, prix et titre récupérés automatiquement</span></span>
+        <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} onBlur={() => readLink()} placeholder="https://…" inputMode="url" autoFocus={!stepped && !initial.url} />
+      </label>
+      {reading && <p className="small muted">Lecture de la fiche produit…</p>}
+    </>
+  )
   return (
     <form className="stack" onSubmit={submit} onPaste={onPasteForm}>
       {shot && <CropCapture source={shot} onCancel={() => setShot(null)} onDone={f => { setShot(null); pickImage(f) }} />}
       <Notice>{err}</Notice>
-      <label><span>Lien du produit <span className="muted">· image, prix et titre récupérés automatiquement</span></span>
-        <input value={d.url} onChange={set('url')} onPaste={onPasteUrl} onBlur={() => readLink()} placeholder="https://…" inputMode="url" autoFocus={!initial.url} />
-      </label>
-      {reading && <p className="small muted">Lecture de la fiche produit…</p>}
+      {!stepped && urlField}
       {hint && <p className="small muted">{hint}</p>}
       <div className="formrow">
         <div className="formthumb">
@@ -157,7 +211,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
         </div>
         <div className="stack grow">
           <label>Cadeau
-            <input required maxLength={200} value={d.title} onChange={set('title')} placeholder="Ex. Pull en laine mérinos" />
+            <input required maxLength={200} value={d.title} onChange={set('title')} placeholder="Ex. Pull en laine mérinos" autoFocus={stepped && !d.title.trim() && !d.url.trim()} />
           </label>
           <label><span>Détails <span className="muted">· taille, couleur, modèle…</span></span>
             <textarea maxLength={1000} rows={2} value={d.details} onChange={set('details')} placeholder="Ex. Taille L, bleu marine" />
@@ -167,6 +221,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel }: {
           </label>
         </div>
       </div>
+      {stepped && urlField}
       <label>Où l'ajouter ?
         <select value={d.groupId} onChange={e => setD(prev => ({ ...prev, groupId: e.target.value }))}>
           <option value="">Ma liste (sans groupe)</option>
@@ -670,8 +725,8 @@ export default function MyList() {
       {modal?.kind === 'share' && list && <ShareModal list={list} onClose={closeModal} />}
       {modal?.kind === 'add' && (
         <Modal title="Ajouter une envie" onClose={closeModal}>
-          <ItemForm key={prefill ? params.toString() : 'new'} groups={groupList} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add} />
-          <BookmarkletBox />
+          <ItemForm key={prefill ? params.toString() : 'new'} groups={groupList} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add}
+            stepped linkFooter={<BookmarkletBox />} />
         </Modal>
       )}
       {modal?.kind === 'group' && (

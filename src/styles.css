@@ -817,3 +817,9 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .join-card h1{margin:0}
 .join-img{width:100%;max-height:220px;object-fit:cover;border-radius:12px}
 .join-kicker{margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+/* Ajout d'une envie : étape « lien » */
+.add-step input[type=url]{font-size:1rem}
+.add-step-btns{display:flex;gap:.6rem;flex-wrap:wrap}
+.add-step-btns .btn{flex:1 1 140px;justify-content:center}
+.add-nolink{align-self:center}
+.add-reading{padding:2rem 0;display:grid;place-items:center}

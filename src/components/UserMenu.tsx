@@ -57,7 +57,7 @@ export default function UserMenu() {
           ))}
           {admin && <Link role="menuitem" to="/admin" className={loc.pathname === '/admin' ? 'on' : ''}><Icon name="chart" size={18} /> Administration</Link>}
           <div className="umenu-sep" />
-          <button type="button" role="menuitem" className="umenu-out" onClick={() => supabase.auth.signOut()}><Icon name="logout" size={18} /> Se déconnecter</button>
+          <button type="button" role="menuitem" className="umenu-out" onClick={() => supabase.auth.signOut({ scope: 'local' })}><Icon name="logout" size={18} /> Se déconnecter</button>
         </div>
       )}
     </div>

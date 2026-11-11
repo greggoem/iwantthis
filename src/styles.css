@@ -812,3 +812,8 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .mob-cols h4{margin:0 0 .4rem}
 .mob-cols ol{margin:0;padding-left:1.2rem;font-size:.92rem;color:var(--muted,#555)}
 .mob-cols li+li{margin-top:.35rem}
+/* Page « Rejoindre l'événement » */
+.join-card{max-width:520px;margin:1.5rem auto}
+.join-card h1{margin:0}
+.join-img{width:100%;max-height:220px;object-fit:cover;border-radius:12px}
+.join-kicker{margin:0;text-transform:uppercase;letter-spacing:.06em;font-weight:600}

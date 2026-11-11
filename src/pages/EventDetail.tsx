@@ -381,11 +381,8 @@ export default function EventDetail() {
         <Modal title="Inviter des proches" onClose={() => setInviteOpen(false)} wide>
           <div className="stack">
             <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
-            <div className="row between wrap gap">
-              <p className="small muted" style={{ margin: 0 }}>Ils ouvrent ce lien, se connectent, et rejoignent l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
-              <button className="btn btn-sm" onClick={() => { setInviteOpen(false); setShareOpen(true) }}><Icon name="share" size={15} /> Partager</button>
-            </div>
-            <CopyField value={eventInviteUrl(ev.invite_code)} />
+            <p className="small muted" style={{ margin: 0 }}>Ils ouvrent ce lien, se connectent, puis choisissent de rejoindre l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
+            <CopyField value={eventInviteUrl(ev.invite_code)} share={() => { setInviteOpen(false); setShareOpen(true) }} />
             {isOrg && (
               <>
                 <hr />

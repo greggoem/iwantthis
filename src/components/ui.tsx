@@ -33,7 +33,8 @@ export async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function CopyField({ value, label }: { value: string; label?: string }) {
+/** share : false = pas de bouton Partager ; une fonction = ouvre notre fenêtre de partage ; absent = partage du système */
+export function CopyField({ value, label, share }: { value: string; label?: string; share?: false | (() => void) }) {
   const [done, setDone] = useState(false)
   const canShare = typeof navigator !== 'undefined' && 'share' in navigator
   return (
@@ -44,9 +45,11 @@ export function CopyField({ value, label }: { value: string; label?: string }) {
         <button type="button" className="btn" onClick={async () => { if (await copyText(value)) { setDone(true); setTimeout(() => setDone(false), 1800) } }}>
           <Icon name={done ? 'check' : 'copy'} size={16} /> {done ? 'Copié' : 'Copier'}
         </button>
-        {canShare && (
-          <button type="button" className="btn btn-ghost" onClick={() => navigator.share({ url: value }).catch(() => {})}>Partager</button>
-        )}
+        {typeof share === 'function'
+          ? <button type="button" className="btn btn-ghost" onClick={share}>Partager</button>
+          : share !== false && canShare && (
+            <button type="button" className="btn btn-ghost" onClick={() => navigator.share({ url: value }).catch(() => {})}>Partager</button>
+          )}
       </div>
     </div>
   )

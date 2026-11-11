@@ -313,7 +313,7 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
       fileName="ma-liste-de-cadeaux"
       onClose={onClose}
     >
-      <CopyField value={url} />
+      <CopyField value={url} share={false} />
     </ShareSheet>
   )
 }

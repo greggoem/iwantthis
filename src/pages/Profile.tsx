@@ -34,12 +34,14 @@ export default function Profile() {
   }
 
   const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
   const [pwMsg, setPwMsg] = useState(''); const [pwErr, setPwErr] = useState('')
   const savePw = async (e: FormEvent) => {
     e.preventDefault()
     setPwErr(''); setPwMsg('')
+    if (pw !== pw2) { setPwErr('Les deux mots de passe ne correspondent pas.'); return }
     const { error } = await supabase.auth.updateUser({ password: pw })
-    if (error) setPwErr(errMsg(error)); else { setPwMsg('Mot de passe mis à jour.'); setPw('') }
+    if (error) setPwErr(errMsg(error)); else { setPwMsg('Mot de passe mis à jour.'); setPw(''); setPw2('') }
   }
 
   return (
@@ -73,6 +75,9 @@ export default function Profile() {
         {!hasPassword && <p className="small muted">Vous vous connectez avec Google. Vous pouvez aussi définir un mot de passe pour vous connecter par e-mail.</p>}
         <label>{hasPassword ? 'Nouveau mot de passe' : 'Mot de passe'} (6 caractères minimum)
           <input type="password" minLength={6} required value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password" />
+        </label>
+        <label>Confirmer le mot de passe
+          <input type="password" minLength={6} required value={pw2} onChange={e => setPw2(e.target.value)} autoComplete="new-password" />
         </label>
         <div><button className="btn btn-primary">{hasPassword ? 'Changer le mot de passe' : 'Définir un mot de passe'}</button></div>
       </form>

@@ -152,7 +152,16 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
     <form className="stack add-step" onSubmit={e => { e.preventDefault(); next() }}>
       <Notice>{err}</Notice>
       {reading ? (
-        <div className="add-reading"><Spinner label="Lecture de la fiche produit…" /></div>
+        <div className="add-reading" role="status" aria-live="polite">
+          <div className="sk-row">
+            <div className="sk-img"><span className="sk-gift"><Icon name="gift" size={30} /></span></div>
+            <div className="sk-lines"><i className="sk-line" style={{ width: '90%' }} /><i className="sk-line" style={{ width: '65%' }} /><i className="sk-line sk-price" /></div>
+          </div>
+          <p className="small muted add-reading-txt">
+            Lecture de la fiche produit{(() => { try { return ` sur ${new URL(d.url).hostname.replace(/^www\./, '')}` } catch { return '' } })()}
+            <span className="dots"><b>.</b><b>.</b><b>.</b></span>
+          </p>
+        </div>
       ) : (
         <>
           <label><span>Lien du produit</span>
@@ -181,7 +190,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
     </>
   )
   return (
-    <form className="stack" onSubmit={submit} onPaste={onPasteForm}>
+    <form className={`stack${stepped ? ' fill-in' : ''}`} onSubmit={submit} onPaste={onPasteForm}>
       {shot && <CropCapture source={shot} onCancel={() => setShot(null)} onDone={f => { setShot(null); pickImage(f) }} />}
       <Notice>{err}</Notice>
       {!stepped && urlField}

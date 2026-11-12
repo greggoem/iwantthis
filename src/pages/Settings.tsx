@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import ThemePicker from '../components/ThemePicker'
 import ApiAccess from '../components/ApiAccess'
-import { HowItWorks, ExtensionGuide, MobileGuide } from '../components/HowItWorks'
+import { ExtensionGuide, MobileGuide } from '../components/HowItWorks'
 import Icon from '../components/Icon'
 
 type Section = 'apparence' | 'guide' | 'extension' | 'api' | 'admin'
@@ -21,7 +21,11 @@ export default function Settings() {
     ...(admin ? [{ key: 'admin' as Section, label: 'Administration' }] : []),
   ]
   const asked = params.get('s') as Section | null
+  const nav = useNavigate()
   const current: Section = menu.some(m => m.key === asked) ? asked! : 'apparence'
+
+  // « Comment ça marche » : une seule page, le guide complet
+  if (asked === 'guide') return <Navigate to="/aide" replace />
 
   return (
     <div>
@@ -31,18 +35,11 @@ export default function Settings() {
         <nav className="settings-menu" aria-label="Sections des réglages">
           {menu.map(m => (
             <button key={m.key} type="button" className={m.key === current ? 'on' : ''} aria-current={m.key === current ? 'page' : undefined}
-              onClick={() => setParams({ s: m.key }, { replace: true })}>{m.label}</button>
+              onClick={() => m.key === 'guide' ? nav('/aide') : setParams({ s: m.key }, { replace: true })}>{m.label}</button>
           ))}
         </nav>
         <div className="settings-body">
           {current === 'apparence' && <ThemePicker />}
-          {current === 'guide' && (
-            <section className="card stack mt">
-              <h2>Comment ça marche</h2>
-              <HowItWorks />
-              <Link className="btn btn-primary" to="/aide" style={{ alignSelf: 'flex-start' }}>Le guide complet, étape par étape →</Link>
-            </section>
-          )}
           {current === 'extension' && <section className="stack mt"><h2>Extension et raccourci</h2><ExtensionGuide /><MobileGuide /></section>}
           {current === 'api' && <ApiAccess />}
           {current === 'admin' && (

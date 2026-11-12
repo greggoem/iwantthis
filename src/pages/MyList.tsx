@@ -713,9 +713,9 @@ export default function MyList() {
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
-          <button className="btn" onClick={() => setModal({ kind: 'group' })}><Icon name="plus" size={17} /> <span>Groupe</span></button>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> <span>Ajouter</span></button>
           <ActionMenu label="Plus d'options pour la liste" actions={[
+            { icon: 'plus', label: 'Nouveau groupe', onClick: () => setModal({ kind: 'group' }) },
             { icon: 'plus', label: 'Ajouter une liste d\'enfant', onClick: () => setModal({ kind: 'child', list: null }) },
             kidList && { icon: 'pencil', label: `Modifier la liste de ${list!.child_name}`, onClick: () => setModal({ kind: 'child', list }) },
             kidList && { icon: 'trash', label: `Supprimer la liste de ${list!.child_name}`, danger: true, onClick: () => deleteChild(list!) },

@@ -40,7 +40,7 @@ export default function Settings() {
             <section className="card stack mt">
               <h2>Comment ça marche</h2>
               <HowItWorks />
-              <MobileGuide />
+              <Link className="btn btn-primary" to="/aide" style={{ alignSelf: 'flex-start' }}>Le guide complet, étape par étape →</Link>
             </section>
           )}
           {current === 'extension' && <section className="stack mt"><h2>Extension et raccourci</h2><ExtensionGuide /><MobileGuide /></section>}

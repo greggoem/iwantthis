@@ -31,6 +31,7 @@ export default function Welcome() {
         <div className="wl-body">
           <h2>Comment ça marche</h2>
           <HowItWorks />
+          <p><Link to="/aide">Le guide complet, étape par étape →</Link></p>
         </div>
       </section>
 

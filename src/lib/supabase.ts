@@ -21,7 +21,8 @@ export function siteUrl(): string {
 export const apiBase = () => `${url ?? ''}/functions/v1/api`
 
 /** Adresse à partager : toujours le domaine officiel (jamais l'ancienne adresse github.io) */
-const shareBase = () => (/\.github\.io$/.test(window.location.hostname) ? 'https://iwantthis.gift/' : siteUrl())
+// VITE_SHARE_BASE : forcé pour les captures de la page d'aide (scripts/captures-aide.mjs)
+const shareBase = () => import.meta.env.VITE_SHARE_BASE || (/\.github\.io$/.test(window.location.hostname) ? 'https://iwantthis.gift/' : siteUrl())
 // Pas de « # » dans les liens partagés : WhatsApp (wa.me) coupe tout ce qui suit le « # ».
 // ?l= / ?e= sont convertis en #/l/… / #/e/… au chargement (voir main.tsx).
 export const listShareUrl = (token: string) => `${shareBase()}?l=${token}`

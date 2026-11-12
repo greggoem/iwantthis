@@ -709,8 +709,8 @@ export default function MyList() {
       {lists.length > 1 && <ListPills lists={lists} current={list?.id ?? ''} myName={profile?.display_name ?? ''} onPick={pick} onAddKid={() => setModal({ kind: 'child', list: null })} />}
       <div className="page-head">
         <div className="title-block">
-          <h1 className="title-input" style={{ margin: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
-          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''} · achats cachés ici, visibles dans <Link to={`/listes/${list!.id}`}>Listes de mes proches</Link></p>}
+          <h1 className="title-input" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
+          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}<br />Achats cachés ici · <Link to={`/listes/${list!.id}`}>voir les achats</Link></p>}
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>

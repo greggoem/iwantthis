@@ -867,3 +867,5 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .my-lists .radio{min-height:44px}
 .my-lists .radio > input{margin-top:0}
 .my-lists .radio{align-items:center !important;gap:.6rem}
+.page-head .title-block{flex:1 1 16rem;min-width:0}
+.title-sub{overflow-wrap:anywhere}

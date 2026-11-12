@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { PersonDot } from '../components/ListPills'
-import { kidShownIn } from '../lib/kids'
+import { formatAge, kidShownIn } from '../lib/kids'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { formatDateShort, todayISO } from '../lib/format'
@@ -210,7 +210,7 @@ export default function ListView() {
         {keeper && <PersonDot name={owner} color={list.child_color ?? 'corail'} size={48} />}
         <div className="title-block">
           <h1 style={{ margin: 0 }}>La liste d'envies de {owner}</h1>
-          {keeper && <p className="muted title-sub">{list.child_age ? `${list.child_age} · ` : ''}liste tenue par {keeper}</p>}
+          {keeper && <p className="muted title-sub">{list.child_age ? `${formatAge(list.child_age)} · ` : ''}liste tenue par {keeper}</p>}
         </div>
       </div>
       <p className="muted">{keeper

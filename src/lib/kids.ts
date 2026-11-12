@@ -27,3 +27,11 @@ export function kidShownIn(w: Pick<Wishlist, 'id' | 'child_name' | 'in_events'>,
 const LAST = 'iwt.lastList'
 export const lastListId = (): string | null => { try { return localStorage.getItem(LAST) } catch { return null } }
 export const rememberList = (id: string) => { try { localStorage.setItem(LAST, id) } catch { /* rien */ } }
+
+/** « 14 » → « 14 ans », « 1 » → « 1 an » ; un texte libre (« 18 mois ») reste tel quel */
+export const formatAge = (age: string | null | undefined): string => {
+  const a = (age ?? '').trim()
+  if (!a) return ''
+  const n = a.match(/^(\d{1,3})(?:[.,]\d+)?$/)
+  return n ? `${a} an${Number(n[1]) > 1 ? 's' : ''}` : a
+}

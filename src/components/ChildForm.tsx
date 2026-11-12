@@ -30,7 +30,7 @@ export default function ChildForm({ initial, submitLabel, onSubmit, onCancel, on
           <input required maxLength={40} value={d.name} onChange={e => setD({ ...d, name: e.target.value })} autoFocus placeholder="Ex. Léo" />
         </label>
         <label><span>Âge <span className="muted">· facultatif</span></span>
-          <input maxLength={20} value={d.age} onChange={e => setD({ ...d, age: e.target.value })} placeholder="Ex. 7 ans" />
+          <input maxLength={20} value={d.age} onChange={e => setD({ ...d, age: e.target.value })} placeholder="Ex. 7" inputMode="text" />
         </label>
       </div>
       <fieldset className="kid-colors">

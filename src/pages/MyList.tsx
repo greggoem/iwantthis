@@ -23,7 +23,7 @@ import { useConfirm } from '../components/Confirm'
 import ActionMenu from '../components/ActionMenu'
 import ListPills from '../components/ListPills'
 import ChildForm, { type ChildDraft } from '../components/ChildForm'
-import { isKid, lastListId, rememberList } from '../lib/kids'
+import { formatAge, isKid, lastListId, rememberList } from '../lib/kids'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
 interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean; listId?: string }
@@ -709,7 +709,7 @@ export default function MyList() {
       <div className="page-head">
         <div className="title-block">
           <h1 className="title-input" style={{ margin: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
-          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${list!.child_age}` : ''}</p>}
+          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}</p>}
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>

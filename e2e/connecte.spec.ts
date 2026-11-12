@@ -49,6 +49,11 @@ test('ajouter, modifier puis supprimer une envie', async ({ page, problems }, in
   await page.goto('#/')
   await page.getByRole('button', { name: /Ajouter/ }).first().click()
   const dialog = page.getByRole('dialog')
+  // ajout en deux temps : d'abord le lien (« Continuer » inactif sans lien valide), sinon saisie à la main
+  await expect(dialog.getByLabel('Lien du produit')).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Continuer' })).toBeDisabled()
+  await capture(page, info, 'ajout-etape-lien')
+  await dialog.getByRole('button', { name: /Remplir à la main/ }).click()
   await dialog.getByLabel('Cadeau').fill(title)
   await dialog.getByLabel(/Détails/).fill('Rouge, en laine')
   await dialog.getByLabel(/Prix/).fill('35')

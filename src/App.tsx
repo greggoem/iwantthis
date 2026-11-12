@@ -21,6 +21,7 @@ import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
 import Landing from './pages/Landing'
 import Welcome from './pages/Welcome'
+import Help from './pages/Help'
 
 /** Connecté : l'application. Non connecté : page d'accueil sur « / », sinon connexion (en gardant la page voulue) */
 function Gate() {
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="evenements/:id" element={<EventDetail />} />
           <Route path="e/:code" element={<JoinEvent />} />
           <Route path="bienvenue" element={<Welcome />} />
+          <Route path="aide" element={<Help />} />
           <Route path="profil" element={<Profile />} />
           <Route path="reglages" element={<Settings />} />
           <Route path="notifications" element={<Notifications />} />

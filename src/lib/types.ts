@@ -5,6 +5,12 @@ export interface Wishlist {
   owner_id: string
   title: string
   share_token: string
+  /** liste d'enfant tenue par owner_id (null = la liste du compte lui-même) */
+  child_name?: string | null
+  child_age?: string | null
+  child_color?: string | null
+  /** liste d'enfant : visible par défaut dans les événements du parent */
+  in_events?: boolean
 }
 
 export interface Item {

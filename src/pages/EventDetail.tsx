@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { PersonDot } from '../components/ListPills'
+import { kidShownIn } from '../lib/kids'
 import { supabase, errMsg, eventInviteUrl, APP_NAME } from '../lib/supabase'
 import { formatDate, formatDateShort } from '../lib/format'
 import type { EventRow, MemberRow } from '../lib/types'
@@ -22,6 +24,8 @@ const imageFrom = (dt: DataTransfer | null): File | undefined =>
   Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
 
 const envies = (n: number) => n === 0 ? 'aucune envie' : `${n} envie${n > 1 ? 's' : ''}`
+interface KidRow { id: string; owner_id: string; child_name: string; child_age: string | null; child_color: string | null; in_events: boolean; count: number }
+interface Override { event_id: string; list_id: string; shown: boolean }
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -34,6 +38,8 @@ export default function EventDetail() {
   const [members, setMembers] = useState<MemberRow[]>([])
   const [lists, setLists] = useState<Record<string, string>>({})
   const [counts, setCounts] = useState<Record<string, number>>({})
+  const [kidLists, setKidLists] = useState<KidRow[]>([])
+  const [overrides, setOverrides] = useState<Override[]>([])
   const [excl, setExcl] = useState<Excl[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [editInv, setEditInv] = useState<Invite | null>(null)
@@ -69,16 +75,21 @@ export default function EventDetail() {
     const { data: m } = await supabase.from('event_members').select('event_id,user_id,in_draw,profiles(display_name)').eq('event_id', id!)
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
-    const [w, x, a, inv] = await Promise.all([
-      supabase.from('wishlists').select('id,owner_id,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
+    const [w, x, a, inv, ov] = await Promise.all([
+      supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
       supabase.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id!),
       supabase.from('draw_assignments').select('receiver_id').eq('event_id', id!).maybeSingle(),
       supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
+      supabase.from('event_child_lists').select('event_id,list_id,shown').eq('event_id', id!),
     ])
+    setOverrides((ov.data as Override[]) ?? [])
     setInvites((inv.data as Invite[]) ?? [])
-    const wl = (w.data as { id: string; owner_id: string; items?: { count: number }[] }[]) ?? []
+    type WRow = { id: string; owner_id: string; child_name: string | null; child_age: string | null; child_color: string | null; in_events: boolean; items?: { count: number }[] }
+    const all = (w.data as WRow[]) ?? []
+    const wl = all.filter(l => !l.child_name)
     setLists(Object.fromEntries(wl.map(l => [l.owner_id, l.id])))
     setCounts(Object.fromEntries(wl.map(l => [l.owner_id, l.items?.[0]?.count ?? 0])))
+    setKidLists(all.filter(l => l.child_name).map(l => ({ id: l.id, owner_id: l.owner_id, child_name: l.child_name!, child_age: l.child_age, child_color: l.child_color, in_events: l.in_events, count: l.items?.[0]?.count ?? 0 })))
     setExcl((x.data as Excl[]) ?? [])
     setMyTarget((a.data as { receiver_id: string } | null)?.receiver_id ?? null)
     setLoading(false)
@@ -98,6 +109,19 @@ export default function EventDetail() {
   }
   const whenTxt = ev ? formatDate(ev.event_date) + (ev.event_time ? ` à ${ev.event_time.slice(0, 5).replace(':', 'h')}` : '') : ''
   const isOrg = ev?.created_by === me
+  const myKids = kidLists.filter(k => k.owner_id === me)
+  const shownKids = kidLists.filter(k => kidShownIn(k, id!, overrides))
+  // invités et enfants dans une même liste, par ordre alphabétique
+  const guests: { key: string; m?: MemberRow; kid?: KidRow }[] = [
+    ...members.map(m => ({ key: m.profiles?.display_name ?? '', m })),
+    ...shownKids.map(k => ({ key: k.child_name, kid: k })),
+  ].sort((a, b) => a.key.localeCompare(b.key, 'fr', { sensitivity: 'base' }))
+  const setKidShown = async (k: KidRow, shown: boolean) => {
+    setErr('')
+    setOverrides(o => [...o.filter(x => x.list_id !== k.id), { event_id: id!, list_id: k.id, shown }])
+    const { error } = await supabase.from('event_child_lists').upsert({ event_id: id!, list_id: k.id, shown })
+    if (error) { setErr(errMsg(error)); load() }
+  }
   // capture d'écran : Ctrl+V / Cmd+V n'importe où sur la page de l'événement (organisateur)
   useEffect(() => {
     if (!isOrg || editing) return
@@ -428,9 +452,38 @@ export default function EventDetail() {
         </Modal>
       )}
 
-      <h2 className="mt">Invités ({members.length})</h2>
+      {myKids.length > 0 && (
+        <section className="card stack mt my-lists">
+          <h2 style={{ margin: 0 }}>Mes listes dans cet événement</h2>
+          <p className="small muted" style={{ margin: 0 }}>Les invités voient les listes cochées.</p>
+          <label className="radio"><input type="checkbox" checked disabled /> <PersonDot name={name(me)} size={28} /> <span><strong>Ma liste</strong> <span className="small muted">· toujours partagée</span></span></label>
+          {myKids.map(k => (
+            <label key={k.id} className="radio">
+              <input type="checkbox" checked={kidShownIn(k, id!, overrides)} onChange={e => setKidShown(k, e.target.checked)} />
+              <PersonDot name={k.child_name} color={k.child_color ?? 'corail'} size={28} />
+              <span><strong>{k.child_name}</strong> <span className="small muted">· {envies(k.count)}</span></span>
+            </label>
+          ))}
+        </section>
+      )}
+
+      <h2 className="mt">Invités ({members.length + shownKids.length})</h2>
       <ul className="items">
-        {members.map(m => (
+        {guests.map(g => g.kid ? (
+          <li key={g.kid.id} className="card item">
+            <div className="item-main">
+              <span className="row gap" style={{ alignItems: 'center', display: 'inline-flex' }}>
+                <PersonDot name={g.kid.child_name} color={g.kid.child_color ?? 'corail'} size={28} />
+                <strong>{g.kid.child_name}</strong>
+              </span>
+              <span className="tag">enfant de {g.kid.owner_id === me ? 'vous' : name(g.kid.owner_id)}</span>
+              <span className="small muted wish-count">{envies(g.kid.count)}</span>
+            </div>
+            <div className="item-actions">
+              <Link className="btn btn-sm" to={g.kid.owner_id === me ? `/?liste=${g.kid.id}` : `/listes/${g.kid.id}`}>{g.kid.owner_id === me ? 'Sa liste' : 'Voir sa liste'}</Link>
+            </div>
+          </li>
+        ) : (m => (
           <li key={m.user_id} className="card item">
             <div className="item-main">
               <strong>{m.profiles?.display_name ?? '—'}</strong>
@@ -455,7 +508,7 @@ export default function EventDetail() {
               )}
             </div>
           </li>
-        ))}
+        ))(g.m!))}
       </ul>
 
       {drawOn && <>

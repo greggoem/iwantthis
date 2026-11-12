@@ -843,3 +843,27 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .fill-in{animation:fill-in .5s ease-out}
 @keyframes fill-in{from{opacity:0;transform:translateY(6px)}}
 @media (prefers-reduced-motion:reduce){.sk-gift,.sk-img::after,.sk-line::after,.dots b,.add-reading,.fill-in{animation:none}}
+/* ---------- Listes d'enfants ---------- */
+.pdot{display:inline-grid;place-items:center;flex:none;border-radius:999px;background:var(--ink);color:var(--surface);font-weight:700;line-height:1}
+.lpills{display:flex;gap:.5rem;overflow-x:auto;padding:2px 2px 4px;margin:0 -2px .9rem;scrollbar-width:none}
+.lpills::-webkit-scrollbar{display:none}
+.lpill{flex:none;display:inline-flex;align-items:center;gap:.5rem;height:44px;padding:0 1rem 0 .35rem;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);font:inherit;font-weight:500;cursor:pointer}
+.lpill:hover{border-color:var(--ink-2)}
+.lpill.on{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:600}
+.lpill.on .pdot:not([style*="background"]){background:var(--surface);color:var(--ink)}
+.lpill-add{padding:0 .9rem;border-style:dashed;color:var(--ink-2)}
+.title-sub{margin:.15rem 0 0;font-size:.88rem}
+.kid-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem}
+.kid-colors{border:0;padding:0;margin:0}
+.kid-colors legend{font-weight:600;font-size:.92rem;margin-bottom:.5rem;padding:0}
+.kid-color{width:44px;height:44px;border-radius:999px;border:2px solid transparent;font:inherit;font-weight:700;cursor:pointer}
+.kid-color.on{border-color:var(--ink)}
+.kid-check{display:flex !important;flex-direction:row !important;align-items:flex-start;gap:.7rem;padding:.8rem .9rem;border:1px solid var(--line);border-radius:var(--radius);font-weight:400 !important}
+.kid-check input{width:18px;height:18px;margin:.15rem 0 0;flex:none;accent-color:var(--ink)}
+.kid-tag{font-size:.8rem}
+.for-who .lpills{margin-bottom:0}
+.title-block{min-width:0}
+.pcard-name .pdot{align-self:center;margin-right:.5rem}
+.my-lists .radio{min-height:44px}
+.my-lists .radio > input{margin-top:0}
+.my-lists .radio{align-items:center !important;gap:.6rem}

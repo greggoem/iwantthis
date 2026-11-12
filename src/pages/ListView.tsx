@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { PersonDot } from '../components/ListPills'
+import { kidShownIn } from '../lib/kids'
 import { useAuth } from '../lib/auth'
 import { supabase, errMsg } from '../lib/supabase'
 import { formatDateShort, todayISO } from '../lib/format'
@@ -22,6 +24,7 @@ export default function ListView() {
   const me = session!.user.id
   const [list, setList] = useState<Wishlist | null>(null)
   const [owner, setOwner] = useState('')
+  const [keeper, setKeeper] = useState('')   // liste d'enfant : le parent qui la tient
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
   const [events, setEvents] = useState<CommonEvent[]>([])
@@ -42,18 +45,21 @@ export default function ListView() {
     if (!l) { setList(null); setLoading(false); return }
     const wl = l as Wishlist
     setList(wl)
-    const [p, it, cl, ev] = await Promise.all([
+    const [p, it, cl, ev, ov] = await Promise.all([
       supabase.from('profiles').select('display_name').eq('id', wl.owner_id).maybeSingle(),
       supabase.from('items').select('*').eq('list_id', wl.id).order('created_at'),
       supabase.from('item_claims').select('*'),
       supabase.from('events').select('id,name,event_date,event_members(user_id)'),
+      wl.child_name ? supabase.from('event_child_lists').select('event_id,list_id,shown').eq('list_id', wl.id) : Promise.resolve({ data: [] }),
     ])
-    setOwner((p.data as { display_name: string } | null)?.display_name ?? 'Cette personne')
+    const parent = (p.data as { display_name: string } | null)?.display_name ?? 'Cette personne'
+    setOwner(wl.child_name || parent)
+    setKeeper(wl.child_name ? parent : '')
     setItems((it.data as Item[]) ?? [])
     const ids = new Set(((it.data as Item[]) ?? []).map(i => i.id))
     setClaims(Object.fromEntries(((cl.data as Claim[]) ?? []).filter(c => ids.has(c.item_id)).map(c => [c.item_id, c])))
     const common = ((ev.data as unknown as (CommonEvent & { event_members: { user_id: string }[] })[]) ?? [])
-      .filter(e => e.event_members.some(m => m.user_id === wl.owner_id))
+      .filter(e => e.event_members.some(m => m.user_id === wl.owner_id) && kidShownIn(wl, e.id, (ov.data as { event_id: string; list_id: string; shown: boolean }[]) ?? []))
       .sort((a, b) => a.event_date.localeCompare(b.event_date))
     setEvents(common)
     setLoading(false)
@@ -131,7 +137,7 @@ export default function ListView() {
 
   if (loading) return <Spinner />
   if (!list) return <Notice>Liste introuvable, ou vous n'y avez pas accès. Demandez le lien de partage à la personne.</Notice>
-  if (list.owner_id === me) return <Navigate to="/" replace />
+  if (list.owner_id === me) return <Navigate to={list.child_name ? `/?liste=${list.id}` : '/'} replace />
 
   const { tops, kids } = groupTree(items)
   const gallery = prefs.view === 'gallery'
@@ -184,7 +190,7 @@ export default function ListView() {
               <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
             )}
             <p className="small muted">
-              {owner} ne verra l'achat qu'à partir du lendemain du {revealDate ? formatDateShort(revealDate) : '…'}.
+              {keeper ? `${keeper} verra votre achat (pour éviter les doublons) ; remise prévue le ${revealDate ? formatDateShort(revealDate) : '…'}.` : `${owner} ne verra l'achat qu'à partir du lendemain du ${revealDate ? formatDateShort(revealDate) : '…'}.`}
               {group?.pick_one && ' Les autres options du groupe seront alors marquées « plus nécessaire ».'}
             </p>
             <div className="row">
@@ -200,8 +206,16 @@ export default function ListView() {
 
   return (
     <div>
-      <h1>La liste d'envies de {owner}</h1>
-      <p className="muted">{owner} ne voit pas ce que vous marquez comme acheté, avant le lendemain de la date de remise.</p>
+      <div className="row gap" style={{ alignItems: 'center', marginBottom: '.4rem' }}>
+        {keeper && <PersonDot name={owner} color={list.child_color ?? 'corail'} size={48} />}
+        <div className="title-block">
+          <h1 style={{ margin: 0 }}>La liste d'envies de {owner}</h1>
+          {keeper && <p className="muted title-sub">{list.child_age ? `${list.child_age} · ` : ''}liste tenue par {keeper}</p>}
+        </div>
+      </div>
+      <p className="muted">{keeper
+        ? `${owner} ne voit pas ce site. ${keeper} voit ce qui est acheté, pour éviter les doublons.`
+        : `${owner} ne voit pas ce que vous marquez comme acheté, avant le lendemain de la date de remise.`}</p>
       <Notice>{err}</Notice>
       {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}

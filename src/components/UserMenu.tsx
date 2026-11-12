@@ -53,7 +53,7 @@ export default function UserMenu() {
           <div className="umenu-sep" />
           <span className="umenu-title">Réglages</span>
           {SETTINGS.map(x => (
-            <Link key={x.s} role="menuitem" to={`/reglages?s=${x.s}`} className={current === x.s ? 'on' : ''}><Icon name={x.icon} size={18} /> {x.label}</Link>
+            <Link key={x.s} role="menuitem" to={x.s === 'guide' ? '/aide' : `/reglages?s=${x.s}`} className={(x.s === 'guide' ? loc.pathname === '/aide' : current === x.s) ? 'on' : ''}><Icon name={x.icon} size={18} /> {x.label}</Link>
           ))}
           {admin && <Link role="menuitem" to="/admin" className={loc.pathname === '/admin' ? 'on' : ''}><Icon name="chart" size={18} /> Administration</Link>}
           <div className="umenu-sep" />

@@ -127,3 +127,9 @@ begin
   end if;
   return r;
 end $$;
+
+-- ces fonctions demandent un compte : pas d'accès anonyme
+revoke execute on function public.create_child_list(text, text, text, boolean) from anon;
+revoke execute on function public.delete_child_list(uuid) from anon;
+revoke execute on function public.item_on_child_list(uuid) from anon;
+revoke execute on function public.event_invite_info(text) from anon;

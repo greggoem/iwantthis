@@ -21,19 +21,36 @@ import ShareSheet from '../components/ShareSheet'
 import { listMessage } from '../lib/shareCard'
 import { useConfirm } from '../components/Confirm'
 import ActionMenu from '../components/ActionMenu'
+import ListPills from '../components/ListPills'
+import ChildForm, { type ChildDraft } from '../components/ChildForm'
+import { isKid, lastListId, rememberList } from '../lib/kids'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
-interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean }
+interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean; listId?: string }
+/** Listes où l'on peut ajouter : la sienne et celles de ses enfants */
+interface Target { id: string; name: string; color: string | null; kid: boolean }
 const NEW_GROUP = '__new__'
 const empty: Draft = { title: '', url: '', details: '', price: '', image: '', groupId: '', newGroup: '', newPickOne: false }
 
 /* ---------- Formulaire cadeau (ajout et modification) ---------- */
-function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = false, linkFooter }: {
+function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = false, linkFooter, targets, initialTarget, currentListId, myName = '' }: {
   initial: Draft; groups: Item[]; onSubmit: (d: Draft) => Promise<string | null>; onCancel: () => void; submitLabel: string
+  /** « Pour qui ? » : affiché quand le compte tient au moins une liste d'enfant */
+  targets?: Target[]; initialTarget?: string; currentListId?: string; myName?: string
   /** ajout : d'abord le lien (collé ou partagé), puis le formulaire déjà rempli */
   stepped?: boolean; linkFooter?: React.ReactNode
 }) {
   const [d, setD] = useState<Draft>(initial)
+  const [target, setTarget] = useState(initialTarget ?? currentListId ?? '')
+  const [otherGroups, setOtherGroups] = useState<Item[]>([])
+  useEffect(() => {
+    if (!targets || !target || target === currentListId) return
+    supabase.from('items').select('*').eq('list_id', target).eq('is_group', true).order('title')
+      .then(({ data }) => setOtherGroups((data as Item[]) ?? []))
+  }, [target, currentListId, targets])
+  const tgt = targets?.find(t => t.id === target)
+  const shownGroups = !targets || target === currentListId ? groups : otherGroups
+  const pickTarget = (id: string) => { setTarget(id); setD(prev => ({ ...prev, groupId: prev.groupId === NEW_GROUP ? NEW_GROUP : '' })) }
   // lien reçu sans image (bouton Partager d'une appli) : on lit la fiche avant d'afficher le formulaire
   const needsRead = stepped && Boolean(safeUrl(initial.url)) && !initial.image
   const [step, setStep] = useState<'link' | 'form'>(stepped && (needsRead || !initial.title.trim()) ? 'link' : 'form')
@@ -141,7 +158,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
     if (d.url.trim() && !safeUrl(d.url)) { setErr('Ce lien ne semble pas valide (il doit commencer par http:// ou https://).'); return }
     if (d.groupId === NEW_GROUP && !d.newGroup.trim()) { setErr('Donnez un nom au nouveau groupe.'); return }
     setBusy(true)
-    const msg = await onSubmit(d)
+    const msg = await onSubmit(targets ? { ...d, listId: target } : d)
     setBusy(false)
     if (msg) { setErr(msg); return }
     // enregistré : on supprime les images envoyées mais plus utilisées (remplacées ou retirées)
@@ -193,6 +210,13 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
     <form className={`stack${stepped ? ' fill-in' : ''}`} onSubmit={submit} onPaste={onPasteForm}>
       {shot && <CropCapture source={shot} onCancel={() => setShot(null)} onDone={f => { setShot(null); pickImage(f) }} />}
       <Notice>{err}</Notice>
+      {targets && targets.length > 1 && (
+        <fieldset className="kid-colors for-who">
+          <legend>Pour qui ?</legend>
+          <ListPills lists={targets.map(t => ({ id: t.id, owner_id: '', title: '', share_token: '', child_name: t.kid ? t.name : null, child_color: t.color }))}
+            current={target} myName={myName} onPick={pickTarget} label="Pour qui ?" />
+        </fieldset>
+      )}
       {!stepped && urlField}
       {hint && <p className="small muted">{hint}</p>}
       <div className="formrow">
@@ -233,8 +257,8 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
       {stepped && urlField}
       <label>Où l'ajouter ?
         <select value={d.groupId} onChange={e => setD(prev => ({ ...prev, groupId: e.target.value }))}>
-          <option value="">Ma liste (sans groupe)</option>
-          {groups.map(g => <option key={g.id} value={g.id}>Groupe : {g.title}</option>)}
+          <option value="">{tgt?.kid ? `Liste de ${tgt.name}` : 'Ma liste'} (sans groupe)</option>
+          {shownGroups.map(g => <option key={g.id} value={g.id}>Groupe : {g.title}</option>)}
           <option value={NEW_GROUP}>＋ Nouveau groupe…</option>
         </select>
       </label>
@@ -248,7 +272,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
       )}
       <div className="modal-foot">
         <button type="button" className="btn btn-ghost" onClick={cancel}>Annuler</button>
-        <button className="btn btn-primary" disabled={busy || reading || sending}>{submitLabel}</button>
+        <button className="btn btn-primary" disabled={busy || reading || sending}>{targets && targets.length > 1 ? (tgt?.kid ? `Ajouter pour ${tgt.name}` : 'Ajouter à ma liste') : submitLabel}</button>
       </div>
     </form>
   )
@@ -365,12 +389,16 @@ function KidsForm({ group, onCancel, onSubmit }: {
 /* ---------- Fenêtre « Partager ma liste » ---------- */
 function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) {
   const { profile } = useAuth()
-  const shareTitle = profile?.display_name ? `La liste d'envies de ${profile.display_name}` : list.title
+  const kid = list.child_name
+  const who = kid || profile?.display_name
+  const shareTitle = who ? `La liste d'envies de ${who}` : list.title
   const url = listShareUrl(list.share_token)
   return (
     <ShareSheet
-      title="Partager ma liste"
-      intro="Vos proches se connectent, voient vos envies et indiquent ce qu'ils achètent. Vous ne verrez pas ce qui est acheté avant le lendemain de la date de remise."
+      title={kid ? `Partager la liste de ${kid}` : 'Partager ma liste'}
+      intro={kid
+        ? `Vos proches se connectent, voient les envies de ${kid} et indiquent ce qu'ils achètent. Vous voyez ce qui est acheté, pour éviter les doublons.`
+        : 'Vos proches se connectent, voient vos envies et indiquent ce qu\'ils achètent. Vous ne verrez pas ce qui est acheté avant le lendemain de la date de remise.'}
       message={listMessage(shareTitle, url, APP_NAME)}
       subject={shareTitle}
       heading={shareTitle} imageUrl={null}
@@ -385,11 +413,14 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
 /* ---------- Page ---------- */
 type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; item: Item }
   | { kind: 'group' } | { kind: 'editGroup'; item: Item } | { kind: 'kids'; item: Item }
+  | { kind: 'child'; list: Wishlist | null }
 
 export default function MyList() {
   const [params, setParams] = useSearchParams()
   const confirm = useConfirm()
+  const { profile } = useAuth()
   const [list, setList] = useState<Wishlist | null>(null)
+  const [lists, setLists] = useState<Wishlist[]>([])   // la sienne d'abord, puis celles des enfants
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
   const [opened, setOpened] = useState(false)   // cadeaux reçus découverts pendant cette visite
@@ -413,10 +444,15 @@ export default function MyList() {
     }
   })() : null
 
+  const wanted = params.get('liste')
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('ensure_my_list')
     if (error) { setErr(errMsg(error)); setLoading(false); return }
-    const l = (Array.isArray(data) ? data[0] : data) as Wishlist
+    const mine = (Array.isArray(data) ? data[0] : data) as Wishlist
+    const { data: k } = await supabase.from('wishlists').select('*').eq('owner_id', mine.owner_id).not('child_name', 'is', null).order('created_at')
+    const all = [mine, ...((k as Wishlist[]) ?? [])]
+    setLists(all)
+    const l = all.find(x => x.id === wanted) ?? mine
     setList(l)
     const [it, cl] = await Promise.all([
       supabase.from('items').select('*').eq('list_id', l.id).order('created_at'),
@@ -425,13 +461,16 @@ export default function MyList() {
     setItems((it.data as Item[]) ?? [])
     setClaims(Object.fromEntries(((cl.data as Claim[]) ?? []).map(c => [c.item_id, c])))
     setLoading(false)
-  }, [])
+  }, [wanted])
 
   useEffect(() => { load() }, [load])
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
+  const kidList = isKid(list)
+  const pick = (id: string) => setParams(id === lists[0]?.id ? {} : { liste: id })
   // cadeaux reçus : « nouveaux » tant que la personne ne les a pas découverts, puis archivés
-  const seen = (id: string) => Boolean(claims[id]?.owner_seen_at)
+  // (liste d'enfant : le parent voit les achats au fil de l'eau, rien n'est archivé)
+  const seen = (id: string) => !kidList && Boolean(claims[id]?.owner_seen_at)
   const archivedIds = new Set<string>()
   for (const g of items.filter(i => i.is_group)) {
     const ks = items.filter(k => k.parent_id === g.id)
@@ -442,7 +481,7 @@ export default function MyList() {
   for (const i of items) if (!i.is_group && !i.parent_id && seen(i.id)) archivedIds.add(i.id)
   const activeItems = items.filter(i => !archivedIds.has(i.id))
   const byTitle = (a: Item, b: Item) => a.title.localeCompare(b.title, 'fr')
-  const fresh = items.filter(i => !i.is_group && claims[i.id] && !claims[i.id].owner_seen_at).sort(byTitle)
+  const fresh = kidList ? [] : items.filter(i => !i.is_group && claims[i.id] && !claims[i.id].owner_seen_at).sort(byTitle)
   const archive = items.filter(i => !i.is_group && seen(i.id)).sort((a, b) => (claims[b.id].reveal_on).localeCompare(claims[a.id].reveal_on) || byTitle(a, b))
   const discover = async () => {
     setOpened(true)
@@ -514,7 +553,7 @@ export default function MyList() {
     closeModal(); await load(); return null
   }
 
-  const closeModal = () => { setModal(null); if (params.get('add')) setParams({}, { replace: true }) }
+  const closeModal = () => { setModal(null); if (params.get('add')) setParams(wanted ? { liste: wanted } : {}, { replace: true }) }
 
   const toRow = (d: Draft) => ({
     title: d.title.trim(),
@@ -528,7 +567,7 @@ export default function MyList() {
   const resolveParent = async (d: Draft): Promise<{ parent: string | null } | { error: string }> => {
     if (d.groupId !== NEW_GROUP) return { parent: d.groupId || null }
     const { data, error } = await supabase.from('items').insert({
-      list_id: list!.id, title: d.newGroup.trim(), is_group: true, pick_one: d.newPickOne,
+      list_id: d.listId ?? list!.id, title: d.newGroup.trim(), is_group: true, pick_one: d.newPickOne,
     }).select('id').single()
     return error ? { error: errMsg(error) } : { parent: (data as { id: string }).id }
   }
@@ -536,10 +575,52 @@ export default function MyList() {
   const add = async (d: Draft) => {
     const r = await resolveParent(d)
     if ('error' in r) return r.error
-    const { error } = await supabase.from('items').insert({ ...toRow(d), list_id: list!.id, parent_id: r.parent })
+    const dest = d.listId ?? list!.id
+    const { error } = await supabase.from('items').insert({ ...toRow(d), list_id: dest, parent_id: r.parent })
     if (error) return errMsg(error)
-    closeModal(); await load(); return null
+    rememberList(dest)
+    const other = lists.find(l => l.id === dest)
+    setModal(null)
+    if (dest !== list!.id && other) {
+      setParams(dest === lists[0]?.id ? {} : { liste: dest }, { replace: true })   // on montre la liste où l'envie est arrivée
+    } else {
+      if (params.get('add')) setParams(wanted ? { liste: wanted } : {}, { replace: true })
+      await load()
+    }
+    if (lists.length > 1) setMsg(other?.child_name ? `Ajouté à la liste de ${other.child_name}.` : 'Ajouté à votre liste.')
+    return null
   }
+
+  // listes d'enfants
+  const saveChild = async (c: ChildDraft, target: Wishlist | null) => {
+    if (target) {
+      const { error } = await supabase.from('wishlists').update({ child_name: c.name, child_age: c.age || null, child_color: c.color, in_events: c.inEvents }).eq('id', target.id)
+      if (error) return errMsg(error)
+      setModal(null); await load(); return null
+    }
+    const { data, error } = await supabase.rpc('create_child_list', { p_name: c.name, p_age: c.age || null, p_color: c.color, p_in_events: c.inEvents })
+    if (error) return errMsg(error)
+    const nl = (Array.isArray(data) ? data[0] : data) as Wishlist
+    setModal(null)
+    setParams({ liste: nl.id })
+    setMsg(`La liste de ${c.name} est prête : ajoutez ses envies.`)
+    return null
+  }
+  const deleteChild = async (target: Wishlist) => {
+    if (!(await confirm({ title: `Supprimer la liste de ${target.child_name} ?`, message: 'Toutes ses envies seront supprimées. Vos proches ne la verront plus.', confirmLabel: 'Supprimer', danger: true }))) return
+    const { error } = await supabase.rpc('delete_child_list', { p_list: target.id })
+    if (error) { setErr(errMsg(error)); return }
+    setModal(null); setParams({}); setMsg(`La liste de ${target.child_name} a été supprimée.`)
+  }
+  const nextColor = () => {
+    const used = new Set(lists.map(l => l.child_color))
+    return ['corail', 'bleu', 'vert', 'jaune', 'violet'].find(c => !used.has(c)) ?? 'corail'
+  }
+  const targets: Target[] | undefined = lists.length > 1
+    ? lists.map(l => ({ id: l.id, name: l.child_name || 'Moi', color: l.child_color ?? null, kid: !!l.child_name }))
+    : undefined
+  // raccourci, extension, partage : la dernière liste utilisée sur cet appareil ; bouton « Ajouter » : la liste affichée
+  const addTarget = prefill && lists.some(l => l.id === lastListId()) ? lastListId()! : list?.id
   const update = async (id: string, d: Draft) => {
     const r = await resolveParent(d)
     if ('error' in r) return r.error
@@ -609,8 +690,8 @@ export default function MyList() {
       kid={kid}
       highlight={Boolean(claims[it.id])}
       status={claims[it.id]
-        ? <span className="chip chip-ok" title={`Offert par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">Offert par {claims[it.id].claimed_by_name}</span></span>
-        : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
+        ? <span className="chip chip-ok" title={`${kidList ? 'Acheté' : 'Offert'} par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">{kidList ? 'Acheté' : 'Offert'} par {claims[it.id].claimed_by_name}</span></span>
+        : kidList ? null : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
       actions={<ActionMenu label={`Actions pour « ${it.title} »`} actions={[
         { icon: 'star', label: it.is_favorite ? 'Retirer des favoris' : 'Marquer comme favori', active: !!it.is_favorite, onClick: () => toggleFav(it) },
         { icon: 'pencil', label: 'Modifier', onClick: () => setModal({ kind: 'edit', item: it }) },
@@ -624,12 +705,21 @@ export default function MyList() {
 
   return (
     <div>
+      {lists.length > 1 && <ListPills lists={lists} current={list?.id ?? ''} myName={profile?.display_name ?? ''} onPick={pick} onAddKid={() => setModal({ kind: 'child', list: null })} />}
       <div className="page-head">
-        <h1 className="title-input" style={{ margin: 0 }}>Ma liste d'envies</h1>
+        <div className="title-block">
+          <h1 className="title-input" style={{ margin: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
+          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${list!.child_age}` : ''}</p>}
+        </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
           <button className="btn" onClick={() => setModal({ kind: 'group' })}><Icon name="plus" size={17} /> <span>Groupe</span></button>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> <span>Ajouter</span></button>
+          <ActionMenu label="Plus d'options pour la liste" actions={[
+            { icon: 'plus', label: 'Ajouter une liste d\'enfant', onClick: () => setModal({ kind: 'child', list: null }) },
+            kidList && { icon: 'pencil', label: `Modifier la liste de ${list!.child_name}`, onClick: () => setModal({ kind: 'child', list }) },
+            kidList && { icon: 'trash', label: `Supprimer la liste de ${list!.child_name}`, danger: true, onClick: () => deleteChild(list!) },
+          ]} />
         </div>
       </div>
 
@@ -676,7 +766,7 @@ export default function MyList() {
       {items.length === 0 ? (
         <div className="empty">
           <div className="empty-ico"><Icon name="gift" size={26} /></div>
-          <h2>Votre liste est vide</h2>
+          <h2>{kidList ? `La liste de ${list!.child_name} est vide` : 'Votre liste est vide'}</h2>
           <p className="muted">Collez le lien d'un produit : l'image et le prix sont récupérés pour vous.</p>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> Ajouter une envie</button>
           <ol className="steps">
@@ -700,8 +790,8 @@ export default function MyList() {
                   kids={ks}
                   image={it.image_url ?? ks.find(k => k.image_url)?.image_url ?? null}
                   status={ks.length === 0 ? null : given > 0
-                    ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} offert{given > 1 ? 's' : ''}</span>
-                    : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
+                    ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} {kidList ? 'acheté' : 'offert'}{given > 1 ? 's' : ''}</span>
+                    : kidList ? null : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
                   actions={<ActionMenu label={`Actions pour le groupe « ${it.title} »`} actions={[
                     { icon: 'plus', label: 'Ajouter des éléments', onClick: () => setModal({ kind: 'kids', item: it }) },
                     { icon: 'pencil', label: 'Modifier le groupe', onClick: () => setModal({ kind: 'editGroup', item: it }) },
@@ -734,8 +824,19 @@ export default function MyList() {
       {modal?.kind === 'share' && list && <ShareModal list={list} onClose={closeModal} />}
       {modal?.kind === 'add' && (
         <Modal title="Ajouter une envie" onClose={closeModal}>
-          <ItemForm key={prefill ? params.toString() : 'new'} groups={groupList} initial={prefill ?? empty} submitLabel="Ajouter à ma liste" onCancel={closeModal} onSubmit={add}
-            stepped linkFooter={<BookmarkletBox />} />
+          <ItemForm key={prefill ? params.toString() : 'new'} groups={groupList} initial={prefill ?? empty} submitLabel={kidList ? `Ajouter pour ${list!.child_name}` : 'Ajouter à ma liste'} onCancel={closeModal} onSubmit={add}
+            stepped linkFooter={<BookmarkletBox />} targets={targets} initialTarget={addTarget} currentListId={list?.id} myName={profile?.display_name ?? ''} />
+        </Modal>
+      )}
+      {modal?.kind === 'child' && (
+        <Modal title={modal.list ? `Modifier la liste de ${modal.list.child_name}` : 'Ajouter un enfant'} onClose={closeModal}>
+          <ChildForm
+            initial={modal.list
+              ? { name: modal.list.child_name ?? '', age: modal.list.child_age ?? '', color: modal.list.child_color ?? 'corail', inEvents: modal.list.in_events !== false }
+              : { name: '', age: '', color: nextColor(), inEvents: true }}
+            submitLabel={n => modal.list ? 'Enregistrer' : `Créer la liste de ${n}`}
+            onCancel={closeModal} onSubmit={c => saveChild(c, modal.list)}
+            onDelete={modal.list ? () => deleteChild(modal.list!) : undefined} />
         </Modal>
       )}
       {modal?.kind === 'group' && (

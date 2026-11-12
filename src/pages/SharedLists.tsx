@@ -6,8 +6,11 @@ import { Notice, Spinner } from '../components/ui'
 import Modal from '../components/Modal'
 import Icon from '../components/Icon'
 import { formatDate } from '../lib/format'
+import { PersonDot } from '../components/ListPills'
+import { kidShownIn, listPerson } from '../lib/kids'
 
-interface Row { id: string; owner_id: string; title: string; items: { count: number }[] }
+interface Row { id: string; owner_id: string; title: string; child_name: string | null; child_age: string | null; child_color: string | null; in_events: boolean; items: { count: number }[] }
+interface Override { event_id: string; list_id: string; shown: boolean }
 interface Ev { id: string; name: string; event_date: string; event_members: { user_id: string }[] }
 type Sort = 'name' | 'event'
 
@@ -15,7 +18,7 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 
 function shownByName(rows: Row[], names: Record<string, string>, q: string): Row[] {
   const needle = norm(q.trim())
-  const nm = (r: Row) => names[r.owner_id] ?? ''
+  const nm = (r: Row) => listPerson(r, names, '')
   return rows.filter(r => !needle || norm(nm(r) + ' ' + r.title).includes(needle)).sort((a, b) => nm(a).localeCompare(nm(b), 'fr', { sensitivity: 'base' }))
 }
 
@@ -32,13 +35,16 @@ export default function SharedLists() {
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<Sort>('name')
   const [openEv, setOpenEv] = useState<Record<string, boolean>>({})
+  const [overrides, setOverrides] = useState<Override[]>([])
 
   useEffect(() => {
     (async () => {
-      const [{ data }, ev] = await Promise.all([
-        supabase.from('wishlists').select('id,owner_id,title,items(count)').eq('items.is_group', false).neq('owner_id', session!.user.id),
+      const [{ data }, ev, ov] = await Promise.all([
+        supabase.from('wishlists').select('id,owner_id,title,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).neq('owner_id', session!.user.id),
         supabase.from('events').select('id,name,event_date,event_members(user_id)'),
+        supabase.from('event_child_lists').select('event_id,list_id,shown'),
       ])
+      setOverrides((ov.data as Override[]) ?? [])
       const r = (data as unknown as Row[]) ?? []
       setRows(r)
       setEvents((ev.data as unknown as Ev[]) ?? [])
@@ -62,22 +68,25 @@ export default function SharedLists() {
   const today = new Date().toISOString().slice(0, 10)
   const evOf = useMemo(() => {
     const m: Record<string, Ev[]> = {}
-    for (const e of events) for (const mem of e.event_members ?? []) (m[mem.user_id] ??= []).push(e)
+    for (const e of events) {
+      const ids = new Set((e.event_members ?? []).map(x => x.user_id))
+      for (const r of rows) if (ids.has(r.owner_id) && kidShownIn(r, e.id, overrides)) (m[r.id] ??= []).push(e)
+    }
     for (const k in m) m[k].sort((a, b) => {
       const fa = a.event_date >= today, fb = b.event_date >= today
       if (fa !== fb) return fa ? -1 : 1
       return fa ? a.event_date.localeCompare(b.event_date) : b.event_date.localeCompare(a.event_date)
     })
     return m
-  }, [events, today])
+  }, [events, rows, overrides, today])
 
   const shown = useMemo(() => {
-    const nm = (r: Row) => names[r.owner_id] ?? ''
+    const nm = (r: Row) => listPerson(r, names, '')
     const needle = norm(q.trim())
-    const list = rows.filter(r => !needle || norm([nm(r), r.title, ...(evOf[r.owner_id] ?? []).map(e => e.name)].join(' ')).includes(needle))
+    const list = rows.filter(r => !needle || norm([nm(r), r.title, ...(evOf[r.id] ?? []).map(e => e.name)].join(' ')).includes(needle))
     return list.sort((a, b) => {
       if (sort === 'event') {
-        const ea = evOf[a.owner_id]?.[0], eb = evOf[b.owner_id]?.[0]
+        const ea = evOf[a.id]?.[0], eb = evOf[b.id]?.[0]
         if (!ea !== !eb) return ea ? -1 : 1
         if (ea && eb) {
           const c = ea.name.localeCompare(eb.name, 'fr', { sensitivity: 'base' })
@@ -90,12 +99,11 @@ export default function SharedLists() {
 
   // vue « par événement » : événements par date (à venir d'abord), participants par ordre alphabétique
   const groups = useMemo(() => {
-    const nm = (r: Row) => names[r.owner_id] ?? ''
+    const nm = (r: Row) => listPerson(r, names, '')
     const needle = norm(q.trim())
-    const byOwner = new Map(rows.map(r => [r.owner_id, r]))
     const out: { ev: Ev; people: Row[] }[] = []
     for (const e of events) {
-      const people = (e.event_members ?? []).map(m => byOwner.get(m.user_id)).filter((r): r is Row => !!r)
+      const people = rows.filter(r => evOf[r.id]?.some(x => x.id === e.id))
       if (!people.length) continue
       const evMatch = !needle || norm(e.name).includes(needle)
       const kept = evMatch ? people : people.filter(r => norm(nm(r) + ' ' + r.title).includes(needle))
@@ -108,18 +116,19 @@ export default function SharedLists() {
       return fa ? a.ev.event_date.localeCompare(b.ev.event_date) : b.ev.event_date.localeCompare(a.ev.event_date)
     })
     const inEvent = new Set(out.flatMap(g => g.people.map(r => r.id)))
-    const others = shownByName(rows, names, q).filter(r => !(evOf[r.owner_id]?.length))
+    const others = shownByName(rows, names, q).filter(r => !(evOf[r.id]?.length))
     return { out, others: others.filter(r => !inEvent.has(r.id)) }
   }, [rows, names, events, evOf, q, today])
 
   const card = (r: Row, withEvents: boolean) => {
-    const ev = evOf[r.owner_id] ?? []
+    const ev = evOf[r.id] ?? []
     return (
       <div className="card item linkcard pcard">
         <div className="item-main">
           <p className="pcard-name">
-            <Link className="pcard-link" to={`/listes/${r.id}`}>{names[r.owner_id] ?? 'Quelqu\'un'}</Link>
-            <span className="small muted wish-count">{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}</span>
+            {r.child_name && <PersonDot name={r.child_name} color={r.child_color ?? 'corail'} size={30} />}
+            <Link className="pcard-link" to={`/listes/${r.id}`}>{listPerson(r, names)}</Link>
+            <span className="small muted wish-count">{r.child_age ? `${r.child_age} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name && names[r.owner_id] ? ` · liste tenue par ${names[r.owner_id]}` : ''}</span>
           </p>
           {withEvents && ev.length > 0 && (
             <div className="pcard-evs">

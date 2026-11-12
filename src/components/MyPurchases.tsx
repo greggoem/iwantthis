@@ -15,7 +15,7 @@ interface ClaimRow {
   reveal_on: string
   event_id: string | null
   discreet: boolean
-  items: { id: string; title: string; url: string | null; price: number | null; image_url: string | null; wishlists: { owner_id: string } | null } | null
+  items: { id: string; title: string; url: string | null; price: number | null; image_url: string | null; wishlists: { owner_id: string; child_name: string | null } | null } | null
   events: { name: string } | null
 }
 interface Purchase {
@@ -36,7 +36,7 @@ export default function MyPurchases() {
   const load = useCallback(async () => {
     if (!session) return
     const { data, error } = await supabase.from('item_claims')
-      .select('item_id,reveal_on,event_id,discreet,items(id,title,url,price,image_url,wishlists(owner_id)),events(name)')
+      .select('item_id,reveal_on,event_id,discreet,items(id,title,url,price,image_url,wishlists(owner_id,child_name)),events(name)')
       .eq('claimed_by', session.user.id).order('reveal_on')
     if (error) { setErr(errMsg(error)); setRows([]); return }
     const claims = ((data as unknown as ClaimRow[]) ?? []).filter(c => c.items)
@@ -49,7 +49,7 @@ export default function MyPurchases() {
     setRows(claims.map(c => ({
       id: c.item_id, title: c.items!.title, url: c.items!.url,
       price: c.items!.price === null ? null : Number(c.items!.price), image: c.items!.image_url,
-      owner: names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche', ownerId: c.items!.wishlists?.owner_id ?? '',
+      owner: c.items!.wishlists?.child_name || (names[c.items!.wishlists?.owner_id ?? ''] ?? 'Un proche'), ownerId: c.items!.wishlists?.owner_id ?? '',
       revealOn: c.reveal_on, event: c.events?.name ?? null, eventId: c.event_id, discreet: Boolean(c.discreet),
     })))
   }, [session])

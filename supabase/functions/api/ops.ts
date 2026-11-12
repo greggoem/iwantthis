@@ -202,13 +202,13 @@ export async function refreshGift(c: Ctx, id: string) {
 
 // ---------- listes des proches ----------
 export async function sharedLists(c: Ctx) {
-  const rows = ok(await c.sb.from('wishlists').select('id,owner_id,title,items(count)').neq('owner_id', c.uid)) as any[]
+  const rows = ok(await c.sb.from('wishlists').select('id,owner_id,title,child_name,items(count)').neq('owner_id', c.uid)) as any[]
   const names: Record<string, string> = {}
   if (rows.length) {
     const p = ok(await c.sb.from('profiles').select('id,display_name').in('id', rows.map((r) => r.owner_id))) as any[]
     for (const x of p) names[x.id] = x.display_name
   }
-  return rows.map((r) => ({ id: r.id, owner: names[r.owner_id] ?? null, owner_id: r.owner_id, title: r.title, gift_count: r.items?.[0]?.count ?? 0 }))
+  return rows.map((r) => ({ id: r.id, owner: r.child_name ?? names[r.owner_id] ?? null, child: !!r.child_name, owner_id: r.owner_id, title: r.title, gift_count: r.items?.[0]?.count ?? 0 }))
 }
 
 export async function resolveListId(c: Ctx, ref: unknown): Promise<string> {
@@ -225,7 +225,7 @@ export async function resolveListId(c: Ctx, ref: unknown): Promise<string> {
 
 export async function getList(c: Ctx, ref: unknown) {
   const id = await resolveListId(c, ref)
-  const l = ok(await c.sb.from('wishlists').select('id,owner_id,title,share_token').eq('id', id).maybeSingle()) as any
+  const l = ok(await c.sb.from('wishlists').select('id,owner_id,title,share_token,child_name').eq('id', id).maybeSingle()) as any
   if (!l) throw new ApiError(404, 'Liste introuvable ou accès refusé')
   const [items, claims, prof] = await Promise.all([
     c.sb.from('items').select('*').eq('list_id', id).order('created_at'),
@@ -236,7 +236,7 @@ export async function getList(c: Ctx, ref: unknown) {
   const ids = new Set(itemRows.map((i) => i.id))
   const cl = Object.fromEntries((ok(claims) as any[]).filter((x) => ids.has(x.item_id)).map((x) => [x.item_id, x]))
   return {
-    list: { id: l.id, title: l.title, owner: (ok(prof) as any)?.display_name ?? null, is_mine: l.owner_id === c.uid },
+    list: { id: l.id, title: l.title, owner: l.child_name ?? (ok(prof) as any)?.display_name ?? null, is_mine: l.owner_id === c.uid },
     gifts: itemRows.map((it) => giftOut(it, cl[it.id], c.uid)),
   }
 }
@@ -323,7 +323,7 @@ export async function getEvent(c: Ctx, ref: unknown) {
   if (!e) throw new ApiError(404, 'Événement introuvable ou accès refusé')
   const members = await eventMembers(c, id)
   const [lists, excl, asg] = await Promise.all([
-    c.sb.from('wishlists').select('id,owner_id').in('owner_id', members.map((m) => m.user_id)),
+    c.sb.from('wishlists').select('id,owner_id').is('child_name', null).in('owner_id', members.map((m) => m.user_id)),
     c.sb.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id),
     c.sb.from('draw_assignments').select('receiver_id').eq('event_id', id).maybeSingle(),
   ])
@@ -424,6 +424,6 @@ export async function myDraw(c: Ctx, eventRef: unknown) {
   if (!a) return { my_recipient: null, note: 'Pas de résultat pour vous (tirage pas encore fait, ou vous ne participez pas).' }
   const ms = await eventMembers(c, id)
   const r = ms.find((m) => m.user_id === a.receiver_id)
-  const l = ok(await c.sb.from('wishlists').select('id').eq('owner_id', a.receiver_id).maybeSingle()) as any
+  const l = ok(await c.sb.from('wishlists').select('id').eq('owner_id', a.receiver_id).is('child_name', null).maybeSingle()) as any
   return { my_recipient: { user_id: a.receiver_id, name: r?.profiles?.display_name ?? null, list_id: l?.id ?? null } }
 }

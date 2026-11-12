@@ -137,7 +137,8 @@ export default function ListView() {
 
   if (loading) return <Spinner />
   if (!list) return <Notice>Liste introuvable, ou vous n'y avez pas accès. Demandez le lien de partage à la personne.</Notice>
-  if (list.owner_id === me) return <Navigate to={list.child_name ? `/?liste=${list.id}` : '/'} replace />
+  if (list.owner_id === me && !list.child_name) return <Navigate to="/" replace />
+  const myKid = list.owner_id === me   // liste de mon enfant : je vois et marque les achats ici
 
   const { tops, kids } = groupTree(items)
   const gallery = prefs.view === 'gallery'
@@ -190,7 +191,7 @@ export default function ListView() {
               <input type="date" value={customDate} min={todayISO()} onChange={e => setCustomDate(e.target.value)} />
             )}
             <p className="small muted">
-              {keeper ? `${keeper} verra votre achat (pour éviter les doublons) ; remise prévue le ${revealDate ? formatDateShort(revealDate) : '…'}.` : `${owner} ne verra l'achat qu'à partir du lendemain du ${revealDate ? formatDateShort(revealDate) : '…'}.`}
+              {myKid ? `Vos proches verront que c'est acheté ; remise prévue le ${revealDate ? formatDateShort(revealDate) : '…'}.` : keeper ? `${keeper} verra votre achat (pour éviter les doublons) ; remise prévue le ${revealDate ? formatDateShort(revealDate) : '…'}.` : `${owner} ne verra l'achat qu'à partir du lendemain du ${revealDate ? formatDateShort(revealDate) : '…'}.`}
               {group?.pick_one && ' Les autres options du groupe seront alors marquées « plus nécessaire ».'}
             </p>
             <div className="row">
@@ -210,10 +211,12 @@ export default function ListView() {
         {keeper && <PersonDot name={owner} color={list.child_color ?? 'corail'} size={48} />}
         <div className="title-block">
           <h1 style={{ margin: 0 }}>La liste d'envies de {owner}</h1>
-          {keeper && <p className="muted title-sub">{list.child_age ? `${formatAge(list.child_age)} · ` : ''}liste tenue par {keeper}</p>}
+          {keeper && <p className="muted title-sub">{list.child_age ? `${formatAge(list.child_age)} · ` : ''}{myKid ? 'votre enfant' : `liste tenue par ${keeper}`}</p>}
         </div>
       </div>
-      <p className="muted">{keeper
+      <p className="muted">{myKid
+        ? <>Ici, vous voyez ce que vos proches ont acheté et pouvez marquer vos propres achats. Dans <Link to={`/?liste=${list.id}`}>Ma liste</Link>, les achats restent cachés : vous pouvez la remplir avec {owner} sans rien dévoiler.</>
+        : keeper
         ? `${owner} ne voit pas ce site. ${keeper} voit ce qui est acheté, pour éviter les doublons.`
         : `${owner} ne voit pas ce que vous marquez comme acheté, avant le lendemain de la date de remise.`}</p>
       <Notice>{err}</Notice>

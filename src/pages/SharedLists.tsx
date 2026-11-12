@@ -40,7 +40,7 @@ export default function SharedLists() {
   useEffect(() => {
     (async () => {
       const [{ data }, ev, ov] = await Promise.all([
-        supabase.from('wishlists').select('id,owner_id,title,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).neq('owner_id', session!.user.id),
+        supabase.from('wishlists').select('id,owner_id,title,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).or(`owner_id.neq.${session!.user.id},child_name.not.is.null`),
         supabase.from('events').select('id,name,event_date,event_members(user_id)'),
         supabase.from('event_child_lists').select('event_id,list_id,shown'),
       ])
@@ -128,7 +128,7 @@ export default function SharedLists() {
           <p className="pcard-name">
             {r.child_name && <PersonDot name={r.child_name} color={r.child_color ?? 'corail'} size={30} />}
             <Link className="pcard-link" to={`/listes/${r.id}`}>{listPerson(r, names)}</Link>
-            <span className="small muted wish-count">{r.child_age ? `${formatAge(r.child_age)} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name && names[r.owner_id] ? ` · liste tenue par ${names[r.owner_id]}` : ''}</span>
+            <span className="small muted wish-count">{r.child_age ? `${formatAge(r.child_age)} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name ? (r.owner_id === session!.user.id ? ' · votre enfant' : names[r.owner_id] ? ` · liste tenue par ${names[r.owner_id]}` : '') : ''}</span>
           </p>
           {withEvents && ev.length > 0 && (
             <div className="pcard-evs">

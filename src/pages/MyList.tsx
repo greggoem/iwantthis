@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { supabase, errMsg, listShareUrl, APP_NAME } from '../lib/supabase'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
@@ -497,6 +497,7 @@ export default function MyList() {
   const Group = gallery ? GroupSection : GroupRow
   // statut pour le tri : 0 = surprise, 1 = déjà offert (révélé) ; un groupe vaut la part de ses éléments offerts
   const statusOf = (it: Item): number => {
+    if (kidList) return 0   // liste d'enfant : le tri ne doit rien trahir des achats
     if (!it.is_group) return claims[it.id] ? 1 : 0
     const ks = kids[it.id] ?? []
     return ks.length ? ks.filter(k => claims[k.id]).length / ks.length : 0
@@ -688,8 +689,8 @@ export default function MyList() {
       key={it.id}
       item={it}
       kid={kid}
-      highlight={Boolean(claims[it.id])}
-      status={claims[it.id]
+      highlight={!kidList && Boolean(claims[it.id])}
+      status={kidList ? null : claims[it.id]
         ? <span className="chip chip-ok" title={`${kidList ? 'Acheté' : 'Offert'} par ${claims[it.id].claimed_by_name} · remise le ${formatDateShort(claims[it.id].reveal_on)}`}><Icon name="gift" size={13} /><span className="ell">{kidList ? 'Acheté' : 'Offert'} par {claims[it.id].claimed_by_name}</span></span>
         : kidList ? null : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
       actions={<ActionMenu label={`Actions pour « ${it.title} »`} actions={[
@@ -709,7 +710,7 @@ export default function MyList() {
       <div className="page-head">
         <div className="title-block">
           <h1 className="title-input" style={{ margin: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
-          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}</p>}
+          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''} · achats cachés ici, visibles dans <Link to={`/listes/${list!.id}`}>Listes de mes proches</Link></p>}
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
@@ -789,7 +790,7 @@ export default function MyList() {
                   group={it}
                   kids={ks}
                   image={it.image_url ?? ks.find(k => k.image_url)?.image_url ?? null}
-                  status={ks.length === 0 ? null : given > 0
+                  status={kidList || ks.length === 0 ? null : given > 0
                     ? <span className="chip chip-ok"><Icon name="gift" size={13} /> {given} {kidList ? 'acheté' : 'offert'}{given > 1 ? 's' : ''}</span>
                     : kidList ? null : <span className="chip chip-quiet"><Icon name="lock" size={12} /> Surprise</span>}
                   actions={<ActionMenu label={`Actions pour le groupe « ${it.title} »`} actions={[

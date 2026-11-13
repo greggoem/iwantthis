@@ -38,6 +38,8 @@ export default function ListView() {
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
   const [editClaim, setEditClaim] = useState<Item | null>(null)
+  // Après un achat : inviter à créer (ou partager) sa propre liste — moteur de bouche-à-oreille
+  const [nudge, setNudge] = useState<{ title: string; empty: boolean } | null>(null)
   const [prefs, setPrefs, cycleSort] = useViewPrefs()
 
   const load = useCallback(async () => {
@@ -83,8 +85,18 @@ export default function ListView() {
       p_discreet: discreet,
     })
     setBusy(false)
-    if (error) setErr(errMsg(error)); else setClaimingId(null)
+    if (error) { setErr(errMsg(error)); load(); return }
+    const claimed = items.find(i => i.id === claimingId)
+    setClaimingId(null)
     load()
+    // Ma propre liste est-elle vide ? (la mienne, pas celles de mes enfants)
+    const { data: mine } = await supabase.from('wishlists').select('id').eq('owner_id', me).is('child_name', null).maybeSingle()
+    let empty = true
+    if (mine) {
+      const { count } = await supabase.from('items').select('id', { count: 'exact', head: true }).eq('list_id', (mine as { id: string }).id)
+      empty = !count
+    }
+    setNudge({ title: claimed?.title ?? '', empty })
   }
 
   /** Copie l'idée d'un proche dans MA liste (titre, lien, détails, prix, image) */
@@ -221,6 +233,24 @@ export default function ListView() {
         : `${owner} ne voit pas ce que vous marquez comme acheté, avant le lendemain de la date de remise.`}</p>
       <Notice>{err}</Notice>
       {copyMsg && <Notice kind="ok">{copyMsg} <Link to="/">Voir ma liste</Link></Notice>}
+      {nudge && (
+        <div className="notice notice-ok nudge" role="status" data-testid="apres-achat">
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '.5rem' }}>
+            <div className="stack" style={{ gap: '.35rem' }}>
+              <strong>{nudge.title ? `C'est noté pour « ${nudge.title} ».` : `C'est noté.`} {myKid || keeper ? '' : `${owner} n'en saura rien.`}</strong>
+              {nudge.empty
+                ? <span>Et vous, qu'est-ce qui vous ferait plaisir ? Créez votre liste en une minute : vos proches éviteront eux aussi les doublons.</span>
+                : <span>Votre liste est prête : partagez-la à {myKid || keeper ? 'vos proches' : owner}, pour que la surprise marche dans les deux sens.</span>}
+              <div className="row" style={{ gap: '.5rem' }}>
+                {nudge.empty
+                  ? <Link className="btn btn-primary btn-sm" to="/?add=1">Ajouter ma première envie</Link>
+                  : <Link className="btn btn-primary btn-sm" to="/">Partager ma liste</Link>}
+              </div>
+            </div>
+            <IconButton icon="x" label="Fermer" onClick={() => setNudge(null)} />
+          </div>
+        </div>
+      )}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
       {editClaim && claims[editClaim.id] && (
         <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}

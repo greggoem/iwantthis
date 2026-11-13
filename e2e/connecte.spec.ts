@@ -98,6 +98,9 @@ test('partage : B voit la liste de A, achète, et A ne voit pas l\'achat (surpri
   await capture(pageB, info, 'achat-choix-date')
   await pageB.getByRole('button', { name: 'Confirmer' }).click()
   await expect(row.locator('.chip-ok, .claimed-ribbon').first()).toBeVisible()
+  // Invitation à créer / partager sa propre liste après l'achat
+  await expect(pageB.getByTestId('apres-achat')).toBeVisible()
+  await expect(pageB.getByTestId('apres-achat').getByRole('link', { name: /Ajouter ma première envie|Partager ma liste/ })).toBeVisible()
   await capture(pageB, info, 'liste-du-proche-apres-achat')
   await ctxB.close()
 

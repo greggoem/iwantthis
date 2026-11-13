@@ -29,14 +29,6 @@ h2{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 1rem}
 .facts dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.5rem 1rem}
 .facts dt{color:var(--muted)}
 .facts dd{margin:0;font-weight:600}
-.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1.2rem}
-.shot{margin:0}
-.shot a{display:block;border-radius:22px;overflow:hidden;border:6px solid var(--ink);background:#fff;box-shadow:0 10px 30px rgba(15,15,16,.12)}
-.shot img{display:block;width:100%;height:auto}
-.shot figcaption{font-size:.85rem;color:var(--muted);margin-top:.5rem;line-height:1.35}
-.desk{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.4rem;margin-top:2rem}
-.desk .shot a{border-radius:12px;border:1px solid var(--line);border-top:22px solid #e7e3dd}
-.dl{font-size:.8rem;margin-left:.3rem}
 .logos{display:flex;flex-wrap:wrap;gap:1rem}
 .logo{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.2rem;text-align:center;width:190px}
 .logo.dark{background:var(--ink);color:#fff}
@@ -46,8 +38,31 @@ h2{font-size:1.5rem;letter-spacing:-.02em;margin:0 0 1rem}
 .contact a{color:#fff}
 .contact p{margin:.2rem 0}
 footer{padding:2rem 0 3rem;color:var(--muted);font-size:.85rem}
-@media (max-width:760px){.cols{grid-template-columns:1fr;gap:1.5rem}.phones{grid-template-columns:repeat(2,1fr)}}
-</style></head><body>
+.carousel{position:relative;margin-top:1.4rem}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;scrollbar-width:none;border-radius:20px;background:#f4f1ec;outline:none}
+.track::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;margin:0;padding:2rem 4.2rem 1.6rem;box-sizing:border-box;display:flex;flex-direction:column;align-items:center}
+.imgs{display:flex;align-items:flex-end;justify-content:center;gap:1.6rem;width:100%;height:440px}
+.imgs a{display:block;height:100%}
+.imgs img{display:block;height:100%;width:auto;max-width:100%;object-fit:contain}
+.imgs .ph{flex:0 0 auto}
+.imgs .ph img{border:6px solid var(--ink);border-radius:24px;box-shadow:0 12px 30px rgba(15,15,16,.18);box-sizing:border-box}
+.imgs .dk{flex:0 1 auto;min-width:0;height:84%}
+.imgs .dk img{border:1px solid var(--line);border-top:20px solid #e7e3dd;border-radius:10px;box-shadow:0 12px 30px rgba(15,15,16,.12);background:#fff;box-sizing:border-box}
+.slide figcaption{text-align:center;margin-top:1.3rem;max-width:560px;display:flex;flex-direction:column;gap:.3rem;line-height:1.4}
+.slide figcaption strong{font-size:1.15rem}
+.slide .num{font-size:.75rem;letter-spacing:.08em;color:var(--accent);font-weight:700}
+.slide .txt{color:var(--muted)}
+.slide .dl{font-size:.85rem}
+.nav{position:absolute;top:220px;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:var(--ink);color:#fff;font-size:1.8rem;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(15,15,16,.25)}
+.nav:hover{background:var(--accent)}.nav:disabled{opacity:.25;cursor:default;background:var(--ink)}
+.prev{left:.8rem}.next{right:.8rem}
+.dots{display:flex;justify-content:center;gap:.5rem;margin-top:1rem}
+.dots button{width:10px;height:10px;border-radius:50%;border:0;padding:0;background:#d6d0c7;cursor:pointer}
+.dots button[aria-selected=true]{background:var(--accent);width:26px;border-radius:5px}
+.kit{text-align:center;color:var(--muted);font-size:.9rem;margin-top:1rem}
+@media (max-width:760px){.slide{padding:1.4rem 1rem 1.2rem}.imgs{height:380px}.imgs .dk{display:none}.nav{top:200px;width:38px;height:38px;font-size:1.5rem}.prev{left:.3rem}.next{right:.3rem}}
+@media (max-width:760px){.cols{grid-template-columns:1fr;gap:1.5rem}</style></head><body>
 
 <header><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" width="32" height="32" alt=""> I Want This</a>
@@ -94,24 +109,22 @@ footer{padding:2rem 0 3rem;color:var(--muted);font-size:.85rem}
 
 <section><div class="wrap">
   <h2>Captures d'écran</h2>
-  <p style="color:var(--muted);margin-top:-.4rem">Le vrai site, avec des données de démonstration. Cliquez sur une image pour l'ouvrir en haute définition.</p>
-  <div class="phones">
-    <figure class="shot"><a href="/presse/1-accueil-phone.jpg" target="_blank"><img src="/presse/1-accueil-phone.jpg" alt="Page d'accueil d'I Want This sur téléphone" loading="lazy"></a><figcaption>L'accueil</figcaption></figure>
-    <figure class="shot"><a href="/presse/2-ma-liste-phone.jpg" target="_blank"><img src="/presse/2-ma-liste-phone.jpg" alt="Ma liste d'envies, en galerie" loading="lazy"></a><figcaption>Ma liste d'envies</figcaption></figure>
-    <figure class="shot"><a href="/presse/3-liste-proche-phone.jpg" target="_blank"><img src="/presse/3-liste-proche-phone.jpg" alt="La liste d'une proche avec deux cadeaux marqués achetés" loading="lazy"></a><figcaption>Chez une proche : ce qui est déjà acheté</figcaption></figure>
-    <figure class="shot"><a href="/presse/4-achat-phone.jpg" target="_blank"><img src="/presse/4-achat-phone.jpg" alt="Indiquer un achat et choisir l'occasion" loading="lazy"></a><figcaption>Indiquer un achat, en restant secret</figcaption></figure>
-    <figure class="shot"><a href="/presse/5-liste-enfant-phone.jpg" target="_blank"><img src="/presse/5-liste-enfant-phone.jpg" alt="La liste d'envies d'un enfant" loading="lazy"></a><figcaption>La liste d'un enfant</figcaption></figure>
-    <figure class="shot"><a href="/presse/6-evenement-phone.jpg" target="_blank"><img src="/presse/6-evenement-phone.jpg" alt="Un événement de Noël avec le tirage au sort" loading="lazy"></a><figcaption>Noël en famille et tirage au sort</figcaption></figure>
-    <figure class="shot"><a href="/presse/7-theme-fete-phone.jpg" target="_blank"><img src="/presse/7-theme-fete-phone.jpg" alt="Le thème coloré « Fête »" loading="lazy"></a><figcaption>Le thème « Fête »</figcaption></figure>
+  <p style="color:var(--muted);margin-top:-.4rem">Le vrai site, avec des données de démonstration. Faites défiler les écrans ; cliquez sur une image pour l'ouvrir en haute définition.</p>
+  <div class="carousel" aria-roledescription="carrousel" aria-label="Captures d'écran">
+    <div class="track" tabindex="0">
+      <figure class="slide" aria-roledescription="diapositive" aria-label="1 sur 7"><div class="imgs"><a class="ph" href="/presse/1-accueil-phone.jpg" target="_blank"><img src="/presse/1-accueil-phone.jpg" alt="L'accueil, sur téléphone"></a><a class="dk" href="/presse/1-accueil-desktop.jpg" target="_blank"><img src="/presse/1-accueil-desktop.jpg" alt="L'accueil, sur ordinateur"></a></div><figcaption><span class="num">1/7</span><strong>L'accueil</strong><span class="txt">Créer sa liste en quelques secondes, gratuitement, sans application à installer.</span><span class="dl"><a href="/presse/1-accueil-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/1-accueil-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+      <figure class="slide" aria-roledescription="diapositive" aria-label="2 sur 7"><div class="imgs"><a class="ph" href="/presse/2-ma-liste-phone.jpg" target="_blank"><img src="/presse/2-ma-liste-phone.jpg" alt="Ma liste d'envies, sur téléphone" loading="lazy"></a><a class="dk" href="/presse/2-ma-liste-desktop.jpg" target="_blank"><img src="/presse/2-ma-liste-desktop.jpg" alt="Ma liste d'envies, sur ordinateur" loading="lazy"></a></div><figcaption><span class="num">2/7</span><strong>Ma liste d'envies</strong><span class="txt">Les idées ajoutées depuis n'importe quel site marchand, avec photo, prix et lien.</span><span class="dl"><a href="/presse/2-ma-liste-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/2-ma-liste-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+      <figure class="slide" aria-roledescription="diapositive" aria-label="3 sur 7"><div class="imgs"><a class="ph" href="/presse/3-liste-proche-phone.jpg" target="_blank"><img src="/presse/3-liste-proche-phone.jpg" alt="Chez une proche : ce qui est déjà acheté, sur téléphone" loading="lazy"></a><a class="dk" href="/presse/3-liste-proche-desktop.jpg" target="_blank"><img src="/presse/3-liste-proche-desktop.jpg" alt="Chez une proche : ce qui est déjà acheté, sur ordinateur" loading="lazy"></a></div><figcaption><span class="num">3/7</span><strong>Chez une proche : ce qui est déjà acheté</strong><span class="txt">Les invités voient ce qui est déjà pris. La personne qui reçoit, elle, ne voit rien.</span><span class="dl"><a href="/presse/3-liste-proche-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/3-liste-proche-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+      <figure class="slide solo" aria-roledescription="diapositive" aria-label="4 sur 7"><div class="imgs"><a class="ph" href="/presse/4-achat-phone.jpg" target="_blank"><img src="/presse/4-achat-phone.jpg" alt="Indiquer un achat, en restant secret, sur téléphone" loading="lazy"></a></div><figcaption><span class="num">4/7</span><strong>Indiquer un achat, en restant secret</strong><span class="txt">Un clic pour signaler son cadeau et choisir l'occasion : fini les doublons.</span><span class="dl"><a href="/presse/4-achat-phone.jpg" download>Télécharger (mobile)</a></span></figcaption></figure>
+      <figure class="slide" aria-roledescription="diapositive" aria-label="5 sur 7"><div class="imgs"><a class="ph" href="/presse/5-liste-enfant-phone.jpg" target="_blank"><img src="/presse/5-liste-enfant-phone.jpg" alt="La liste d'un enfant, sur téléphone" loading="lazy"></a><a class="dk" href="/presse/5-liste-enfant-desktop.jpg" target="_blank"><img src="/presse/5-liste-enfant-desktop.jpg" alt="La liste d'un enfant, sur ordinateur" loading="lazy"></a></div><figcaption><span class="num">5/7</span><strong>La liste d'un enfant</strong><span class="txt">Les parents tiennent la liste des enfants et la partagent aux grands-parents, parrains et marraines.</span><span class="dl"><a href="/presse/5-liste-enfant-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/5-liste-enfant-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+      <figure class="slide" aria-roledescription="diapositive" aria-label="6 sur 7"><div class="imgs"><a class="ph" href="/presse/6-evenement-phone.jpg" target="_blank"><img src="/presse/6-evenement-phone.jpg" alt="Noël en famille et tirage au sort, sur téléphone" loading="lazy"></a><a class="dk" href="/presse/6-evenement-desktop.jpg" target="_blank"><img src="/presse/6-evenement-desktop.jpg" alt="Noël en famille et tirage au sort, sur ordinateur" loading="lazy"></a></div><figcaption><span class="num">6/7</span><strong>Noël en famille et tirage au sort</strong><span class="txt">On crée l'événement, on invite la famille ou les collègues, le site tire au sort qui offre à qui.</span><span class="dl"><a href="/presse/6-evenement-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/6-evenement-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+      <figure class="slide" aria-roledescription="diapositive" aria-label="7 sur 7"><div class="imgs"><a class="ph" href="/presse/7-theme-fete-phone.jpg" target="_blank"><img src="/presse/7-theme-fete-phone.jpg" alt="Le thème « Fête », sur téléphone" loading="lazy"></a><a class="dk" href="/presse/7-theme-fete-desktop.jpg" target="_blank"><img src="/presse/7-theme-fete-desktop.jpg" alt="Le thème « Fête », sur ordinateur" loading="lazy"></a></div><figcaption><span class="num">7/7</span><strong>Le thème « Fête »</strong><span class="txt">Cinq thèmes de couleurs pour personnaliser l'affichage.</span><span class="dl"><a href="/presse/7-theme-fete-phone.jpg" download>Télécharger (mobile)</a> · <a href="/presse/7-theme-fete-desktop.jpg" download>Télécharger (ordinateur)</a></span></figcaption></figure>
+    </div>
+    <button class="nav prev" type="button" aria-label="Image précédente">&#8249;</button>
+    <button class="nav next" type="button" aria-label="Image suivante">&#8250;</button>
+    <div class="dots" role="tablist"><button type="button" aria-label="Aller à l'image 1"></button><button type="button" aria-label="Aller à l'image 2"></button><button type="button" aria-label="Aller à l'image 3"></button><button type="button" aria-label="Aller à l'image 4"></button><button type="button" aria-label="Aller à l'image 5"></button><button type="button" aria-label="Aller à l'image 6"></button><button type="button" aria-label="Aller à l'image 7"></button></div>
   </div>
-  <div class="desk">
-    <figure class="shot"><a href="/presse/1-accueil-desktop.jpg" target="_blank"><img src="/presse/1-accueil-desktop.jpg" alt="Page d'accueil sur ordinateur" loading="lazy"></a><figcaption>L'accueil, sur ordinateur</figcaption></figure>
-    <figure class="shot"><a href="/presse/2-ma-liste-desktop.jpg" target="_blank"><img src="/presse/2-ma-liste-desktop.jpg" alt="Ma liste d'envies sur ordinateur" loading="lazy"></a><figcaption>Ma liste d'envies</figcaption></figure>
-    <figure class="shot"><a href="/presse/3-liste-proche-desktop.jpg" target="_blank"><img src="/presse/3-liste-proche-desktop.jpg" alt="La liste d'une proche sur ordinateur" loading="lazy"></a><figcaption>Chez une proche</figcaption></figure>
-    <figure class="shot"><a href="/presse/6-evenement-desktop.jpg" target="_blank"><img src="/presse/6-evenement-desktop.jpg" alt="Un événement sur ordinateur" loading="lazy"></a><figcaption>Événement et tirage au sort</figcaption></figure>
-    <figure class="shot"><a href="/presse/5-liste-enfant-desktop.jpg" target="_blank"><img src="/presse/5-liste-enfant-desktop.jpg" alt="La liste d'un enfant sur ordinateur" loading="lazy"></a><figcaption>La liste d'un enfant</figcaption></figure>
-    <figure class="shot"><a href="/presse/7-theme-fete-desktop.jpg" target="_blank"><img src="/presse/7-theme-fete-desktop.jpg" alt="Le thème Fête sur ordinateur" loading="lazy"></a><figcaption>Le thème « Fête »</figcaption></figure>
-  </div>
+  <p class="kit">Toutes les images en haute définition : <a href="/presse/iwantthis-kit-presse.zip" download>kit presse (.zip)</a></p>
 </div></section>
 
 <section><div class="wrap">
@@ -134,4 +147,14 @@ footer{padding:2rem 0 3rem;color:var(--muted);font-size:.85rem}
 </main>
 
 <footer><div class="wrap">I Want This · <a href="/">iwantthis.gift</a> · <a href="/privacy.html">Confidentialité</a></div></footer>
+<script>
+(function(){var c=document.querySelector('.carousel');if(!c)return;var t=c.querySelector('.track'),sl=t.children,d=c.querySelectorAll('.dots button'),p=c.querySelector('.prev'),n=c.querySelector('.next');
+function cur(){return Math.round(t.scrollLeft/t.clientWidth)}
+var tgt=null,tm;function go(i){i=Math.max(0,Math.min(sl.length-1,i));tgt=i;clearTimeout(tm);tm=setTimeout(function(){tgt=null},700);t.scrollTo({left:i*t.clientWidth});upd()}
+function upd(){var i=tgt!==null?tgt:cur();d.forEach(function(b,k){b.setAttribute('aria-selected',k===i)});p.disabled=i===0;n.disabled=i===sl.length-1}
+function now(){return tgt!==null?tgt:cur()}p.onclick=function(){go(now()-1)};n.onclick=function(){go(now()+1)};
+d.forEach(function(b,k){b.onclick=function(){go(k)}});
+t.addEventListener('keydown',function(e){if(e.key==='ArrowRight'){e.preventDefault();go(now()+1)}if(e.key==='ArrowLeft'){e.preventDefault();go(now()-1)}});
+var r;t.addEventListener('scroll',function(){cancelAnimationFrame(r);r=requestAnimationFrame(upd)});window.addEventListener('resize',upd);upd();})();
+</script>
 </body></html>

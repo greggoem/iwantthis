@@ -947,3 +947,17 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .device-tip .dt-main{background:var(--surface);color:var(--ink);border-color:var(--surface)}
 .device-tip .dt-later{background:transparent;color:inherit;border-color:color-mix(in srgb,var(--surface) 35%,transparent)}
 @media (min-width:700px){.dt-actions .btn{flex:none;padding:0 1.2rem}}
+
+/* Administration : inscrits */
+.users-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-bottom: .8rem; }
+.users-bar input { flex: 1 1 240px; max-width: 360px; }
+.users-bar .btn { margin-left: auto; }
+.users-wrap { margin-bottom: .6rem; overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.users-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.users-table th, .users-table td { padding: .55rem .8rem; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.users-table tbody tr:last-child td { border-bottom: 0; }
+.users-table th button { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+.users-table th[aria-sort="ascending"] button, .users-table th[aria-sort="descending"] button { color: var(--ink); }
+.users-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.users-table .u-mail { font-weight: 500; }
+.u-tag { display: inline-block; margin-left: .45rem; padding: .05rem .45rem; border-radius: 999px; background: var(--line); color: var(--muted); font-size: .72rem; font-weight: 600; vertical-align: 1px; }

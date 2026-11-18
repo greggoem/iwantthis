@@ -269,19 +269,97 @@ function PartnersTab() {
   )
 }
 
-/** Espace réservé aux administrateurs : statistiques et partenaires */
+interface Member {
+  id: string; email: string | null; display_name: string | null; provider: string
+  created_at: string; last_sign_in_at: string | null; wishes: number; kids: number; gifts: number
+}
+type SortKey = 'created_at' | 'last_sign_in_at' | 'email' | 'display_name' | 'wishes' | 'gifts'
+const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '–'
+
+/** Liste des inscrits : adresse, prénom, nombre d'envies et de cadeaux réservés */
+function UsersTab({ onDenied }: { onDenied: () => void }) {
+  const [rows, setRows] = useState<Member[] | null>(null)
+  const [err, setErr] = useState('')
+  const [q, setQ] = useState('')
+  const [sort, setSort] = useState<{ k: SortKey; desc: boolean }>({ k: 'created_at', desc: true })
+  useEffect(() => {
+    supabase.rpc('admin_users').then(({ data, error }) => {
+      if (error) { if (/refus/i.test(error.message)) onDenied(); else setErr(errMsg(error)); setRows([]); return }
+      setRows(((data as Member[]) ?? []).map(r => ({ ...r, wishes: Number(r.wishes), kids: Number(r.kids), gifts: Number(r.gifts) })))
+    })
+  }, [onDenied])
+  if (!rows) return <Spinner />
+  const n = q.trim().toLowerCase()
+  const shown = rows
+    .filter(r => !n || (r.email ?? '').toLowerCase().includes(n) || (r.display_name ?? '').toLowerCase().includes(n))
+    .sort((a, b) => {
+      const x = a[sort.k] ?? '', y = b[sort.k] ?? ''
+      const c = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'fr', { sensitivity: 'base' })
+      return sort.desc ? -c : c
+    })
+  const th = (k: SortKey, label: string, num = false) => (
+    <th className={num ? 'num' : ''} aria-sort={sort.k === k ? (sort.desc ? 'descending' : 'ascending') : 'none'}>
+      <button type="button" onClick={() => setSort(s => ({ k, desc: s.k === k ? !s.desc : num || k.endsWith('_at') }))}>
+        {label}{sort.k === k ? (sort.desc ? ' ↓' : ' ↑') : ''}
+      </button>
+    </th>
+  )
+  const csv = () => {
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lines = [['E-mail', 'Prénom', 'Connexion', 'Inscrit le', 'Dernière connexion', 'Envies', "Listes d'enfants", 'Cadeaux réservés'].map(esc).join(';'),
+      ...shown.map(r => [r.email, r.display_name, r.provider, fmtDate(r.created_at), fmtDate(r.last_sign_in_at), r.wishes, r.kids, r.gifts].map(esc).join(';'))]
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }))
+    a.download = `inscrits-iwantthis-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click(); URL.revokeObjectURL(a.href)
+  }
+  const tot = (k: 'wishes' | 'gifts') => shown.reduce((s, r) => s + r[k], 0)
+  return (
+    <div>
+      <Notice>{err}</Notice>
+      <div className="users-bar">
+        <input type="search" placeholder="Rechercher un e-mail ou un prénom" value={q} onChange={e => setQ(e.target.value)} aria-label="Rechercher" />
+        <span className="small muted">{shown.length} inscrit{shown.length > 1 ? 's' : ''} · {tot('wishes')} envies · {tot('gifts')} cadeaux</span>
+        <button type="button" className="btn btn-sm" onClick={csv}>Exporter (CSV)</button>
+      </div>
+      <div className="users-wrap">
+        <table className="users-table">
+          <thead><tr>
+            {th('email', 'E-mail')}{th('display_name', 'Prénom')}{th('created_at', 'Inscrit le')}{th('last_sign_in_at', 'Dernière connexion')}
+            {th('wishes', 'Envies', true)}{th('gifts', 'Cadeaux', true)}
+          </tr></thead>
+          <tbody>{shown.map(r => (
+            <tr key={r.id}>
+              <td className="u-mail">{r.email ?? '–'}{r.provider === 'google' && <span className="u-tag">Google</span>}</td>
+              <td>{r.display_name ?? '–'}{r.kids > 0 && <span className="u-tag">+{r.kids} enfant{r.kids > 1 ? 's' : ''}</span>}</td>
+              <td>{fmtDate(r.created_at)}</td>
+              <td>{r.last_sign_in_at ? fmtDate(r.last_sign_in_at) : <span className="muted">jamais</span>}</td>
+              <td className="num">{r.wishes}</td>
+              <td className="num">{r.gifts}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+      <p className="small muted">Envies : sur toutes ses listes (enfants compris). Cadeaux : les envies des autres qu'il ou elle a réservées.</p>
+    </div>
+  )
+}
+
+/** Espace réservé aux administrateurs : statistiques, inscrits et partenaires */
 export default function Admin() {
-  const [tab, setTab] = useState<'stats' | 'partners'>('stats')
+  const [tab, setTab] = useState<'stats' | 'users' | 'partners'>('stats')
   const [denied, setDenied] = useState(false)
+  const deny = useCallback(() => setDenied(true), [])
   if (denied) return <Navigate to="/" replace />
   return (
     <div className="admin">
       <div className="page-head"><h1>Administration</h1></div>
       <div className="admin-tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'stats'} className={tab === 'stats' ? 'on' : ''} onClick={() => setTab('stats')}><Icon name="chart" size={16} /> Statistiques</button>
+        <button role="tab" aria-selected={tab === 'users'} className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}><Icon name="users" size={16} /> Inscrits</button>
         <button role="tab" aria-selected={tab === 'partners'} className={tab === 'partners' ? 'on' : ''} onClick={() => setTab('partners')}><Icon name="gift" size={16} /> Partenaires</button>
       </div>
-      {tab === 'stats' ? <StatsTab onDenied={() => setDenied(true)} /> : <PartnersTab />}
+      {tab === 'stats' ? <StatsTab onDenied={deny} /> : tab === 'users' ? <UsersTab onDenied={deny} /> : <PartnersTab />}
       <p className="small muted"><Link to="/reglages">← Réglages</Link></p>
     </div>
   )

@@ -23,6 +23,7 @@ import { useConfirm } from '../components/Confirm'
 import ActionMenu from '../components/ActionMenu'
 import ListPills from '../components/ListPills'
 import ChildForm, { type ChildDraft } from '../components/ChildForm'
+import DeviceTip from '../components/DeviceTip'
 import { formatAge, isKid, lastListId, rememberList } from '../lib/kids'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
@@ -706,6 +707,7 @@ export default function MyList() {
 
   return (
     <div>
+      <DeviceTip />
       {lists.length > 1 && <ListPills lists={lists} current={list?.id ?? ''} myName={profile?.display_name ?? ''} onPick={pick} onAddKid={() => setModal({ kind: 'child', list: null })} />}
       <div className="page-head">
         <div className="title-block">

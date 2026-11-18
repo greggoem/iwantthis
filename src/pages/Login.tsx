@@ -1,14 +1,18 @@
-import { useState, type FormEvent } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase, siteUrl, errMsg, APP_NAME } from '../lib/supabase'
 import Logo from '../components/Logo'
+import Icon from '../components/Icon'
 import { Notice } from '../components/ui'
 import { getTheme } from '../lib/theme'
 
-type Mode = 'in' | 'up' | 'forgot'
+/** start : Google ou code par e-mail · code : saisie du code · pw : mot de passe · forgot : mot de passe oublié */
+type Mode = 'start' | 'code' | 'pw' | 'forgot'
 
 /** Passer à true une fois « Sign in with Apple » configuré dans Supabase (Authentication → Providers → Apple) */
 const APPLE_ENABLED = false
+/** Longueur du code envoyé par e-mail (Supabase → Authentication → Email → « Email OTP Length ») */
+export const OTP_LENGTH = 8
 
 /** Logo « G » de Google (quatre couleurs officielles) */
 const GoogleG = () => (
@@ -20,114 +24,156 @@ const GoogleG = () => (
   </svg>
 )
 
+/**
+ * Connexion et inscription, sans mot de passe : Google, ou un code reçu par e-mail.
+ * Même chemin pour un membre (il retrouve son compte grâce à son adresse) et pour un nouveau (le compte est créé).
+ */
 export default function Login() {
-  const [params] = useSearchParams()
   const pending = sessionStorage.getItem('postLoginPath') ?? ''
   const invite = pending.startsWith('/l/') ? 'list' : pending.startsWith('/e/') ? 'event' : null
-  const [mode, setMode] = useState<Mode>(params.get('mode') === 'up' || invite ? 'up' : 'in')
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [mode, setMode] = useState<Mode>('start')
+  const [email, setEmail] = useState(() => { try { return localStorage.getItem('iwt.lastEmail') ?? '' } catch { return '' } })
+  const [code, setCode] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+  const [wait, setWait] = useState(0)   // secondes avant de pouvoir renvoyer un code
+  const codeRef = useRef<HTMLInputElement>(null)
 
-  const submit = async (e: FormEvent) => {
+  useEffect(() => {
+    if (wait <= 0) return
+    const t = setTimeout(() => setWait(w => w - 1), 1000)
+    return () => clearTimeout(t)
+  }, [wait])
+
+  const reset = (m: Mode) => { setMode(m); setErr(''); setInfo('') }
+  const remember = () => { try { localStorage.setItem('iwt.lastEmail', email.trim()) } catch { /* rien */ } }
+
+  const sendCode = async (e?: FormEvent) => {
+    e?.preventDefault()
+    setErr(''); setInfo(''); setBusy(true)
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true, emailRedirectTo: siteUrl(), data: { theme: getTheme() } },
+    })
+    setBusy(false)
+    if (error) { setErr(errMsg(error)); return }
+    remember(); setCode(''); setMode('code'); setWait(60)
+    setTimeout(() => codeRef.current?.focus(), 50)
+  }
+
+  const verify = async (token = code) => {
+    if (busy) return
+    setErr(''); setBusy(true)
+    const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token: token.trim(), type: 'email' })
+    setBusy(false)
+    if (error) { setErr(/expired|invalid/i.test(error.message) ? 'Ce code n\'est pas bon ou a expiré. Vérifiez-le, ou demandez-en un nouveau.' : errMsg(error)); setCode('') }
+    // connecté : l'application prend le relais (première étape pour un nouveau compte, sinon la liste)
+  }
+
+  const onCode = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 10)
+    setCode(digits)
+    if (digits.length === OTP_LENGTH) verify(digits)
+  }
+
+  const passwordLogin = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr(''); setBusy(true)
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pw })
+    setBusy(false)
+    if (error) setErr(errMsg(error)); else remember()
+  }
+
+  const forgot = async (e: FormEvent) => {
     e.preventDefault()
     setErr(''); setInfo(''); setBusy(true)
-    try {
-      if (mode === 'in') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password: pw })
-        if (error) throw error
-      } else if (mode === 'up') {
-        const { data, error } = await supabase.auth.signUp({
-          email, password: pw,
-          options: { data: { display_name: name.trim(), theme: getTheme() }, emailRedirectTo: siteUrl() },
-        })
-        if (error) throw error
-        if (!data.session) setInfo('Compte créé ! Cliquez sur le lien de confirmation reçu par e-mail, puis connectez-vous.')
-      } else {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: siteUrl() })
-        if (error) throw error
-        setInfo('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pensez à regarder dans les indésirables (spam).')
-      }
-    } catch (x) {
-      setErr(errMsg(x))
-    } finally {
-      setBusy(false)
-    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: siteUrl() })
+    setBusy(false)
+    if (error) setErr(errMsg(error))
+    else setInfo('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pensez à regarder dans les indésirables (spam).')
   }
 
-  const google = async () => {
+  const oauth = async (provider: 'google' | 'apple') => {
     setErr('')
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: siteUrl() } })
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: siteUrl() } })
     if (error) setErr(errMsg(error))
   }
 
-  const apple = async () => {
-    setErr('')
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'apple', options: { redirectTo: siteUrl() } })
-    if (error) setErr(errMsg(error))
-  }
+  const emailField = (
+    <label>Votre adresse e-mail
+      <input type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" inputMode="email" placeholder="prenom@exemple.be" />
+    </label>
+  )
 
   return (
     <div className="auth-wrap">
       <Link to="/" className="auth-back">← Accueil</Link>
-      <form className="card auth-card" onSubmit={submit}>
-        <Logo name={APP_NAME} size={32} />
-        <p className="muted">Partagez vos envies, offrez sans doublon, tirez au sort en famille.</p>
-
-        {mode !== 'forgot' && (
-          <div className="tabs">
-            <button type="button" className={mode === 'in' ? 'tab on' : 'tab'} onClick={() => setMode('in')}>Connexion</button>
-            <button type="button" className={mode === 'up' ? 'tab on' : 'tab'} onClick={() => setMode('up')}>Créer un compte</button>
-          </div>
-        )}
-        {mode === 'forgot' && <h2>Mot de passe oublié</h2>}
-
-        {invite && (
-          <Notice kind="info">
-            {invite === 'list' ? 'On vous a partagé une liste de cadeaux. ' : 'On vous invite à un événement. '}
-            Créez votre compte gratuit (ou connectez-vous) pour {invite === 'list' ? 'la voir' : 'le rejoindre'}.
-          </Notice>
-        )}
-        <Notice>{err}</Notice>
-        <Notice kind="ok">{info}</Notice>
-
-        {mode === 'up' && (
-          <label>Votre prénom (affiché aux autres)
-            <input required value={name} onChange={e => setName(e.target.value)} maxLength={60} autoComplete="given-name" />
-          </label>
-        )}
-        <label>E-mail
-          <input type="email" required value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
-        </label>
-        {mode !== 'forgot' && (
-          <label>Mot de passe
-            <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)}
-              autoComplete={mode === 'in' ? 'current-password' : 'new-password'} />
-          </label>
-        )}
-
-        <button className="btn btn-primary" disabled={busy}>
-          {mode === 'in' ? 'Se connecter' : mode === 'up' ? 'Créer mon compte' : 'Envoyer le lien'}
-        </button>
-
-        {mode === 'in' && (
-          <button type="button" className="link small" onClick={() => { setMode('forgot'); setErr(''); setInfo('') }}>Mot de passe oublié ?</button>
-        )}
-        {mode === 'forgot' && (
-          <button type="button" className="link small" onClick={() => { setMode('in'); setErr(''); setInfo('') }}>← Retour</button>
-        )}
-
-        {mode !== 'forgot' && (
-          <>
+      <div className="card auth-card">
+        {mode === 'start' && (
+          <form className="stack" onSubmit={sendCode}>
+            <Logo name={APP_NAME} size={32} />
+            <p className="muted" style={{ margin: 0 }}>Connexion ou inscription : c'est le même chemin, sans mot de passe à retenir.</p>
+            {invite && (
+              <Notice kind="info">
+                {invite === 'list' ? 'On vous a partagé une liste d\'envies. ' : 'On vous invite à un événement. '}
+                Connectez-vous (ou créez votre compte gratuit) pour {invite === 'list' ? 'la voir' : 'le rejoindre'}.
+              </Notice>
+            )}
+            <Notice>{err}</Notice>
+            <button type="button" className="btn btn-social btn-lg" onClick={() => oauth('google')}><GoogleG /> Continuer avec Google</button>
+            {APPLE_ENABLED && <button type="button" className="btn btn-lg" onClick={() => oauth('apple')}>Continuer avec Apple</button>}
             <div className="or"><span>ou</span></div>
-            <button type="button" className="btn btn-social" onClick={google}><GoogleG /> Continuer avec Google</button>
-            {APPLE_ENABLED && <button type="button" className="btn" onClick={apple}>Continuer avec Apple</button>}
-          </>
+            {emailField}
+            <button className="btn btn-primary btn-lg" disabled={busy}><Icon name="mail" size={18} /> Recevoir un code par e-mail</button>
+            <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>On vous envoie un code à {OTP_LENGTH} chiffres.</p>
+            <button type="button" className="link small" onClick={() => reset('pw')}>Se connecter avec un mot de passe</button>
+          </form>
         )}
-      </form>
+
+        {mode === 'code' && (
+          <form className="stack" onSubmit={e => { e.preventDefault(); verify() }}>
+            <button type="button" className="link small" style={{ alignSelf: 'flex-start' }} onClick={() => reset('start')}>← Changer d'adresse</button>
+            <h1 style={{ fontSize: '1.5rem' }}>Entrez le code reçu</h1>
+            <p className="muted" style={{ margin: 0 }}>Envoyé à <strong>{email.trim()}</strong>. Pensez à regarder dans les indésirables.</p>
+            <Notice>{err}</Notice>
+            <label className="sr-only" htmlFor="otp">Code reçu par e-mail</label>
+            <input id="otp" ref={codeRef} className="otp-input" value={code} onChange={e => onCode(e.target.value)}
+              inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]*" placeholder={'•'.repeat(OTP_LENGTH)} aria-label="Code reçu par e-mail" />
+            <button className="btn btn-primary btn-lg" disabled={busy || code.length < OTP_LENGTH}>{busy ? 'Vérification…' : 'Continuer'}</button>
+            <p className="small muted" style={{ margin: 0, textAlign: 'center' }}>
+              Rien reçu ? {wait > 0 ? <>Nouveau code possible dans {wait} s</> : <button type="button" className="link small" onClick={() => sendCode()}>Renvoyer le code</button>}
+            </p>
+          </form>
+        )}
+
+        {mode === 'pw' && (
+          <form className="stack" onSubmit={passwordLogin}>
+            <button type="button" className="link small" style={{ alignSelf: 'flex-start' }} onClick={() => reset('start')}>← Retour</button>
+            <h1 style={{ fontSize: '1.5rem' }}>Connexion avec mot de passe</h1>
+            <Notice>{err}</Notice>
+            {emailField}
+            <label>Mot de passe
+              <input type="password" required minLength={6} value={pw} onChange={e => setPw(e.target.value)} autoComplete="current-password" />
+            </label>
+            <button className="btn btn-primary btn-lg" disabled={busy}>Se connecter</button>
+            <button type="button" className="link small" onClick={() => reset('forgot')}>Mot de passe oublié ?</button>
+          </form>
+        )}
+
+        {mode === 'forgot' && (
+          <form className="stack" onSubmit={forgot}>
+            <button type="button" className="link small" style={{ alignSelf: 'flex-start' }} onClick={() => reset('pw')}>← Retour</button>
+            <h1 style={{ fontSize: '1.5rem' }}>Mot de passe oublié</h1>
+            <p className="muted small" style={{ margin: 0 }}>Plus simple : <button type="button" className="link small" onClick={() => reset('start')}>recevez un code</button> et connectez-vous sans mot de passe.</p>
+            <Notice>{err}</Notice>
+            <Notice kind="ok">{info}</Notice>
+            {emailField}
+            <button className="btn btn-primary btn-lg" disabled={busy}>Envoyer le lien</button>
+          </form>
+        )}
+      </div>
     </div>
   )
 }

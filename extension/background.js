@@ -49,3 +49,11 @@ api.action.onClicked.addListener(async function (tab) {
     : base
   api.tabs.create({ url: url, index: tab && typeof tab.index === 'number' ? tab.index + 1 : undefined })
 })
+
+// Chrome / Edge : le site demande « l'extension est-elle là ? » pour ne pas la proposer une deuxième fois.
+// Réponse minimale (aucune donnée), uniquement à iwantthis.gift (voir externally_connectable dans manifest.json).
+if (api.runtime && api.runtime.onMessageExternal) {
+  api.runtime.onMessageExternal.addListener(function (msg, sender, reply) {
+    if (msg && msg.type === 'iwt-ping') reply({ ok: true, version: api.runtime.getManifest().version })
+  })
+}

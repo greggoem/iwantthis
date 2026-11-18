@@ -1,13 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { STORE_LINKS } from '../lib/extensions'
-import { platform, deviceSetupDone, hasDeviceStep, markDeviceSetup } from '../lib/platform'
+import { platform, isMobile, deviceSetupDone, hasDeviceStep, markDeviceSetup, buttonInstalled } from '../lib/platform'
 import Icon from './Icon'
 
 /** Première connexion sur un appareil : on propose une fois la bonne « première étape » (extension, installation…) */
 export default function DeviceTip() {
   const [hidden, setHidden] = useState(() => deviceSetupDone() || !hasDeviceStep())
-  if (hidden) return null
+  // ordinateur : on attend de savoir si l'extension est déjà là avant de la proposer
+  const [checked, setChecked] = useState(() => isMobile())
+  useEffect(() => {
+    if (hidden || checked) return
+    buttonInstalled().then(yes => { if (yes) { markDeviceSetup(); setHidden(true) } setChecked(true) })
+  }, [hidden, checked])
+  if (hidden || !checked) return null
   const p = platform()
   const close = () => { markDeviceSetup(); setHidden(true) }
   const phone = p === 'ios' || p === 'android'

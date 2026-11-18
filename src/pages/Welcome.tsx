@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { supabase, errMsg, APP_NAME } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { STORE_LINKS } from '../lib/extensions'
-import { platform, isStandalone, isMobile, canPromptInstall, promptInstall, markDeviceSetup } from '../lib/platform'
+import { platform, isStandalone, isMobile, canPromptInstall, promptInstall, markDeviceSetup, buttonInstalled } from '../lib/platform'
 import BookmarkletBox from '../components/BookmarkletBox'
 import { LogoMark } from '../components/Logo'
 import { Notice } from '../components/ui'
@@ -27,10 +27,16 @@ export default function Welcome() {
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const [installed, setInstalled] = useState(false)
+  // ordinateur : extension (ou favori) déjà installée dans ce navigateur ? null = vérification en cours
+  const [hasButton, setHasButton] = useState<boolean | null>(() => isMobile(p) ? false : null)
+  useEffect(() => { if (hasButton === null) buttonInstalled().then(setHasButton) }, [hasButton])
   const go = (() => { try { return sessionStorage.getItem('postLoginPath') || '/' } catch { return '/' } })()
 
   // rien d'utile à proposer (appli déjà installée sur ce téléphone) et prénom connu : directement à la liste
   if (!askName && isMobile(p) && isStandalone()) { markDeviceSetup(); return <Navigate to={go} replace /> }
+  // ordinateur où le bouton est déjà installé et prénom connu : rien à proposer
+  if (!askName && hasButton) { markDeviceSetup(); return <Navigate to={go} replace /> }
+  if (hasButton === null) return null
 
   const saveName = async (): Promise<boolean> => {
     if (!askName) return true
@@ -76,6 +82,10 @@ export default function Welcome() {
     if (installed) body = <Notice kind="ok">C'est installé ! Dans l'appli d'une marque, touchez Partager › {APP_NAME}.</Notice>
     else if (canPromptInstall()) action = <button type="button" className="btn btn-primary btn-lg" onClick={install}><Icon name="plus" size={18} /> Installer l'appli</button>
     else body = <ol className="fs-steps">{step(1, <>Menu <strong>⋮</strong> du navigateur › <strong>Installer l'application</strong> (ou <strong>Ajouter à l'écran d'accueil</strong>).</>)}{step(2, <>Dans l'appli d'une marque : <strong>Partager › {APP_NAME}</strong>.</>)}</ol>
+  } else if (hasButton) {
+    kicker = 'Ordinateur'
+    title = 'Tout est prêt sur cet ordinateur'
+    intro = <>Le bouton {APP_NAME} est déjà installé dans ce navigateur : sur la page d'un produit, un clic l'ajoute à votre liste.</>
   } else if (p === 'chromium' || p === 'firefox') {
     const ff = p === 'firefox'
     kicker = ff ? 'Firefox' : 'Ordinateur'

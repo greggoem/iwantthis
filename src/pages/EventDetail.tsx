@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import { PersonDot } from '../components/ListPills'
 import { kidShownIn } from '../lib/kids'
 import { supabase, errMsg, eventInviteUrl, APP_NAME } from '../lib/supabase'
-import { formatDate, formatDateShort } from '../lib/format'
+import { formatDate } from '../lib/format'
 import type { EventRow, MemberRow } from '../lib/types'
 import { CopyField, IconButton, Notice, Spinner, copyText } from '../components/ui'
 import { useConfirm } from '../components/Confirm'
@@ -16,8 +16,8 @@ import ShareSheet from '../components/ShareSheet'
 import { eventMessage, occasionEmoji } from '../lib/shareCard'
 import { removeEventImage, setEventImage } from '../lib/eventImage'
 import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
+import Draws, { type DrawCandidate } from '../components/Draws'
 
-interface Excl { giver_id: string; receiver_id: string }
 interface Invite { id: string; name: string; email: string }
 
 const imageFrom = (dt: DataTransfer | null): File | undefined =>
@@ -40,7 +40,6 @@ export default function EventDetail() {
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [kidLists, setKidLists] = useState<KidRow[]>([])
   const [overrides, setOverrides] = useState<Override[]>([])
-  const [excl, setExcl] = useState<Excl[]>([])
   const [invites, setInvites] = useState<Invite[]>([])
   const [editInv, setEditInv] = useState<Invite | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
@@ -54,8 +53,8 @@ export default function EventDetail() {
   const [eiErr, setEiErr] = useState('')
   const [invName, setInvName] = useState('')
   const [invEmail, setInvEmail] = useState('')
-  const [myTarget, setMyTarget] = useState<string | null>(null)
-  const [showTarget, setShowTarget] = useState(false)
+  const [newDraw, setNewDraw] = useState(0)
+  const [hasDraws, setHasDraws] = useState(false)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
@@ -64,9 +63,6 @@ export default function EventDetail() {
   const [eDate, setEDate] = useState('')
   const [eTime, setETime] = useState('')
   const [ePlace, setEPlace] = useState('')
-  const [exGiver, setExGiver] = useState('')
-  const [exReceiver, setExReceiver] = useState('')
-  const [exBoth, setExBoth] = useState(true)
 
   const load = useCallback(async () => {
     const { data: e } = await supabase.from('events').select('*').eq('id', id!).maybeSingle()
@@ -75,10 +71,9 @@ export default function EventDetail() {
     const { data: m } = await supabase.from('event_members').select('event_id,user_id,in_draw,profiles(display_name)').eq('event_id', id!)
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
-    const [w, x, a, inv, ov] = await Promise.all([
+    const [w, dr, inv, ov] = await Promise.all([
       supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
-      supabase.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id!),
-      supabase.from('draw_assignments').select('receiver_id').eq('event_id', id!).maybeSingle(),
+      supabase.rpc('event_draws', { p_event: id! }),
       supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
       supabase.from('event_child_lists').select('event_id,list_id,shown').eq('event_id', id!),
     ])
@@ -90,8 +85,7 @@ export default function EventDetail() {
     setLists(Object.fromEntries(wl.map(l => [l.owner_id, l.id])))
     setCounts(Object.fromEntries(wl.map(l => [l.owner_id, l.items?.[0]?.count ?? 0])))
     setKidLists(all.filter(l => l.child_name).map(l => ({ id: l.id, owner_id: l.owner_id, child_name: l.child_name!, child_age: l.child_age, child_color: l.child_color, in_events: l.in_events, count: l.items?.[0]?.count ?? 0 })))
-    setExcl((x.data as Excl[]) ?? [])
-    setMyTarget((a.data as { receiver_id: string } | null)?.receiver_id ?? null)
+    setHasDraws(((dr.data as unknown[]) ?? []).length > 0)
     setLoading(false)
   }, [id])
 
@@ -99,14 +93,9 @@ export default function EventDetail() {
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
   const openEdit = () => { if (!ev) return; setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }
-  const drawOn = !!ev && (!!ev.draw_enabled || !!ev.draw_done_at)
-  const setDrawEnabled = async (v: boolean) => {
-    setErr('')
-    const { error } = await supabase.from('events').update({ draw_enabled: v }).eq('id', id!)
-    if (error) { setErr(errMsg(error)); return }
-    setEv(e => e ? { ...e, draw_enabled: v } : e)
-    if (v) setTimeout(() => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }), 100)
-  }
+  const drawOn = hasDraws
+  const goDraws = () => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' })
+  const addDraw = () => { setHasDraws(true); setNewDraw(n => n + 1); setTimeout(goDraws, 100) }
   const whenTxt = ev ? formatDate(ev.event_date) + (ev.event_time ? ` à ${ev.event_time.slice(0, 5).replace(':', 'h')}` : '') : ''
   const isOrg = ev?.created_by === me
   const myKids = kidLists.filter(k => k.owner_id === me)
@@ -132,8 +121,10 @@ export default function EventDetail() {
     document.addEventListener('paste', onPaste)
     return () => document.removeEventListener('paste', onPaste)
   })
-  const inDraw = members.filter(m => m.in_draw)
-  const meInDraw = members.find(m => m.user_id === me)?.in_draw ?? false
+  const drawCandidates: DrawCandidate[] = [
+    ...members.map(m => ({ pid: m.user_id, kind: 'user' as const, name: m.profiles?.display_name ?? '—', color: null, owner_id: m.user_id, ownerName: m.profiles?.display_name ?? '' })),
+    ...shownKids.map(k => ({ pid: k.id, kind: 'kid' as const, name: k.child_name, color: k.child_color, owner_id: k.owner_id, ownerName: name(k.owner_id) })),
+  ]
 
   const run = async (fn: () => PromiseLike<{ error: { message: string } | null }>, ok = '') => {
     setErr(''); setMsg('')
@@ -217,70 +208,13 @@ export default function EventDetail() {
   }
   const mailtoFor = (i: Invite) => `mailto:${encodeURIComponent(i.email)}?subject=${encodeURIComponent(`Invitation : ${ev!.name}`)}&body=${encodeURIComponent(inviteText(i))}`
   const copyInvite = async (i: Invite) => { if (await copyText(inviteText(i))) { setErr(''); setMsg(`Message pour ${i.name} copié.`) } }
-  const addExcl = async () => {
-    if (!exGiver || !exReceiver || exGiver === exReceiver) { setErr('Choisissez deux personnes différentes.'); return }
-    const rows = [{ event_id: id!, giver_id: exGiver, receiver_id: exReceiver }]
-    if (exBoth) rows.push({ event_id: id!, giver_id: exReceiver, receiver_id: exGiver })
-    await run(() => supabase.from('draw_exclusions').upsert(rows, { onConflict: 'event_id,giver_id,receiver_id', ignoreDuplicates: true }))
-    setExGiver(''); setExReceiver('')
-  }
-  const delExcl = async (pairs: Excl[]) => {
-    for (const p of pairs) {
-      const { error } = await supabase.from('draw_exclusions').delete().eq('event_id', id!).eq('giver_id', p.giver_id).eq('receiver_id', p.receiver_id)
-      if (error) { setErr(errMsg(error)); break }
-    }
-    load()
-  }
   const removeMember = async (m: MemberRow) => {
     const name = m.profiles?.display_name ?? 'cette personne'
     if (!(await confirm({ title: `Retirer ${name} ?`, message: `${name} ne fera plus partie de l'événement.`, confirmLabel: 'Retirer', danger: true }))) return
     await run(() => supabase.from('event_members').delete().eq('event_id', id!).eq('user_id', m.user_id))
   }
-  const doDraw = async () => {
-    if (ev?.draw_done_at && !(await confirm({ title: 'Refaire le tirage ?', message: 'Un tirage existe déjà. Le refaire remplacera tous les résultats actuels et chaque participant sera prévenu par e-mail.', confirmLabel: 'Refaire le tirage', danger: true }))) return
-    setShowTarget(false)
-    setErr(''); setMsg('')
-    const { error } = await supabase.rpc('run_draw', { p_event: id })
-    if (error) { setErr(errMsg(error)); await load(); return }
-    const mails = await sendDrawEmails()
-    setMsg(`Tirage effectué ! Chaque participant a reçu une notification dans le site. ${mails}`)
-    await load()
-  }
-  /** Prévient chaque participant par e-mail (sans révéler le résultat) ; renvoie une phrase pour l'organisateur */
-  const sendDrawEmails = async (): Promise<string> => {
-    const { data, error } = await supabase.functions.invoke('send-draw-email', { body: { event_id: id } })
-    const r = data as { sent?: number; total?: number; reason?: string; error?: string } | null
-    if (r?.reason === 'not_configured') return 'L\'envoi d\'e-mails n\'est pas encore activé sur le site.'
-    if (r?.reason === 'refused') return r.error ?? 'Les e-mails n\'ont pas pu être envoyés.'
-    if (error || !r) return 'Les e-mails n\'ont pas pu être envoyés.'
-    return r.sent === r.total ? `${r.sent} e-mail${(r.sent ?? 0) > 1 ? 's' : ''} d'annonce envoyé${(r.sent ?? 0) > 1 ? 's' : ''}.` : `${r.sent} e-mail(s) envoyé(s) sur ${r.total}.`
-  }
-  const resetDraw = async () => {
-    if (!(await confirm({ title: 'Annuler le tirage ?', message: 'Les résultats seront effacés pour tout le monde.', confirmLabel: 'Annuler le tirage', danger: true }))) return
-    setShowTarget(false)
-    await run(() => supabase.rpc('reset_draw', { p_event: id }), 'Tirage annulé.')
-  }
-
   if (loading) return <Spinner />
   if (!ev) return <Notice>Événement introuvable ou accès refusé.</Notice>
-
-  // regroupe les exclusions réciproques : « A ↔ B »
-  const shown = new Set<string>()
-  const exclGroups: { label: string; pairs: Excl[] }[] = []
-  for (const x of excl) {
-    const k = `${x.giver_id}>${x.receiver_id}`
-    if (shown.has(k)) continue
-    const rev = excl.find(y => y.giver_id === x.receiver_id && y.receiver_id === x.giver_id)
-    shown.add(k)
-    if (rev) {
-      shown.add(`${rev.giver_id}>${rev.receiver_id}`)
-      exclGroups.push({ label: `${name(x.giver_id)} ↔ ${name(x.receiver_id)}`, pairs: [x, rev] })
-    } else {
-      exclGroups.push({ label: `${name(x.giver_id)} → ${name(x.receiver_id)} (à sens unique)`, pairs: [x] })
-    }
-  }
-
-  const stale = Boolean(ev.draw_done_at) && ev.draw_count !== inDraw.length
 
   return (
     <div className="narrow">
@@ -346,9 +280,8 @@ export default function EventDetail() {
               <ActionMenu label="Options de l'événement" actions={[
                 isOrg && { icon: 'pencil', label: 'Modifier nom, date, lieu', onClick: openEdit },
                 isOrg && { icon: 'image', label: ev.image_url ? "Changer l'image" : 'Ajouter une image', onClick: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setImgMenu(true) } },
-                isOrg && !drawOn && { icon: 'dice', label: 'Activer le tirage au sort', onClick: () => setDrawEnabled(true) },
-                drawOn && { icon: 'dice', label: ev.draw_done_at ? 'Voir le tirage au sort' : 'Configurer le tirage au sort', onClick: () => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' }) },
-                isOrg && drawOn && !ev.draw_done_at && { icon: 'x', label: 'Désactiver le tirage au sort', onClick: () => setDrawEnabled(false) },
+                isOrg && { icon: 'dice', label: drawOn ? 'Ajouter un tirage au sort' : 'Créer un tirage au sort', onClick: addDraw },
+                drawOn && { icon: 'dice', label: 'Voir les tirages au sort', onClick: goDraws },
                 { icon: 'coins', label: 'Comptes partagés · bientôt', disabled: true, onClick: () => {} },
                 { icon: 'camera', label: 'Photos partagées · bientôt', disabled: true, onClick: () => {} },
                 { icon: 'chat', label: 'Discussion · bientôt', disabled: true, onClick: () => {} },
@@ -361,22 +294,7 @@ export default function EventDetail() {
       )}
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
 
-      {ev.draw_done_at && myTarget && (
-        <section className="card target-card">
-          {showTarget ? (
-            <div className="reveal">
-              <p className="small muted">Vous offrez un cadeau à…</p>
-              <p className="big">{name(myTarget)}</p>
-              <div className="row wrap gap" style={{ justifyContent: 'center' }}>
-                {lists[myTarget] && <Link className="btn btn-primary" to={`/listes/${lists[myTarget]}`}>Voir sa liste de souhaits</Link>}
-                <button className="btn btn-ghost btn-sm" onClick={() => setShowTarget(false)}>Masquer</button>
-              </div>
-            </div>
-          ) : (
-            <button className="btn btn-primary btn-lg" onClick={() => setShowTarget(true)}><Icon name="dice" size={18} /> Découvrir à qui j'offre un cadeau</button>
-          )}
-        </section>
-      )}
+      {drawOn && <Draws eventId={id!} isOrg={isOrg} me={me!} candidates={drawCandidates} pendingInvites={invites.length} openNew={newDraw} onChanged={load} />}
 
       {isOrg && invites.length > 0 && (
         <>
@@ -490,13 +408,6 @@ export default function EventDetail() {
               {m.user_id === ev.created_by && <span className="tag">organisateur</span>}
               {m.user_id === me && <span className="tag">vous</span>}
               {lists[m.user_id] && <span className="small muted wish-count">{envies(counts[m.user_id] ?? 0)}</span>}
-              {isOrg && (
-                <label className="radio small">
-                  <input type="checkbox" checked={m.in_draw}
-                    onChange={e => run(() => supabase.from('event_members').update({ in_draw: e.target.checked }).eq('event_id', id!).eq('user_id', m.user_id))} />
-                  participe au tirage
-                </label>
-              )}
             </div>
             <div className="item-actions">
               {m.user_id === me
@@ -511,67 +422,6 @@ export default function EventDetail() {
         ))(g.m!))}
       </ul>
 
-      {drawOn && <>
-      <h2 className="mt row" id="tirage"><Icon name="dice" size={20} /> Tirage au sort</h2>
-      <section className="card stack">
-        {ev.draw_done_at ? (
-          <>
-            <p className="small muted">Tirage effectué le {formatDateShort(ev.draw_done_at)}.</p>
-            {stale && <Notice kind="info">Les invités ont changé depuis le tirage{isOrg ? ' : pensez à le refaire.' : ' : demandez à l\'organisateur de le refaire.'}</Notice>}
-            {myTarget ? (
-              <p className="small muted">Votre résultat est affiché en haut de la page.</p>
-            ) : meInDraw ? (
-              <p className="muted">Vous n'avez pas encore de résultat : le tirage a eu lieu avant votre arrivée.</p>
-            ) : (
-              <p className="muted">Vous ne participez pas à ce tirage.</p>
-            )}
-          </>
-        ) : (
-          <p className="muted">Le tirage n'a pas encore eu lieu.{isOrg ? '' : ' L\'organisateur le lancera.'}</p>
-        )}
-
-        {isOrg && (
-          <>
-            <hr />
-            {invites.length > 0 && <Notice kind="info">{invites.length} personne{invites.length > 1 ? 's' : ''} invitée{invites.length > 1 ? 's' : ''} n'ont pas encore rejoint l'événement : elles ne seront pas incluses dans le tirage.</Notice>}
-            <h3>Qui ne doit pas s'offrir de cadeau ?</h3>
-            <p className="small muted">Par exemple un couple, ou deux personnes qui se sont déjà tirées l'an dernier. Vous ne verrez pas le résultat du tirage des autres : seulement le vôtre.</p>
-            {exclGroups.length > 0 && (
-              <ul className="plain">
-                {exclGroups.map(g => (
-                  <li key={g.label} className="row between">
-                    <span>{g.label}</span>
-                    <button className="btn btn-ghost btn-sm danger" onClick={() => delExcl(g.pairs)}>Retirer</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="row wrap gap">
-              <select value={exGiver} onChange={e => setExGiver(e.target.value)}>
-                <option value="">Personne A…</option>
-                {inDraw.map(m => <option key={m.user_id} value={m.user_id}>{m.profiles?.display_name}</option>)}
-              </select>
-              <span className="muted">ne doit pas offrir à</span>
-              <select value={exReceiver} onChange={e => setExReceiver(e.target.value)}>
-                <option value="">Personne B…</option>
-                {inDraw.filter(m => m.user_id !== exGiver).map(m => <option key={m.user_id} value={m.user_id}>{m.profiles?.display_name}</option>)}
-              </select>
-            </div>
-            <label className="radio small"><input type="checkbox" checked={exBoth} onChange={e => setExBoth(e.target.checked)} /> Dans les deux sens (B non plus à A)</label>
-            <div><button className="btn btn-sm" onClick={addExcl}>Ajouter l'exclusion</button></div>
-            <hr />
-            <div className="row wrap gap">
-              <button className="btn btn-primary" disabled={inDraw.length < 2} onClick={doDraw}>
-                {ev.draw_done_at ? 'Refaire le tirage' : `Lancer le tirage (${inDraw.length} participant${inDraw.length > 1 ? 's' : ''})`}
-              </button>
-              {ev.draw_done_at && <button className="btn btn-ghost" onClick={resetDraw}>Annuler le tirage</button>}
-              {!ev.draw_done_at && <button className="btn btn-ghost" onClick={() => setDrawEnabled(false)}>Désactiver le tirage</button>}
-            </div>
-            {inDraw.length < 2 && <p className="small muted">Il faut au moins 2 participants.</p>}
-          </>
-        )}
-      </section>
-      </>}
 
     </div>
   )

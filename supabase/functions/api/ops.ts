@@ -322,25 +322,17 @@ export async function getEvent(c: Ctx, ref: unknown) {
   const e = ok(await c.sb.from('events').select('*').eq('id', id).maybeSingle()) as any
   if (!e) throw new ApiError(404, 'Événement introuvable ou accès refusé')
   const members = await eventMembers(c, id)
-  const [lists, excl, asg] = await Promise.all([
+  const [lists, draws] = await Promise.all([
     c.sb.from('wishlists').select('id,owner_id').is('child_name', null).in('owner_id', members.map((m) => m.user_id)),
-    c.sb.from('draw_exclusions').select('giver_id,receiver_id').eq('event_id', id),
-    c.sb.from('draw_assignments').select('receiver_id').eq('event_id', id).maybeSingle(),
+    eventDraws(c, id),
   ])
   const listOf = Object.fromEntries((ok(lists) as any[]).map((l) => [l.owner_id, l.id]))
-  const nm = (uid: string) => members.find((m) => m.user_id === uid)?.profiles?.display_name ?? uid
   const isOrg = e.created_by === c.uid
-  const target = (ok(asg) as any)?.receiver_id
-  const inDraw = members.filter((m) => m.in_draw).length
+  const inSome = new Set(draws.flatMap((d: any) => d.participants.map((p: any) => p.pid)))
   return {
     id: e.id, name: e.name, event_date: e.event_date, is_organizer: isOrg, invite_url: inviteUrl(c, e.invite_code),
-    members: members.map((m) => ({ user_id: m.user_id, name: m.profiles?.display_name ?? null, in_draw: m.in_draw, is_me: m.user_id === c.uid, is_organizer: m.user_id === e.created_by, list_id: listOf[m.user_id] ?? null })),
-    draw: {
-      done: Boolean(e.draw_done_at), done_at: e.draw_done_at,
-      outdated: Boolean(e.draw_done_at) && e.draw_count !== inDraw,
-      my_recipient: target ? { user_id: target, name: nm(target), list_id: listOf[target] ?? null } : null,
-      ...(isOrg ? { exclusions: (ok(excl) as any[]).map((x) => ({ giver: nm(x.giver_id), receiver: nm(x.receiver_id) })) } : {}),
-    },
+    members: members.map((m) => ({ user_id: m.user_id, name: m.profiles?.display_name ?? null, in_draw: inSome.has(m.user_id), is_me: m.user_id === c.uid, is_organizer: m.user_id === e.created_by, list_id: listOf[m.user_id] ?? null })),
+    draws: draws.map((d: any) => drawSummary(d, isOrg)),
   }
 }
 
@@ -375,55 +367,112 @@ export async function joinEvent(c: Ctx, invite: unknown) {
   return getEvent(c, id)
 }
 
-// ---------- tirage au sort ----------
-export async function addExclusion(c: Ctx, eventRef: unknown, a: unknown, bRef: unknown, both = true) {
-  const id = await resolveEventId(c, eventRef)
-  const ms = await eventMembers(c, id)
-  const x = member(ms, a), y = member(ms, bRef)
-  if (x.user_id === y.user_id) throw new ApiError(400, 'Choisissez deux personnes différentes')
-  const rows = [{ event_id: id, giver_id: x.user_id, receiver_id: y.user_id }]
-  if (both) rows.push({ event_id: id, giver_id: y.user_id, receiver_id: x.user_id })
-  ok(await c.sb.from('draw_exclusions').upsert(rows, { onConflict: 'event_id,giver_id,receiver_id', ignoreDuplicates: true }))
-  return { excluded: true, both_ways: both, people: [x.profiles?.display_name, y.profiles?.display_name] }
+// ---------- tirages au sort (plusieurs par événement) ----------
+// Un participant est un invité (compte) ou une liste d'enfant. Chacun ne voit que ses résultats et ceux de ses enfants.
+async function eventDraws(c: Ctx, eventId: string): Promise<any[]> {
+  return (ok(await c.sb.rpc('event_draws', { p_event: eventId })) as any[]) ?? []
+}
+function findDraw(draws: any[], ref: unknown): any | null {
+  if (ref == null || (typeof ref === 'string' && !ref.trim())) {
+    if (draws.length === 1) return draws[0]
+    if (!draws.length) return null
+    throw new ApiError(400, `Cet événement a plusieurs tirages : précisez lequel (${draws.map((d) => `« ${d.name} »`).join(', ')})`)
+  }
+  const r = norm(String(ref))
+  let m = draws.filter((d) => d.id === r || norm(d.name) === r)
+  if (!m.length) m = draws.filter((d) => norm(d.name).includes(r))
+  if (m.length === 1) return m[0]
+  if (!m.length) return null
+  throw new ApiError(400, `Plusieurs tirages correspondent à « ${ref} » : précisez`)
+}
+/** Invités et listes d'enfants pouvant participer (pid = id du compte ou de la liste d'enfant) */
+async function drawPeople(c: Ctx, eventId: string): Promise<{ pid: string; name: string }[]> {
+  const ms = await eventMembers(c, eventId)
+  const kids = ok(await c.sb.from('wishlists').select('id,child_name').not('child_name', 'is', null).in('owner_id', ms.map((m) => m.user_id))) as any[]
+  return [...ms.map((m) => ({ pid: m.user_id, name: m.profiles?.display_name ?? '' })), ...kids.map((k) => ({ pid: k.id, name: k.child_name }))]
+}
+function person(people: { pid: string; name: string }[], ref: unknown) {
+  if (typeof ref !== 'string' || !ref.trim()) throw new ApiError(400, 'Précisez la personne (prénom ou identifiant)')
+  const r = norm(ref)
+  let m = people.filter((x) => x.pid === r || norm(x.name) === r)
+  if (!m.length) m = people.filter((x) => norm(x.name).includes(r))
+  if (m.length === 1) return m[0]
+  if (!m.length) throw new ApiError(404, `« ${ref} » ne fait pas partie de cet événement ou de ce tirage`)
+  throw new ApiError(400, `Plusieurs personnes correspondent à « ${ref} » : précisez`)
+}
+/** Le tirage visé ; s'il n'existe pas encore, on le crée (avec tous les invités s'il s'agit du premier) */
+async function drawFor(c: Ctx, eventId: string, ref: unknown, create = true): Promise<any> {
+  const draws = await eventDraws(c, eventId)
+  const d = findDraw(draws, ref)
+  if (d) return d
+  if (!create) throw new ApiError(404, draws.length ? `Aucun tirage nommé « ${ref} »` : 'Aucun tirage dans cet événement')
+  const name = typeof ref === 'string' && ref.trim() ? ref.trim() : 'Tirage au sort'
+  const pids = draws.length ? [] : (await eventMembers(c, eventId)).map((m) => m.user_id)
+  const id = ok(await c.sb.rpc('save_draw', { p_event: eventId, p_draw: null, p_name: name, p_pids: pids })) as string
+  return findDraw(await eventDraws(c, eventId), id)
+}
+const resultsOf = (d: any) => (d.mine ?? []).map((m: any) => ({
+  draw: d.name, giver: m.giver_kind === 'me' ? 'vous' : m.giver_name, recipient: m.receiver_name, list_id: m.receiver_list ?? null,
+}))
+function drawSummary(d: any, isOrg: boolean) {
+  const nm = (pid: string) => d.participants.find((p: any) => p.pid === pid)?.name ?? pid
+  return {
+    name: d.name, done: Boolean(d.done_at), done_at: d.done_at,
+    outdated: Boolean(d.done_at) && d.done_count !== d.participants.length,
+    participants: d.participants.map((p: any) => (p.kind === 'kid' ? `${p.name} (liste d'enfant)` : p.name)),
+    my_results: resultsOf(d),
+    ...(isOrg ? { exclusions: d.blocks.map((b: any) => ({ giver: nm(b.giver), receiver: nm(b.receiver) })) } : {}),
+  }
 }
 
-export async function removeExclusion(c: Ctx, eventRef: unknown, a: unknown, bRef: unknown, both = true) {
+export async function addExclusion(c: Ctx, eventRef: unknown, a: unknown, bRef: unknown, both = true, drawRef?: unknown) {
   const id = await resolveEventId(c, eventRef)
-  const ms = await eventMembers(c, id)
-  const x = member(ms, a), y = member(ms, bRef)
-  const del = async (g: string, r: string) => ok(await c.sb.from('draw_exclusions').delete().eq('event_id', id).eq('giver_id', g).eq('receiver_id', r).select('giver_id'))
-  await del(x.user_id, y.user_id)
-  if (both) await del(y.user_id, x.user_id)
-  return { removed: true }
+  const d = await drawFor(c, id, drawRef)
+  const people = d.participants.map((p: any) => ({ pid: p.pid, name: p.name }))
+  const x = person(people, a), y = person(people, bRef)
+  if (x.pid === y.pid) throw new ApiError(400, 'Choisissez deux personnes différentes')
+  ok(await c.sb.rpc('set_draw_block', { p_draw: d.id, p_giver: x.pid, p_receiver: y.pid, p_on: true, p_both: both }))
+  return { excluded: true, draw: d.name, both_ways: both, people: [x.name, y.name] }
 }
 
-export async function setInDraw(c: Ctx, eventRef: unknown, who: unknown, inDraw: boolean) {
+export async function removeExclusion(c: Ctx, eventRef: unknown, a: unknown, bRef: unknown, both = true, drawRef?: unknown) {
   const id = await resolveEventId(c, eventRef)
-  const m = member(await eventMembers(c, id), who)
-  const rows = ok(await c.sb.from('event_members').update({ in_draw: inDraw }).eq('event_id', id).eq('user_id', m.user_id).select('user_id')) as any[]
-  if (!rows.length) throw new ApiError(403, 'Seul l\'organisateur peut modifier les participants au tirage')
-  return { person: m.profiles?.display_name, in_draw: inDraw }
+  const d = await drawFor(c, id, drawRef, false)
+  const people = d.participants.map((p: any) => ({ pid: p.pid, name: p.name }))
+  const x = person(people, a), y = person(people, bRef)
+  ok(await c.sb.rpc('set_draw_block', { p_draw: d.id, p_giver: x.pid, p_receiver: y.pid, p_on: false, p_both: both }))
+  return { removed: true, draw: d.name }
 }
 
-export async function runDraw(c: Ctx, eventRef: unknown) {
+export async function setInDraw(c: Ctx, eventRef: unknown, who: unknown, inDraw: boolean, drawRef?: unknown) {
   const id = await resolveEventId(c, eventRef)
-  ok(await c.sb.rpc('run_draw', { p_event: id }))
-  const mine = await myDraw(c, id)
-  return { done: true, note: 'Tirage effectué. Chaque participant (organisateur compris) ne voit que son propre résultat.', my_recipient: mine.my_recipient }
+  const p = person(await drawPeople(c, id), who)
+  const d = await drawFor(c, id, drawRef, inDraw)
+  const pids = new Set<string>(d.participants.map((x: any) => x.pid))
+  if (inDraw) pids.add(p.pid); else pids.delete(p.pid)
+  ok(await c.sb.rpc('save_draw', { p_event: id, p_draw: d.id, p_name: d.name, p_pids: [...pids] }))
+  return { person: p.name, draw: d.name, in_draw: inDraw }
 }
 
-export async function resetDraw(c: Ctx, eventRef: unknown) {
+export async function runDraw(c: Ctx, eventRef: unknown, drawRef?: unknown) {
   const id = await resolveEventId(c, eventRef)
-  ok(await c.sb.rpc('reset_draw', { p_event: id }))
-  return { reset: true }
+  const d = await drawFor(c, id, drawRef)
+  ok(await c.sb.rpc('run_one_draw', { p_draw: d.id }))
+  const after = findDraw(await eventDraws(c, id), d.id)
+  return { done: true, draw: d.name, note: 'Tirage effectué. Chacun (organisateur compris) ne voit que son résultat et celui de ses enfants.', my_results: after ? resultsOf(after) : [] }
+}
+
+export async function resetDraw(c: Ctx, eventRef: unknown, drawRef?: unknown) {
+  const id = await resolveEventId(c, eventRef)
+  const d = await drawFor(c, id, drawRef, false)
+  ok(await c.sb.rpc('reset_one_draw', { p_draw: d.id }))
+  return { reset: true, draw: d.name }
 }
 
 export async function myDraw(c: Ctx, eventRef: unknown) {
   const id = await resolveEventId(c, eventRef)
-  const a = ok(await c.sb.from('draw_assignments').select('receiver_id').eq('event_id', id).maybeSingle()) as any
-  if (!a) return { my_recipient: null, note: 'Pas de résultat pour vous (tirage pas encore fait, ou vous ne participez pas).' }
-  const ms = await eventMembers(c, id)
-  const r = ms.find((m) => m.user_id === a.receiver_id)
-  const l = ok(await c.sb.from('wishlists').select('id').eq('owner_id', a.receiver_id).is('child_name', null).maybeSingle()) as any
-  return { my_recipient: { user_id: a.receiver_id, name: r?.profiles?.display_name ?? null, list_id: l?.id ?? null } }
+  const results = (await eventDraws(c, id)).filter((d) => d.done_at).flatMap(resultsOf)
+  if (!results.length) return { my_results: [], note: 'Pas de résultat pour vous (tirage pas encore fait, ou vous ne participez pas).' }
+  const mine = results.filter((r: any) => r.giver === 'vous')
+  return { my_results: results, ...(mine.length === 1 ? { my_recipient: { name: mine[0].recipient, list_id: mine[0].list_id } } : {}) }
 }

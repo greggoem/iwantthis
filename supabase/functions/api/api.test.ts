@@ -115,7 +115,7 @@ Deno.test('REST : achat — événement commun par défaut, sinon date exigée',
 })
 
 Deno.test('REST : erreurs de la base renvoyées proprement', async () => {
-  const sb = fakeSb({}, { run_draw: new Error('Seul l\'organisateur peut lancer le tirage') })
+  const sb = fakeSb({}, { event_draws: [{ id: 'D1', name: 'Tirage au sort', participants: [], blocks: [], mine: [] }], run_one_draw: new Error('Seul l\'organisateur peut gérer les tirages') })
   const ev = '22222222-2222-2222-2222-222222222222'
   const r = await call(req('POST', `/v1/events/${ev}/draw`), sb)
   assert(r.status === 400 && /organisateur/.test(r.json.error.message), 'message de la base conservé')
@@ -123,20 +123,24 @@ Deno.test('REST : erreurs de la base renvoyées proprement', async () => {
 
 Deno.test('REST : exclusions de tirage par prénom', async () => {
   const calls: any[] = []
-  const sb = fakeSb({ event_members: [
-    { user_id: 'u-me', in_draw: true, profiles: { display_name: 'Greg' } },
-    { user_id: 'u-j', in_draw: true, profiles: { display_name: 'Julie' } },
-    { user_id: 'u-l', in_draw: true, profiles: { display_name: 'Louis' } },
-  ] }, {}, calls)
+  const p = (pid: string, name: string, kind = 'user') => ({ pid, name, kind })
+  const sb = fakeSb({}, { event_draws: [
+    { id: 'D1', name: 'Les parents', participants: [p('u-me', 'Greg'), p('u-j', 'Julie'), p('u-l', 'Louis')], blocks: [], mine: [] },
+    { id: 'D2', name: 'Les enfants', participants: [p('u-me', 'Greg'), p('K1', 'Léo', 'kid'), p('K2', 'Lina', 'kid')], blocks: [], mine: [] },
+  ] }, calls)
   const ev = '22222222-2222-2222-2222-222222222222'
   let r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'greg', person_b: 'JULIE' }), sb)
+  eq(r.status, 400, 'plusieurs tirages : il faut préciser lequel')
+  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'greg', person_b: 'JULIE', draw: 'parents' }), sb)
   eq(r.status, 200, 'exclusion ok')
-  const rows = calls.find((x) => x[0] === 'draw_exclusions' && x[1] === 'upsert')[2]
-  eq(rows.map((x: any) => [x.giver_id, x.receiver_id]), [['u-me', 'u-j'], ['u-j', 'u-me']], 'deux sens')
-  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'Greg', person_b: 'Greg' }), sb)
+  const args = calls.find((x) => x[0] === 'rpc' && x[1] === 'set_draw_block')[2]
+  eq([args.p_draw, args.p_giver, args.p_receiver, args.p_on, args.p_both], ['D1', 'u-me', 'u-j', true, true], 'deux sens, bon tirage')
+  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'leo', person_b: 'lina', draw: 'Les enfants' }), sb)
+  eq(r.status, 200, 'exclusion entre listes d\'enfants')
+  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'Greg', person_b: 'Greg', draw: 'parents' }), sb)
   eq(r.status, 400, 'même personne refusée')
-  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'Greg', person_b: 'Inconnu' }), sb)
-  eq(r.status, 404, 'invité inconnu')
+  r = await call(req('POST', `/v1/events/${ev}/exclusions`, { person_a: 'Greg', person_b: 'Léo', draw: 'parents' }), sb)
+  eq(r.status, 404, 'pas dans ce tirage')
 })
 
 Deno.test('MCP : poignée de main, outils, appel, erreurs', async () => {
@@ -200,7 +204,7 @@ Deno.test('noms : insensibles aux accents et à la casse', async () => {
   const ev = await call(req('GET', '/v1/events/NOEL'), sb)
   assert(ev.status !== 404 && ev.status !== 400, 'événement trouvé sans accent : ' + JSON.stringify(ev.json).slice(0, 120))
   const calls: any[] = []
-  const sb2 = fakeSb({ event_members: [{ user_id: 'u-me', in_draw: true, profiles: { display_name: 'Hélène' } }, { user_id: 'u-j', in_draw: true, profiles: { display_name: 'Zoé' } }] }, {}, calls)
+  const sb2 = fakeSb({}, { event_draws: [{ id: 'D1', name: 'Tirage au sort', participants: [{ pid: 'u-me', name: 'Hélène', kind: 'user' }, { pid: 'u-j', name: 'Zoé', kind: 'user' }], blocks: [], mine: [] }] }, calls)
   const id = '33333333-3333-3333-3333-333333333333'
   const r = await call(req('POST', `/v1/events/${id}/exclusions`, { person_a: 'helene', person_b: 'ZOE' }), sb2)
   eq(r.status, 200, 'exclusion par prénoms sans accent')

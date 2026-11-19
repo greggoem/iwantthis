@@ -11,7 +11,7 @@ const giftFields = {
   title: { type: 'string', maxLength: 200 }, url: { type: 'string', format: 'uri' }, details: { type: 'string', maxLength: 1000 },
   price: { type: 'number', description: 'Euros' }, image_url: { type: 'string', format: 'uri' },
 }
-const exclFields = { person_a: { ...S, description: 'Prénom ou identifiant' }, person_b: { ...S, description: 'Prénom ou identifiant' }, both_ways: { type: 'boolean', default: true } }
+const exclFields = { person_a: { ...S, description: 'Prénom ou identifiant' }, person_b: { ...S, description: 'Prénom ou identifiant' }, both_ways: { type: 'boolean', default: true }, draw: { ...S, description: 'Nom du tirage (s\'il y en a plusieurs)' } }
 
 export function openapi(base: string): Record<string, unknown> {
   const op = (summary: string, extra: Record<string, unknown> = {}) => ({ summary, security: [{ bearer: [] }], responses: okRes('Succès'), ...extra })
@@ -61,11 +61,11 @@ export function openapi(base: string): Record<string, unknown> {
         post: op('Exclure deux personnes du tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body(exclFields, ['person_a', 'person_b']) }),
         delete: op('Retirer une exclusion (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body(exclFields, ['person_a', 'person_b']) }),
       },
-      '/events/{id}/participants': { patch: op('Inclure/exclure un invité du tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body({ person: S, in_draw: { type: 'boolean' } }, ['person', 'in_draw']) }) },
+      '/events/{id}/participants': { patch: op('Inclure/exclure un invité du tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body({ person: S, in_draw: { type: 'boolean' }, draw: S }, ['person', 'in_draw']) }) },
       '/events/{id}/draw': {
-        post: op('Lancer ou refaire le tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')] }),
-        delete: op('Annuler le tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')] }),
-        get: op('Mon résultat du tirage (confidentiel)', { parameters: [idParam('id', 'Identifiant ou nom')] }),
+        post: op('Lancer ou refaire un tirage (organisateur) ; « draw » = nom du tirage s\'il y en a plusieurs', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body({ draw: S }) }),
+        delete: op('Annuler un tirage (organisateur)', { parameters: [idParam('id', 'Identifiant ou nom')], requestBody: body({ draw: S }) }),
+        get: op('Mes résultats (et ceux de mes enfants) dans chaque tirage (confidentiel)', { parameters: [idParam('id', 'Identifiant ou nom')] }),
       },
     },
   }

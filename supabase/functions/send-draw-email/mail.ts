@@ -100,3 +100,33 @@ export function buildDraw(m: DrawMail, site: string, appName: string, eventId: s
   const text = `🎲 ${m.event_name} — ${when}\n\nBonjour ${m.display_name},\n\n${m.organizer} vient de lancer le tirage au sort. Vous savez maintenant à qui offrir un cadeau, mais chut… c'est un secret !\n\nDécouvrir à qui j'offre un cadeau : ${link}\n\nConnectez-vous à ${appName} et ouvrez l'événement : le résultat n'est visible que par vous.\n`
   return { subject, html, text, link }
 }
+
+/** Un tirage parmi plusieurs dans l'événement : la personne peut recevoir le résultat de ses enfants */
+export interface OneDrawMail { display_name: string; email: string; kids: string[]; self: boolean; event_id: string; event_name: string; event_date: string; draw_name: string; organizer: string }
+
+const andList = (xs: string[]) => xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} et ${xs[xs.length - 1]}`
+
+/** E-mail « le tirage a eu lieu » : ne révèle JAMAIS le résultat */
+export function buildOneDraw(m: OneDrawMail, site: string, appName: string): { subject: string; html: string; text: string; link: string } {
+  const base = site.replace(/#.*$/, '').replace(/\/?$/, '/')
+  const link = `${base}#/evenements/${encodeURIComponent(m.event_id)}`
+  const when = dateLong(m.event_date)
+  const kids = andList(m.kids ?? [])
+  const subject = `🎲 Tirage « ${m.draw_name} » : ${m.event_name}`
+  const who = m.self && kids ? `Vous savez maintenant à qui offrir un cadeau, et ${esc(kids)} aussi`
+    : m.self ? 'Vous savez maintenant à qui offrir un cadeau'
+    : `Vous pouvez découvrir à qui ${esc(kids)} ${m.kids.length > 1 ? 'offrent' : 'offre'} un cadeau`
+  const whoTxt = who.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#fffaf1;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2150">
+<div style="max-width:560px;margin:0 auto;padding:28px 20px">
+  <h1 style="font-size:24px;line-height:1.2;margin:0 0 10px">🎲 ${esc(m.event_name)}</h1>
+  <p style="margin:0 0 18px;color:#6b5f9a">${esc(when)} · tirage « ${esc(m.draw_name)} »</p>
+  <p style="font-size:16px;line-height:1.55;margin:0 0 14px">Bonjour ${esc(m.display_name)},</p>
+  <p style="font-size:16px;line-height:1.55;margin:0 0 14px"><strong>${esc(m.organizer)}</strong> vient de lancer le tirage au sort « ${esc(m.draw_name)} ». ${who}, mais chut… <strong>c'est un secret</strong> 🤫</p>
+  <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#ff4d8d;color:#fff;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:14px">Découvrir le résultat</a></p>
+  <p style="font-size:13px;line-height:1.5;color:#6b5f9a;margin:0 0 6px">Connectez-vous à ${esc(appName)} et ouvrez l'événement : le résultat n'est visible que par vous.</p>
+  <p style="font-size:12px;color:#9a90bf;margin:14px 0 0">Si le bouton ne marche pas : ${esc(link)}</p>
+</div></body></html>`
+  const text = `🎲 ${m.event_name} — ${when} · tirage « ${m.draw_name} »\n\nBonjour ${m.display_name},\n\n${m.organizer} vient de lancer le tirage au sort « ${m.draw_name} ». ${whoTxt}, mais chut… c'est un secret !\n\nDécouvrir le résultat : ${link}\n\nConnectez-vous à ${appName} et ouvrez l'événement : le résultat n'est visible que par vous.\n`
+  return { subject, html, text, link }
+}

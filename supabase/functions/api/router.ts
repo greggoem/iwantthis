@@ -38,11 +38,11 @@ const ROUTES: [string, string, Handler, number?][] = [
   ['GET', '/v1/events/:id', (c, p) => ops.getEvent(c, p.id)],
   ['PATCH', '/v1/events/:id', (c, p, b) => ops.updateEvent(c, p.id, b)],
   ['DELETE', '/v1/events/:id', (c, p) => ops.deleteEvent(c, p.id)],
-  ['POST', '/v1/events/:id/exclusions', (c, p, b) => ops.addExclusion(c, p.id, b.person_a, b.person_b, b.both_ways !== false)],
-  ['DELETE', '/v1/events/:id/exclusions', (c, p, b) => ops.removeExclusion(c, p.id, b.person_a, b.person_b, b.both_ways !== false)],
-  ['PATCH', '/v1/events/:id/participants', (c, p, b) => ops.setInDraw(c, p.id, b.person, Boolean(b.in_draw))],
-  ['POST', '/v1/events/:id/draw', (c, p) => ops.runDraw(c, p.id)],
-  ['DELETE', '/v1/events/:id/draw', (c, p) => ops.resetDraw(c, p.id)],
+  ['POST', '/v1/events/:id/exclusions', (c, p, b) => ops.addExclusion(c, p.id, b.person_a, b.person_b, b.both_ways !== false, b.draw)],
+  ['DELETE', '/v1/events/:id/exclusions', (c, p, b) => ops.removeExclusion(c, p.id, b.person_a, b.person_b, b.both_ways !== false, b.draw)],
+  ['PATCH', '/v1/events/:id/participants', (c, p, b) => ops.setInDraw(c, p.id, b.person, Boolean(b.in_draw), b.draw)],
+  ['POST', '/v1/events/:id/draw', (c, p, b) => ops.runDraw(c, p.id, b?.draw)],
+  ['DELETE', '/v1/events/:id/draw', (c, p, b) => ops.resetDraw(c, p.id, b?.draw)],
   ['GET', '/v1/events/:id/draw', (c, p) => ops.myDraw(c, p.id)],
 ]
 

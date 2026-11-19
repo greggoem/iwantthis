@@ -157,16 +157,16 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'tirage', icon: 'dice', title: 'Le tirage au sort',
-    intro: <>Chacun offre un cadeau à une seule personne, tirée au sort : idéal pour les grandes familles.</>,
+    intro: <>Chacun offre un cadeau à une seule personne, tirée au sort : idéal pour les grandes familles. Un événement peut avoir plusieurs tirages, par exemple « Les parents » et « Les enfants ».</>,
     steps: [
       {
-        title: 'Activez et réglez le tirage',
-        text: <>L'organisateur choisit <strong>Activer le tirage au sort</strong> dans le menu <strong>⋯</strong> de l'événement. La section <strong>Tirage au sort</strong> <N n={1} /> permet d'exclure des paires (un couple, par exemple) et de choisir qui participe, puis de lancer le tirage.</>,
+        title: 'Créez un ou plusieurs tirages',
+        text: <>L'organisateur choisit <strong>Créer un tirage au sort</strong> dans le menu <strong>⋯</strong> de l'événement, lui donne un nom et coche les participants : des invités et aussi des listes d'enfants. Une même personne peut être dans plusieurs tirages. On peut exclure des paires (un couple, un frère et une sœur), puis lancer chaque tirage <N n={1} />.</>,
         shots: [{ src: 'tirage-1', alt: 'Section « Tirage au sort »' }],
       },
       {
         title: 'Chacun découvre son résultat',
-        text: <>Chaque participant touche <strong>Découvrir à qui j'offre un cadeau</strong> <N n={1} /> et accède à la liste de la personne tirée. Le résultat est secret : même l'organisateur ne voit que le sien.</>,
+        text: <>Chaque participant touche <strong>Découvrir à qui j'offre</strong> <N n={1} /> et accède à la liste de la personne tirée. Pour une liste d'enfant, c'est le parent qui voit le résultat. Le résultat est secret : même l'organisateur ne voit que le sien.</>,
         shots: [{ src: 'tirage-2', alt: 'Bouton « Découvrir à qui j\'offre un cadeau »' }],
       },
     ],

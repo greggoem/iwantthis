@@ -433,10 +433,7 @@ export default function EventDetail() {
         {guests.map(g => g.kid ? (
           <li key={g.kid.id} className="card item">
             <div className="item-main">
-              <span className="row gap" style={{ alignItems: 'center', display: 'inline-flex' }}>
-                <PersonDot name={g.kid.child_name} color={g.kid.child_color ?? 'corail'} size={28} />
-                <strong>{g.kid.child_name}</strong>
-              </span>
+              <strong>{g.kid.child_name}</strong>
               <span className="tag">{managedTag(g.kid.managed_kind, g.kid.owner_id === me ? 'vous' : name(g.kid.owner_id))}</span>
               <span className="small muted wish-count">{envies(g.kid.count)}</span>
             </div>

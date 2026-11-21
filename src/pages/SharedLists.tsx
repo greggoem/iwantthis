@@ -6,7 +6,6 @@ import { Notice, Spinner } from '../components/ui'
 import Modal from '../components/Modal'
 import Icon from '../components/Icon'
 import { formatDate } from '../lib/format'
-import { PersonDot } from '../components/ListPills'
 import { formatAge, kidShownIn, listPerson } from '../lib/kids'
 
 interface Row { id: string; owner_id: string; title: string; child_name: string | null; child_age: string | null; child_color: string | null; in_events: boolean; items: { count: number }[] }
@@ -126,7 +125,6 @@ export default function SharedLists() {
       <div className="card item linkcard pcard">
         <div className="item-main">
           <p className="pcard-name">
-            {r.child_name && <PersonDot name={r.child_name} color={r.child_color ?? 'corail'} size={30} />}
             <Link className="pcard-link" to={`/listes/${r.id}`}>{listPerson(r, names)}</Link>
             <span className="small muted wish-count">{r.child_age ? `${formatAge(r.child_age)} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name ? (r.owner_id === session!.user.id ? ' · votre enfant' : names[r.owner_id] ? ` · liste tenue par ${names[r.owner_id]}` : '') : ''}</span>
           </p>

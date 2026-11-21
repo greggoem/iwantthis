@@ -191,3 +191,77 @@ grant execute on function public.request_invite_email_by_id(uuid)               
 grant execute on function public.my_contacts(uuid)                                  to authenticated;
 grant execute on function public.invite_contacts(uuid, uuid[])                      to authenticated;
 grant execute on function public.create_child_list(text, text, text, boolean, text) to authenticated;
+
+-- =====================================================================
+--  Retirer une liste gérée (enfant, proche sans compte) d'un événement :
+--  son propriétaire OU l'organisateur de l'événement
+-- =====================================================================
+create or replace function public.set_event_list_shown(p_event uuid, p_list uuid, p_shown boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_owner uuid;
+begin
+  select owner_id into v_owner from wishlists where id = p_list and child_name is not null;
+  if v_owner is null then raise exception 'Liste introuvable'; end if;
+  if not (v_owner = auth.uid() or (public.is_event_creator(p_event) and not coalesce(p_shown, false))) then
+    raise exception 'Seul le parent ou l''organisateur peut retirer cette liste de l''événement';
+  end if;
+  if not exists (select 1 from event_members where event_id = p_event and user_id = v_owner) then
+    raise exception 'Cette liste n''appartient pas à un invité de l''événement';
+  end if;
+  insert into event_child_lists (event_id, list_id, shown) values (p_event, p_list, coalesce(p_shown, false))
+  on conflict (event_id, list_id) do update set shown = excluded.shown;
+end $$;
+revoke all on function public.set_event_list_shown(uuid, uuid, boolean) from public, anon;
+grant execute on function public.set_event_list_shown(uuid, uuid, boolean) to authenticated;
+
+-- =====================================================================
+--  Changement de date, d'heure ou de lieu : notification à tous les invités
+--  (+ e-mail envoyé par la fonction Edge « send-event-update »)
+-- =====================================================================
+alter table public.events add column if not exists change_emailed_at timestamptz;
+
+create or replace function public.notify_event_change()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare v_body text := '';
+begin
+  if new.event_date is distinct from old.event_date then
+    v_body := v_body || 'Nouvelle date : ' || to_char(new.event_date, 'DD/MM/YYYY') || '. ';
+  end if;
+  if new.event_time is distinct from old.event_time then
+    v_body := v_body || coalesce('Nouvelle heure : ' || replace(to_char(new.event_time, 'HH24:MI'), ':', 'h') || '. ', 'Heure retirée. ');
+  end if;
+  if new.location is distinct from old.location then
+    v_body := v_body || coalesce('Nouveau lieu : ' || new.location || '. ', 'Lieu retiré. ');
+  end if;
+  if v_body = '' then return new; end if;
+  insert into notifications (user_id, kind, title, body, link)
+  select m.user_id, 'event_change', left('📅 « ' || new.name || ' » a changé', 200), left(btrim(v_body), 500), '/evenements/' || new.id::text
+    from event_members m
+   where m.event_id = new.id and m.user_id is distinct from auth.uid();
+  return new;
+end $$;
+drop trigger if exists events_notify_change on public.events;
+create trigger events_notify_change after update of event_date, event_time, location on public.events
+  for each row execute function public.notify_event_change();
+revoke all on function public.notify_event_change() from public, anon, authenticated;
+
+-- Réservé au serveur (fonction Edge) : les invités à prévenir par e-mail, une fois par minute au plus
+create or replace function public.request_event_change_emails(p_event uuid, p_user uuid)
+returns table (email text, display_name text, event_name text, event_date date, event_time time, location text, organizer text)
+language plpgsql security definer set search_path = public as $$
+declare v_ev events%rowtype;
+begin
+  select * into v_ev from events where id = p_event and created_by = p_user for update;
+  if not found then raise exception 'Seul l''organisateur peut prévenir les invités'; end if;
+  if v_ev.change_emailed_at is not null and v_ev.change_emailed_at > now() - interval '1 minute' then
+    raise exception 'Les invités viennent d''être prévenus : réessayez dans une minute';
+  end if;
+  update events set change_emailed_at = now() where id = p_event;
+  return query
+    select u.email::text, pr.display_name, v_ev.name, v_ev.event_date, v_ev.event_time, v_ev.location,
+           (select pp.display_name from profiles pp where pp.id = p_user)
+      from event_members m join auth.users u on u.id = m.user_id join profiles pr on pr.id = m.user_id
+     where m.event_id = p_event and m.user_id <> p_user and u.email is not null;
+end $$;
+revoke all on function public.request_event_change_emails(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.request_event_change_emails(uuid, uuid) to service_role;

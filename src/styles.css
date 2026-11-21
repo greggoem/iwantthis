@@ -999,3 +999,7 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .contact-name { flex: 1; font-weight: 600; }
 .seg > button { border: 0; background: transparent; border-radius: 9px; padding: .55rem .6rem; font: inherit; font-weight: 600; font-size: .9rem; color: var(--muted); cursor: pointer; }
 .seg > button.on { background: var(--surface, #fff); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.contact-open { align-self: flex-start; }
+.contact-new { width: 100%; background: none; border: 0; text-align: left; font: inherit; color: var(--ink); }
+.contact-plus { width: 30px; height: 30px; border-radius: 999px; border: 1.5px dashed var(--line-strong, #c9c9cf); display: grid; place-items: center; flex: none; margin-left: 28px; }
+.contact-empty { padding: .7rem .8rem; margin: 0; border-bottom: 1px solid var(--line); }

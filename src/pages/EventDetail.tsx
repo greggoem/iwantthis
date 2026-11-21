@@ -111,8 +111,15 @@ export default function EventDetail() {
   const setKidShown = async (k: KidRow, shown: boolean) => {
     setErr('')
     setOverrides(o => [...o.filter(x => x.list_id !== k.id), { event_id: id!, list_id: k.id, shown }])
-    const { error } = await supabase.from('event_child_lists').upsert({ event_id: id!, list_id: k.id, shown })
+    const { error } = await supabase.rpc('set_event_list_shown', { p_event: id!, p_list: k.id, p_shown: shown })
     if (error) { setErr(errMsg(error)); load() }
+  }
+  const removeKid = async (k: KidRow) => {
+    const mine = k.owner_id === me
+    if (!(await confirm({ title: `Retirer ${k.child_name} de l'événement ?`, message: mine ? 'Sa liste ne sera plus visible des invités de cet événement. Vous pourrez la remettre plus tard.' : `Sa liste ne sera plus visible dans cet événement. ${name(k.owner_id)} pourra la remettre.`, confirmLabel: 'Retirer' }))) return
+    setMsg('')
+    await setKidShown(k, false)
+    setMsg(`${k.child_name} a été retiré·e de l'événement.`)
   }
   // capture d'écran : Ctrl+V / Cmd+V n'importe où sur la page de l'événement (organisateur)
   useEffect(() => {
@@ -138,8 +145,16 @@ export default function EventDetail() {
 
   const saveEvent = async (e: FormEvent) => {
     e.preventDefault()
+    const changed = !!ev && (ev.event_date !== eDate || (ev.event_time?.slice(0, 5) ?? '') !== eTime || (ev.location ?? '') !== ePlace.trim())
+    const others = members.filter(m => m.user_id !== me).length
     await run(() => supabase.from('events').update({ name: eName.trim(), event_date: eDate, event_time: eTime || null, location: ePlace.trim() || null }).eq('id', id!), 'Événement mis à jour.')
     setEditing(false)
+    if (changed && others > 0) {
+      // notification déjà créée par la base ; ici l'e-mail à chaque invité
+      const { data } = await supabase.functions.invoke('send-event-update', { body: { event_id: id } })
+      const r = data as { sent?: number; reason?: string } | null
+      setMsg(r?.sent ? `Événement mis à jour. Les ${others > 1 ? `${others} invités ont` : 'invité a'} reçu une notification et un e-mail.` : `Événement mis à jour. Les invités ont reçu une notification.`)
+    }
   }
   const deleteEvent = async () => {
     if (!(await confirm({ title: 'Supprimer l\'événement ?', message: 'Il sera supprimé pour tous les invités, avec le tirage au sort et les achats liés à cette date. Cette action est définitive.', confirmLabel: 'Supprimer', danger: true }))) return
@@ -338,7 +353,15 @@ export default function EventDetail() {
         <Modal title="Inviter des proches" onClose={() => setInviteOpen(false)} wide>
           <div className="stack">
             <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
-            <ContactPicker eventId={id!} onInvited={(names, mailed) => { setErr(''); setMsg(`${names.length > 1 ? `${names.length} proches invités` : `${names[0] ?? 'Votre proche'} est invité·e`} : ${names.length > 1 ? 'ils ont' : 'il ou elle a'} reçu une notification${mailed ? ' et un e-mail' : ''} et ${names.length > 1 ? 'choisiront' : 'choisira'} de rejoindre l'événement.`); load() }} />
+            <ContactPicker eventId={id!} managed={myKids.filter(k => !kidShownIn(k, id!, overrides)).map(k => ({ id: k.id, name: k.child_name, color: k.child_color }))}
+              onAddManaged={(ids) => Promise.all(ids.map(lid => supabase.rpc('set_event_list_shown', { p_event: id!, p_list: lid, p_shown: true }))).then(() => load())}
+              onNewManaged={() => { setInviteOpen(false); setAddManaged(true) }}
+              onInvited={(invited, added, mailed) => {
+                const parts: string[] = []
+                if (invited.length) parts.push(`${invited.join(', ')} ${invited.length > 1 ? 'ont' : 'a'} reçu l'invitation (notification${mailed ? ' et e-mail' : ''}) et ${invited.length > 1 ? 'choisiront' : 'choisira'} de rejoindre l'événement.`)
+                if (added.length) parts.push(`${added.join(', ')} ${added.length > 1 ? 'font' : 'fait'} maintenant partie de l'événement.`)
+                setErr(''); setMsg(parts.join(' ')); load()
+              }} />
             <hr />
             <h3 style={{ margin: 0 }}>Par un lien</h3>
             <p className="small muted" style={{ margin: 0 }}>Ils ouvrent ce lien, se connectent, puis choisissent de rejoindre l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
@@ -351,11 +374,6 @@ export default function EventDetail() {
               <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
               <button className="btn btn-primary">Ajouter</button>
             </form>
-            <hr />
-            <div className="row between wrap gap">
-              <span><strong>Un proche sans e-mail ?</strong><br /><span className="small muted">Grand-parent, enfant… vous gérez sa liste depuis votre compte.</span></span>
-              <button type="button" className="btn" onClick={() => { setInviteOpen(false); setAddManaged(true) }}><Icon name="plus" size={16} /> Ajouter sa liste</button>
-            </div>
           </div>
         </Modal>
       )}
@@ -424,6 +442,7 @@ export default function EventDetail() {
             </div>
             <div className="item-actions">
               <Link className="btn btn-sm" to={g.kid.owner_id === me ? `/?liste=${g.kid.id}` : `/listes/${g.kid.id}`}>{g.kid.owner_id === me ? 'Sa liste' : 'Voir sa liste'}</Link>
+              {(g.kid.owner_id === me || isOrg) && <IconButton icon="x" label={`Retirer ${g.kid.child_name} de l'événement`} onClick={() => removeKid(g.kid!)} />}
             </div>
           </li>
         ) : (m => (

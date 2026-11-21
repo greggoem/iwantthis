@@ -279,8 +279,8 @@ const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('fr-BE'
 
 interface ReminderStat { kind: 'activation' | 'first_wish'; pending: number; sent: number; last_sent: string | null }
 const REMINDERS: Record<ReminderStat['kind'], { title: string; who: string; what: string }> = {
-  activation: { title: 'Pas encore commencé', who: 'Inscrits depuis plus d\'un jour, jamais connectés ou sans liste', what: '« Votre liste d\'envies vous attend » : connexion sans mot de passe, comment ajouter et partager.' },
-  first_wish: { title: 'Liste sans envie', who: 'Connectés, liste créée, mais aucune envie', what: '« Ajoutez votre première envie en un clic » : liens vers les extensions Chrome, Edge, Firefox et le partage sur téléphone.' },
+  activation: { title: 'Pas encore commencé', who: '1 jour après l\'inscription : jamais connecté ou sans liste', what: '« Votre liste d\'envies vous attend » : connexion sans mot de passe, comment ajouter et partager.' },
+  first_wish: { title: 'Liste sans envie', who: '3 jours après l\'inscription : liste créée mais aucune envie', what: '« Ajoutez votre première envie en un clic » : liens vers les extensions Chrome, Edge, Firefox et le partage sur téléphone.' },
 }
 
 /** Relances par e-mail : une seule fois par personne et par type */
@@ -313,7 +313,8 @@ function Reminders() {
   if (!stats) return null
   return (
     <section className="reminders">
-      <h3 style={{ margin: '0 0 .5rem' }}>Relances par e-mail</h3>
+      <h3 style={{ margin: '0 0 .2rem' }}>Relances par e-mail</h3>
+      <p className="small muted" style={{ margin: '0 0 .6rem' }}>Envoyées automatiquement chaque matin (9h), une seule fois par personne. Le bouton envoie tout de suite celles qui sont dues.</p>
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
       <div className="reminder-grid">
         {stats.map(r => (
@@ -321,10 +322,10 @@ function Reminders() {
             <strong>{REMINDERS[r.kind].title}</strong>
             <span className="small muted">{REMINDERS[r.kind].who}</span>
             <span className="small">{REMINDERS[r.kind].what}</span>
-            <span className="small muted">{r.sent ? `Déjà relancés : ${r.sent}${r.last_sent ? ` (dernier envoi le ${fmtDate(r.last_sent)})` : ''}` : 'Jamais envoyée'}</span>
+            <span className="small muted">{r.pending ? `${r.pending} en attente du prochain envoi · ` : ''}{r.sent ? `Déjà relancés : ${r.sent}${r.last_sent ? ` (dernier envoi le ${fmtDate(r.last_sent)})` : ''}` : 'Jamais envoyée'}</span>
             <div>
               <button type="button" className="btn btn-sm btn-primary" disabled={!r.pending || busy === r.kind} onClick={() => send(r)}>
-                {busy === r.kind ? 'Envoi…' : r.pending ? `Envoyer à ${r.pending} personne${r.pending > 1 ? 's' : ''}` : 'Personne à relancer'}
+                {busy === r.kind ? 'Envoi…' : r.pending ? `Envoyer maintenant (${r.pending})` : 'Personne à relancer'}
               </button>
             </div>
           </div>

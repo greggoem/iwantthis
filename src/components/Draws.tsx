@@ -214,7 +214,7 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
 
   const label = (c: DrawCandidate) => {
     const others = draws.filter(d => d.id !== draw?.id && d.participants.some(p => p.pid === c.pid)).map(d => `« ${d.name} »`)
-    const base = c.kind === 'kid' ? `Liste d'enfant · ${c.owner_id === me ? 'vous' : c.ownerName}` : c.pid === me ? 'Vous' : 'Invité'
+    const base = c.kind === 'kid' ? `Sans compte · géré par ${c.owner_id === me ? 'vous' : c.ownerName}` : c.pid === me ? 'Vous' : 'Invité'
     return others.length ? `${base} · aussi dans ${others.join(', ')}` : base
   }
   const nm = (pid: string) => candidates.find(c => c.pid === pid)?.name ?? '—'

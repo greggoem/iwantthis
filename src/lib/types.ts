@@ -11,6 +11,8 @@ export interface Wishlist {
   child_color?: string | null
   /** liste d'enfant : visible par défaut dans les événements du parent */
   in_events?: boolean
+  /** liste gérée : un enfant, ou un adulte sans compte (grand-parent…) */
+  managed_kind?: 'enfant' | 'proche'
 }
 
 export interface Item {

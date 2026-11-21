@@ -596,11 +596,11 @@ export default function MyList() {
   // listes d'enfants
   const saveChild = async (c: ChildDraft, target: Wishlist | null) => {
     if (target) {
-      const { error } = await supabase.from('wishlists').update({ child_name: c.name, child_age: c.age || null, child_color: c.color, in_events: c.inEvents }).eq('id', target.id)
+      const { error } = await supabase.from('wishlists').update({ child_name: c.name, child_age: c.kind === 'proche' ? null : (c.age || null), child_color: c.color, in_events: c.inEvents, managed_kind: c.kind }).eq('id', target.id)
       if (error) return errMsg(error)
       setModal(null); await load(); return null
     }
-    const { data, error } = await supabase.rpc('create_child_list', { p_name: c.name, p_age: c.age || null, p_color: c.color, p_in_events: c.inEvents })
+    const { data, error } = await supabase.rpc('create_child_list', { p_name: c.name, p_age: c.age || null, p_color: c.color, p_in_events: c.inEvents, p_kind: c.kind })
     if (error) return errMsg(error)
     const nl = (Array.isArray(data) ? data[0] : data) as Wishlist
     setModal(null)
@@ -712,14 +712,14 @@ export default function MyList() {
       <div className="page-head">
         <div className="title-block">
           <h1 className="title-input" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
-          {kidList && <p className="muted title-sub">Liste d'enfant · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}<br />Achats cachés ici · <Link to={`/listes/${list!.id}`}>voir les achats</Link></p>}
+          {kidList && <p className="muted title-sub">{list!.managed_kind === 'proche' ? 'Liste sans compte' : 'Liste d\'enfant'} · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}<br />Achats cachés ici · <Link to={`/listes/${list!.id}`}>voir les achats</Link></p>}
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> <span>Ajouter</span></button>
           <ActionMenu label="Plus d'options pour la liste" actions={[
             { icon: 'plus', label: 'Nouveau groupe', onClick: () => setModal({ kind: 'group' }) },
-            { icon: 'plus', label: 'Ajouter une liste d\'enfant', onClick: () => setModal({ kind: 'child', list: null }) },
+            { icon: 'plus', label: 'Ajouter un enfant ou un proche sans compte', onClick: () => setModal({ kind: 'child', list: null }) },
             kidList && { icon: 'pencil', label: `Modifier la liste de ${list!.child_name}`, onClick: () => setModal({ kind: 'child', list }) },
             kidList && { icon: 'trash', label: `Supprimer la liste de ${list!.child_name}`, danger: true, onClick: () => deleteChild(list!) },
           ]} />
@@ -832,11 +832,11 @@ export default function MyList() {
         </Modal>
       )}
       {modal?.kind === 'child' && (
-        <Modal title={modal.list ? `Modifier la liste de ${modal.list.child_name}` : 'Ajouter un enfant'} onClose={closeModal}>
+        <Modal title={modal.list ? `Modifier la liste de ${modal.list.child_name}` : 'Ajouter un enfant ou un proche'} onClose={closeModal}>
           <ChildForm
             initial={modal.list
-              ? { name: modal.list.child_name ?? '', age: modal.list.child_age ?? '', color: modal.list.child_color ?? 'corail', inEvents: modal.list.in_events !== false }
-              : { name: '', age: '', color: nextColor(), inEvents: true }}
+              ? { name: modal.list.child_name ?? '', age: modal.list.child_age ?? '', color: modal.list.child_color ?? 'corail', inEvents: modal.list.in_events !== false, kind: modal.list.managed_kind === 'proche' ? 'proche' : 'enfant' }
+              : { name: '', age: '', color: nextColor(), inEvents: true, kind: 'enfant' }}
             submitLabel={n => modal.list ? 'Enregistrer' : `Créer la liste de ${n}`}
             onCancel={closeModal} onSubmit={c => saveChild(c, modal.list)}
             onDelete={modal.list ? () => deleteChild(modal.list!) : undefined} />

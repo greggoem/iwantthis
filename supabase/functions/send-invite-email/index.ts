@@ -1,5 +1,5 @@
 // Envoie l'e-mail d'invitation à un événement.
-// Appelée par le site, avec la session de l'organisateur (verify_jwt) : la base vérifie qu'il est bien organisateur
+// Appelée par le site, avec la session de la personne qui invite (verify_jwt) : la base vérifie qu'elle en a le droit
 // et limite à un envoi toutes les 2 minutes par invité (fonction SQL request_invite_email).
 // Secrets à définir (Supabase → Edge Functions → Secrets) :
 //   BREVO_API_KEY  ou  RESEND_API_KEY   (l'un des deux)
@@ -23,10 +23,12 @@ Deno.serve(async (req) => {
   const auth = req.headers.get('Authorization')
   if (!auth) return json({ error: 'Non connecté' }, 401)
 
-  let body: { event_id?: string; email?: string }
+  // { event_id, email } ou { invite_id } (invitation d'un proche : le site ne connaît pas son adresse)
+  let body: { event_id?: string; email?: string; invite_id?: string }
   try { body = await req.json() } catch { return json({ error: 'Requête invalide' }, 400) }
-  const eventId = String(body.event_id ?? ''), email = String(body.email ?? '')
-  if (!/^[0-9a-f-]{36}$/i.test(eventId) || !email.includes('@')) return json({ error: 'Requête invalide' }, 400)
+  const eventId = String(body.event_id ?? ''), email = String(body.email ?? ''), inviteId = String(body.invite_id ?? '')
+  const isId = (s: string) => /^[0-9a-f-]{36}$/i.test(s)
+  if (!isId(inviteId) && (!isId(eventId) || !email.includes('@'))) return json({ error: 'Requête invalide' }, 400)
 
   const brevo = Deno.env.get('BREVO_API_KEY'), resend = Deno.env.get('RESEND_API_KEY'), from = Deno.env.get('MAIL_FROM')
   const provider: Provider | null = brevo ? 'brevo' : resend ? 'resend' : null
@@ -34,7 +36,9 @@ Deno.serve(async (req) => {
   if (!provider || !key || !from) return json({ sent: false, reason: 'not_configured' })   // pas encore branché : le site propose l'envoi manuel
 
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, { global: { headers: { Authorization: auth } } })
-  const { data, error } = await supabase.rpc('request_invite_email', { p_event: eventId, p_email: email })
+  const { data, error } = isId(inviteId)
+    ? await supabase.rpc('request_invite_email_by_id', { p_invite: inviteId })
+    : await supabase.rpc('request_invite_email', { p_event: eventId, p_email: email })
   if (error) return json({ sent: false, reason: 'refused', error: error.message }, 200)
   const row = (Array.isArray(data) ? data[0] : data) as InviteMail | undefined
   if (!row) return json({ sent: false, reason: 'refused', error: 'Invitation introuvable' }, 200)

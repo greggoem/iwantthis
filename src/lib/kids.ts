@@ -23,6 +23,10 @@ export function kidShownIn(w: Pick<Wishlist, 'id' | 'child_name' | 'in_events'>,
   return o ? o.shown : w.in_events !== false
 }
 
+/** « enfant de Greg » / « géré par Greg » selon le type de liste gérée */
+export const managedTag = (kind: string | null | undefined, who: string): string =>
+  kind === 'proche' ? `géré par ${who}` : `enfant de ${who}`
+
 /** Dernière liste utilisée sur cet appareil pour ajouter une envie */
 const LAST = 'iwt.lastList'
 export const lastListId = (): string | null => { try { return localStorage.getItem(LAST) } catch { return null } }

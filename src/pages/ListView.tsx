@@ -223,7 +223,7 @@ export default function ListView() {
         {keeper && <PersonDot name={owner} color={list.child_color ?? 'corail'} size={48} />}
         <div className="title-block">
           <h1 style={{ margin: 0 }}>La liste d'envies de {owner}</h1>
-          {keeper && <p className="muted title-sub">{list.child_age ? `${formatAge(list.child_age)} · ` : ''}{myKid ? 'votre enfant' : `liste tenue par ${keeper}`}</p>}
+          {keeper && <p className="muted title-sub">{list.child_age ? `${formatAge(list.child_age)} · ` : ''}{myKid ? (list.managed_kind === 'proche' ? 'liste gérée par vous' : 'votre enfant') : `liste tenue par ${keeper}`}</p>}
         </div>
       </div>
       <p className="muted">{myKid

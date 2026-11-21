@@ -989,3 +989,13 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .draw-excl[open] > * + * { margin-top: .55rem; }
 .draw-excl summary { cursor: pointer; font-weight: 600; }
 .modal-actions { justify-content: flex-end; }
+
+/* Inviter : vos proches */
+.contact-list { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 14px; max-height: 40vh; overflow-y: auto; }
+.contact { flex-direction: row; display: flex; align-items: center; gap: .7rem; padding: .5rem .8rem; border-bottom: 1px solid var(--line); cursor: pointer; font-weight: 400; }
+.contact:last-child { border-bottom: 0; }
+.contact input { width: 18px; height: 18px; flex: none; accent-color: var(--ink); }
+.contact.off { cursor: default; }
+.contact-name { flex: 1; font-weight: 600; }
+.seg > button { border: 0; background: transparent; border-radius: 9px; padding: .55rem .6rem; font: inherit; font-weight: 600; font-size: .9rem; color: var(--muted); cursor: pointer; }
+.seg > button.on { background: var(--surface, #fff); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12); }

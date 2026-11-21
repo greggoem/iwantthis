@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { PersonDot } from '../components/ListPills'
-import { kidShownIn } from '../lib/kids'
+import { kidShownIn, managedTag, KID_COLOR_KEYS } from '../lib/kids'
 import { supabase, errMsg, eventInviteUrl, APP_NAME } from '../lib/supabase'
 import { formatDate } from '../lib/format'
 import type { EventRow, MemberRow } from '../lib/types'
@@ -17,6 +17,8 @@ import { eventMessage, occasionEmoji } from '../lib/shareCard'
 import { removeEventImage, setEventImage } from '../lib/eventImage'
 import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
 import Draws, { type DrawCandidate } from '../components/Draws'
+import ContactPicker from '../components/ContactPicker'
+import ChildForm, { type ChildDraft } from '../components/ChildForm'
 
 interface Invite { id: string; name: string; email: string }
 
@@ -24,7 +26,7 @@ const imageFrom = (dt: DataTransfer | null): File | undefined =>
   Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
 
 const envies = (n: number) => n === 0 ? 'aucune envie' : `${n} envie${n > 1 ? 's' : ''}`
-interface KidRow { id: string; owner_id: string; child_name: string; child_age: string | null; child_color: string | null; in_events: boolean; count: number }
+interface KidRow { id: string; owner_id: string; child_name: string; child_age: string | null; child_color: string | null; in_events: boolean; managed_kind: string | null; count: number }
 interface Override { event_id: string; list_id: string; shown: boolean }
 
 export default function EventDetail() {
@@ -53,6 +55,7 @@ export default function EventDetail() {
   const [eiErr, setEiErr] = useState('')
   const [invName, setInvName] = useState('')
   const [invEmail, setInvEmail] = useState('')
+  const [addManaged, setAddManaged] = useState(false)
   const [newDraw, setNewDraw] = useState(0)
   const [hasDraws, setHasDraws] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -72,19 +75,19 @@ export default function EventDetail() {
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
     const [w, dr, inv, ov] = await Promise.all([
-      supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
+      supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,managed_kind,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
       supabase.rpc('event_draws', { p_event: id! }),
       supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
       supabase.from('event_child_lists').select('event_id,list_id,shown').eq('event_id', id!),
     ])
     setOverrides((ov.data as Override[]) ?? [])
     setInvites((inv.data as Invite[]) ?? [])
-    type WRow = { id: string; owner_id: string; child_name: string | null; child_age: string | null; child_color: string | null; in_events: boolean; items?: { count: number }[] }
+    type WRow = { id: string; owner_id: string; child_name: string | null; child_age: string | null; child_color: string | null; in_events: boolean; managed_kind: string | null; items?: { count: number }[] }
     const all = (w.data as WRow[]) ?? []
     const wl = all.filter(l => !l.child_name)
     setLists(Object.fromEntries(wl.map(l => [l.owner_id, l.id])))
     setCounts(Object.fromEntries(wl.map(l => [l.owner_id, l.items?.[0]?.count ?? 0])))
-    setKidLists(all.filter(l => l.child_name).map(l => ({ id: l.id, owner_id: l.owner_id, child_name: l.child_name!, child_age: l.child_age, child_color: l.child_color, in_events: l.in_events, count: l.items?.[0]?.count ?? 0 })))
+    setKidLists(all.filter(l => l.child_name).map(l => ({ id: l.id, owner_id: l.owner_id, child_name: l.child_name!, child_age: l.child_age, child_color: l.child_color, in_events: l.in_events, managed_kind: l.managed_kind, count: l.items?.[0]?.count ?? 0 })))
     setHasDraws(((dr.data as unknown[]) ?? []).length > 0)
     setLoading(false)
   }, [id])
@@ -162,6 +165,18 @@ export default function EventDetail() {
     setInvName(''); setInvEmail('')
     await load()
   }
+  // proche sans compte (ou enfant) : sa liste est créée et affichée dans cet événement
+  const createManaged = async (c: ChildDraft): Promise<string | null> => {
+    const { data, error } = await supabase.rpc('create_child_list', { p_name: c.name, p_age: c.age || null, p_color: c.color, p_in_events: c.inEvents, p_kind: c.kind })
+    if (error) return errMsg(error)
+    const nl = (Array.isArray(data) ? data[0] : data) as { id: string }
+    if (!c.inEvents) await supabase.from('event_child_lists').upsert({ event_id: id!, list_id: nl.id, shown: true })
+    setAddManaged(false); setInviteOpen(false)
+    setErr(''); setMsg(`${c.name} fait partie de l'événement. Ajoutez ses envies depuis « Ma liste ».`)
+    await load()
+    return null
+  }
+  const nextColor = () => KID_COLOR_KEYS.find(k => !kidLists.some(l => l.owner_id === me && l.child_color === k)) ?? 'corail'
   const openEditInvite = (i: Invite) => { setEditInv(i); setEiName(i.name); setEiEmail(i.email); setEiErr('') }
   const saveInvite = async (e: FormEvent) => {
     e.preventDefault()
@@ -296,9 +311,9 @@ export default function EventDetail() {
 
       {drawOn && <Draws eventId={id!} isOrg={isOrg} me={me!} candidates={drawCandidates} pendingInvites={invites.length} openNew={newDraw} onChanged={load} />}
 
-      {isOrg && invites.length > 0 && (
+      {invites.length > 0 && (
         <>
-          <h2 className="mt">En attente ({invites.length})</h2>
+          <h2 className="mt">{isOrg ? 'En attente' : 'Vos invitations en attente'} ({invites.length})</h2>
           <ul className="items">
             {invites.map(i => (
               <li key={i.id} className="card item">
@@ -323,21 +338,31 @@ export default function EventDetail() {
         <Modal title="Inviter des proches" onClose={() => setInviteOpen(false)} wide>
           <div className="stack">
             <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+            <ContactPicker eventId={id!} onInvited={(names, mailed) => { setErr(''); setMsg(`${names.length > 1 ? `${names.length} proches invités` : `${names[0] ?? 'Votre proche'} est invité·e`} : ${names.length > 1 ? 'ils ont' : 'il ou elle a'} reçu une notification${mailed ? ' et un e-mail' : ''} et ${names.length > 1 ? 'choisiront' : 'choisira'} de rejoindre l'événement.`); load() }} />
+            <hr />
+            <h3 style={{ margin: 0 }}>Par un lien</h3>
             <p className="small muted" style={{ margin: 0 }}>Ils ouvrent ce lien, se connectent, puis choisissent de rejoindre l'événement. Les listes de tous les invités deviennent alors visibles entre eux.</p>
             <CopyField value={eventInviteUrl(ev.invite_code)} share={() => { setInviteOpen(false); setShareOpen(true) }} />
-            {isOrg && (
-              <>
-                <hr />
-                <h3>Ajouter quelqu'un par son nom et son e-mail</h3>
-                <p className="small muted">La personne reçoit un e-mail (et une notification si elle a déjà un compte) et choisit de rejoindre l'événement ou de refuser : rien n'est visible avant son accord.</p>
-                <form className="invite-form" onSubmit={addInvite}>
-                  <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
-                  <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
-                  <button className="btn btn-primary">Ajouter</button>
-                </form>
-              </>
-            )}
+            <hr />
+            <h3 style={{ margin: 0 }}>Par son nom et son e-mail</h3>
+            <p className="small muted">La personne reçoit un e-mail (et une notification si elle a déjà un compte) et choisit de rejoindre l'événement ou de refuser : rien n'est visible avant son accord.</p>
+            <form className="invite-form" onSubmit={addInvite}>
+              <input required maxLength={80} value={invName} onChange={e => setInvName(e.target.value)} placeholder="Nom (ex. Marie)" aria-label="Nom" />
+              <input required type="email" maxLength={200} value={invEmail} onChange={e => setInvEmail(e.target.value)} placeholder="E-mail" aria-label="E-mail" />
+              <button className="btn btn-primary">Ajouter</button>
+            </form>
+            <hr />
+            <div className="row between wrap gap">
+              <span><strong>Un proche sans e-mail ?</strong><br /><span className="small muted">Grand-parent, enfant… vous gérez sa liste depuis votre compte.</span></span>
+              <button type="button" className="btn" onClick={() => { setInviteOpen(false); setAddManaged(true) }}><Icon name="plus" size={16} /> Ajouter sa liste</button>
+            </div>
           </div>
+        </Modal>
+      )}
+      {addManaged && (
+        <Modal title="Ajouter un proche sans compte" onClose={() => setAddManaged(false)}>
+          <ChildForm initial={{ name: '', age: '', color: nextColor(), inEvents: true, kind: 'proche' }}
+            submitLabel={n => `Ajouter ${n} à l'événement`} onCancel={() => setAddManaged(false)} onSubmit={createManaged} />
         </Modal>
       )}
       {shareOpen && (
@@ -394,7 +419,7 @@ export default function EventDetail() {
                 <PersonDot name={g.kid.child_name} color={g.kid.child_color ?? 'corail'} size={28} />
                 <strong>{g.kid.child_name}</strong>
               </span>
-              <span className="tag">enfant de {g.kid.owner_id === me ? 'vous' : name(g.kid.owner_id)}</span>
+              <span className="tag">{managedTag(g.kid.managed_kind, g.kid.owner_id === me ? 'vous' : name(g.kid.owner_id))}</span>
               <span className="small muted wish-count">{envies(g.kid.count)}</span>
             </div>
             <div className="item-actions">

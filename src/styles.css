@@ -1003,3 +1003,8 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .contact-new { width: 100%; background: none; border: 0; text-align: left; font: inherit; color: var(--ink); }
 .contact-plus { width: 30px; height: 30px; border-radius: 999px; border: 1.5px dashed var(--line-strong, #c9c9cf); display: grid; place-items: center; flex: none; margin-left: 28px; }
 .contact-empty { padding: .7rem .8rem; margin: 0; border-bottom: 1px solid var(--line); }
+
+/* Administration : relances */
+.reminders { margin-bottom: 1.2rem; }
+.reminder-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.reminder { display: flex; flex-direction: column; gap: .35rem; margin: 0; }

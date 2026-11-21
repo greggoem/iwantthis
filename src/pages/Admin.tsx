@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
+import { useConfirm } from '../components/Confirm'
 import { supabase, errMsg } from '../lib/supabase'
 import { Notice, Spinner } from '../components/ui'
 import Icon from '../components/Icon'
@@ -276,6 +277,63 @@ interface Member {
 type SortKey = 'created_at' | 'last_sign_in_at' | 'email' | 'display_name' | 'wishes' | 'gifts'
 const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('fr-BE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '–'
 
+interface ReminderStat { kind: 'activation' | 'first_wish'; pending: number; sent: number; last_sent: string | null }
+const REMINDERS: Record<ReminderStat['kind'], { title: string; who: string; what: string }> = {
+  activation: { title: 'Pas encore commencé', who: 'Inscrits depuis plus d\'un jour, jamais connectés ou sans liste', what: '« Votre liste d\'envies vous attend » : connexion sans mot de passe, comment ajouter et partager.' },
+  first_wish: { title: 'Liste sans envie', who: 'Connectés, liste créée, mais aucune envie', what: '« Ajoutez votre première envie en un clic » : liens vers les extensions Chrome, Edge, Firefox et le partage sur téléphone.' },
+}
+
+/** Relances par e-mail : une seule fois par personne et par type */
+function Reminders() {
+  const confirm = useConfirm()
+  const [stats, setStats] = useState<ReminderStat[] | null>(null)
+  const [busy, setBusy] = useState('')
+  const [msg, setMsg] = useState('')
+  const [err, setErr] = useState('')
+  const load = useCallback(() => {
+    supabase.rpc('admin_reminders').then(({ data, error }) => {
+      if (error) { setErr(errMsg(error)); return }
+      setStats(((data as ReminderStat[]) ?? []).map(r => ({ ...r, pending: Number(r.pending), sent: Number(r.sent) })))
+    })
+  }, [])
+  useEffect(() => { load() }, [load])
+  const send = async (r: ReminderStat) => {
+    const t = REMINDERS[r.kind]
+    if (!(await confirm({ title: `Envoyer « ${t.title} » ?`, message: `${r.pending} personne${r.pending > 1 ? 's' : ''} ${r.pending > 1 ? 'vont' : 'va'} recevoir cet e-mail. Chacune ne le reçoit qu'une fois.`, confirmLabel: 'Envoyer' }))) return
+    setBusy(r.kind); setMsg(''); setErr('')
+    const { data, error } = await supabase.functions.invoke('send-reminders', { body: { kind: r.kind } })
+    const res = data as { sent?: number; total?: number; reason?: string; error?: string } | null
+    setBusy('')
+    if (error || !res) setErr('L\'envoi n\'a pas abouti.')
+    else if (res.reason === 'not_configured') setErr('L\'envoi d\'e-mails n\'est pas configuré.')
+    else if (res.reason === 'refused') setErr(res.error ?? 'Envoi refusé.')
+    else setMsg(`${res.sent} e-mail${(res.sent ?? 0) > 1 ? 's' : ''} envoyé${(res.sent ?? 0) > 1 ? 's' : ''}${res.total !== res.sent ? ` sur ${res.total}` : ''}.`)
+    load()
+  }
+  if (!stats) return null
+  return (
+    <section className="reminders">
+      <h3 style={{ margin: '0 0 .5rem' }}>Relances par e-mail</h3>
+      <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+      <div className="reminder-grid">
+        {stats.map(r => (
+          <div key={r.kind} className="card reminder">
+            <strong>{REMINDERS[r.kind].title}</strong>
+            <span className="small muted">{REMINDERS[r.kind].who}</span>
+            <span className="small">{REMINDERS[r.kind].what}</span>
+            <span className="small muted">{r.sent ? `Déjà relancés : ${r.sent}${r.last_sent ? ` (dernier envoi le ${fmtDate(r.last_sent)})` : ''}` : 'Jamais envoyée'}</span>
+            <div>
+              <button type="button" className="btn btn-sm btn-primary" disabled={!r.pending || busy === r.kind} onClick={() => send(r)}>
+                {busy === r.kind ? 'Envoi…' : r.pending ? `Envoyer à ${r.pending} personne${r.pending > 1 ? 's' : ''}` : 'Personne à relancer'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 /** Liste des inscrits : adresse, prénom, nombre d'envies et de cadeaux réservés */
 function UsersTab({ onDenied }: { onDenied: () => void }) {
   const [rows, setRows] = useState<Member[] | null>(null)
@@ -316,6 +374,7 @@ function UsersTab({ onDenied }: { onDenied: () => void }) {
   const tot = (k: 'wishes' | 'gifts') => shown.reduce((s, r) => s + r[k], 0)
   return (
     <div>
+      <Reminders />
       <Notice>{err}</Notice>
       <div className="users-bar">
         <input type="search" placeholder="Rechercher un e-mail ou un prénom" value={q} onChange={e => setQ(e.target.value)} aria-label="Rechercher" />

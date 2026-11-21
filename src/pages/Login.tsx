@@ -32,7 +32,12 @@ export default function Login() {
   const pending = sessionStorage.getItem('postLoginPath') ?? ''
   const invite = pending.startsWith('/l/') ? 'list' : pending.startsWith('/e/') ? 'event' : null
   const [mode, setMode] = useState<Mode>('start')
-  const [email, setEmail] = useState(() => { try { return localStorage.getItem('iwt.lastEmail') ?? '' } catch { return '' } })
+  // lien des e-mails de relance : #/login?email=… préremplit l'adresse
+  const [email, setEmail] = useState(() => {
+    const fromLink = new URLSearchParams(window.location.hash.split('?')[1] ?? '').get('email')
+    if (fromLink && fromLink.includes('@')) return fromLink.slice(0, 200)
+    try { return localStorage.getItem('iwt.lastEmail') ?? '' } catch { return '' }
+  })
   const [code, setCode] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState('')

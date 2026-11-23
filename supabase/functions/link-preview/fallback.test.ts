@@ -21,3 +21,10 @@ Deno.test('chain', async () => {
   const r4 = await fillGaps({ found: false, reason: 'bloqué' }, new URL('https://z.com/a'), { json: async () => { throw new Error() }, ok: async () => false })
   eq([r4.found, r4.reason], [false, 'bloqué'])
 })
+import { isShortLink, googleRedirectTarget } from './parse.ts'
+Deno.test('liens Google', () => {
+  eq(isShortLink(new URL('https://share.google/7WeMC1jq1cbu8Y4Im')), true)
+  eq(googleRedirectTarget(new URL('https://www.google.com/url?q=https://shop.be/p/1&sa=U')), 'https://shop.be/p/1')
+  eq(googleRedirectTarget(new URL('https://www.google.com/aclk?sa=L&adurl=')), undefined)
+  eq(isShortLink(new URL('https://www.google.com/search?q=x')), false)
+})

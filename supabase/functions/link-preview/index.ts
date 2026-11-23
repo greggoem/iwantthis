@@ -3,7 +3,7 @@
 // - bloque les adresses internes (protection SSRF) et limite la taille / la durée
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { parseProductPage, isShortLink, cleanProductUrl, type Preview } from './parse.ts'
+import { parseProductPage, isShortLink, cleanProductUrl, googleRedirectTarget, type Preview } from './parse.ts'
 import { fillGaps } from './fallback.ts'
 
 const CORS = {
@@ -99,6 +99,8 @@ async function fetchHtml(start: URL): Promise<{ html: string; finalUrl: string }
 async function resolveShort(start: URL): Promise<URL> {
   let url = start
   for (let hop = 0; hop <= MAX_REDIRECTS && isShortLink(url); hop++) {
+    const google = googleRedirectTarget(url)
+    if (google) { url = new URL(google); continue }
     await assertPublic(url)
     const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': UA } })
     res.body?.cancel().catch(() => {})

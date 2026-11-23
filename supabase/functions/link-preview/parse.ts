@@ -14,11 +14,20 @@ export interface Preview {
 }
 
 /** Raccourcisseurs de liens des magasins (le vrai lien est obtenu en suivant la redirection) */
-export const SHORT_HOSTS = ['amzn.eu', 'amzn.to', 'a.co', 'amzn.asia']
+export const SHORT_HOSTS = ['amzn.eu', 'amzn.to', 'a.co', 'amzn.asia',
+  // partage depuis l'appli Google / Google Lens / Chrome sur mobile
+  'share.google', 'search.app', 'goo.gl', 'g.co']
 
 export function isShortLink(u: URL): boolean {
   const h = u.hostname.toLowerCase().replace(/^www\./, '')
-  return SHORT_HOSTS.includes(h)
+  return SHORT_HOSTS.includes(h) || googleRedirectTarget(u) !== undefined
+}
+
+/** Lien de redirection Google (google.xx/url?q=…, /aclk?…&adurl=…) → adresse de destination */
+export function googleRedirectTarget(u: URL): string | undefined {
+  if (!/^(www\.)?google\.[a-z.]+$/i.test(u.hostname) || !/^\/(url|aclk)$/.test(u.pathname)) return undefined
+  const dest = u.searchParams.get('q') || u.searchParams.get('url') || u.searchParams.get('adurl')
+  return dest && /^https?:\/\//i.test(dest) ? dest : undefined
 }
 
 /** Fiche Amazon → https://www.amazon.xx/dp/ASIN (retire ref=, tag= d'autrui, suivi…). Autres liens : inchangés. */

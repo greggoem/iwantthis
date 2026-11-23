@@ -4,6 +4,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { parseProductPage, isShortLink, cleanProductUrl, type Preview } from './parse.ts'
+import { fillGaps } from './fallback.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -108,6 +109,28 @@ async function resolveShort(start: URL): Promise<URL> {
   return url
 }
 
+/** JSON d'une adresse publique (fiche Shopify, service de secours), plafonné en taille et en durée */
+async function fetchJson(raw: string, headers: Record<string, string> = {}): Promise<unknown> {
+  const u = new URL(raw)
+  await assertPublic(u)
+  const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(7000), headers: { 'User-Agent': UA, Accept: 'application/json', ...headers } })
+  if (!res.ok) { res.body?.cancel().catch(() => {}); throw new Error(`HTTP ${res.status}`) }
+  const text = await res.text()
+  if (text.length > MAX_BYTES) throw new Error('Réponse trop grande')
+  return JSON.parse(text)
+}
+
+/** L'adresse répond-elle avec une image ? (couverture de livre) */
+async function fetchOk(raw: string): Promise<boolean> {
+  const u = new URL(raw)
+  await assertPublic(u)
+  const res = await fetch(u, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': UA } })
+  res.body?.cancel().catch(() => {})
+  return res.ok && /^image\//i.test(res.headers.get('content-type') ?? '')
+}
+
+const NET = { json: fetchJson, ok: fetchOk, microlinkKey: Deno.env.get('MICROLINK_API_KEY') || undefined }
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
@@ -134,11 +157,21 @@ Deno.serve(async (req) => {
   // 2) lecture de la fiche
   try {
     const { html, finalUrl } = await fetchHtml(new URL(clean))
-    const preview = parseProductPage(html, finalUrl)
+    let preview = parseProductPage(html, finalUrl)
+    // 3) pas d'image : solutions de secours (fiche Shopify, couverture de livre, service d'aperçu)
+    if (!preview.image) preview = await fillGaps(preview, new URL(finalUrl), NET)
     if (!preview.found && !preview.reason) preview.reason = 'Aucune information produit lisible sur cette page'
     return json({ ...preview, url })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Lecture impossible'
-    return json({ found: false, url, reason: msg.includes('abort') || msg.includes('timed out') ? 'Le site met trop de temps à répondre' : msg } satisfies Preview)
+    const reason = msg.includes('abort') || msg.includes('timed out') ? 'Le site met trop de temps à répondre' : msg
+    // le site refuse la lecture : on tente quand même les solutions de secours
+    let dest: URL | undefined
+    try { dest = new URL(clean) } catch { /* lien invalide */ }
+    if (dest && !/Adresse non autorisée|Port non autorisé|Site introuvable/.test(msg)) {
+      const rescued = await fillGaps({ found: false, reason }, dest, NET)
+      if (rescued.found) return json({ ...rescued, url })
+    }
+    return json({ found: false, url, reason } satisfies Preview)
   }
 })

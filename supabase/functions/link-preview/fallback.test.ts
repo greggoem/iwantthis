@@ -28,3 +28,9 @@ Deno.test('liens Google', () => {
   eq(googleRedirectTarget(new URL('https://www.google.com/aclk?sa=L&adurl=')), undefined)
   eq(isShortLink(new URL('https://www.google.com/search?q=x')), false)
 })
+Deno.test('page d’attente Google', () => {
+  eq(isShortLink(new URL('https://www.google.com/share.google?q=abc')), true)
+})
+Deno.test('recherche d’images Google', () => {
+  eq(googleRedirectTarget(new URL('https://www.google.com/imgres?imgurl=https://m.media-amazon.com/x.jpg&imgrefurl=https://www.amazon.com.be/dp/B0BR53V7GN&w=1')), 'https://www.amazon.com.be/dp/B0BR53V7GN')
+})

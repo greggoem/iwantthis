@@ -41,9 +41,15 @@ export function fromShopify(json: unknown): Partial<Preview> {
 }
 
 export function fromMicrolink(json: unknown): Partial<Preview> {
-  const r = json as { status?: string; data?: { title?: string; image?: { url?: string }; publisher?: string } } | null
+  const r = json as { status?: string; data?: { title?: string; url?: string; image?: { url?: string }; publisher?: string } } | null
   if (!r || r.status !== 'success' || !r.data) return {}
-  return { title: r.data.title?.slice(0, 200) || undefined, image: httpsUrl(r.data.image?.url) }
+  return { title: r.data.title?.slice(0, 200) || undefined, image: httpsUrl(r.data.image?.url), url: httpsUrl(r.data.url) }
+}
+
+/** Service d'aperçu (navigateur distant) : sert aussi à suivre les liens courts que Google refuse de rediriger pour un serveur */
+export async function microlink(target: URL, net: { json: JsonFetcher; microlinkKey?: string }): Promise<Partial<Preview>> {
+  const api = net.microlinkKey ? 'https://pro.microlink.io/' : 'https://api.microlink.io/'
+  return fromMicrolink(await net.json(`${api}?url=${encodeURIComponent(target.toString())}`, net.microlinkKey ? { 'x-api-key': net.microlinkKey } : undefined))
 }
 
 /** Complète l'aperçu (image surtout) avec les solutions de secours, de la moins coûteuse à la plus coûteuse */
@@ -63,10 +69,7 @@ export async function fillGaps(p: Preview, target: URL, net: { json: JsonFetcher
   if (cover) { try { if (await net.ok(cover)) merge({ image: cover }) } catch { /* pas de couverture */ } }
 
   if (!out.image) {
-    try {
-      const api = net.microlinkKey ? 'https://pro.microlink.io/' : 'https://api.microlink.io/'
-      merge(fromMicrolink(await net.json(`${api}?url=${encodeURIComponent(target.toString())}`, net.microlinkKey ? { 'x-api-key': net.microlinkKey } : undefined)))
-    } catch { /* service de secours indisponible ou quota atteint */ }
+    try { const { url: _u, ...m } = await microlink(target, net); merge(m) } catch { /* service de secours indisponible ou quota atteint */ }
   }
 
   out.found = Boolean(out.image || out.title || out.price !== undefined)

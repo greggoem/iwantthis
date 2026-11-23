@@ -3,8 +3,8 @@
 // - bloque les adresses internes (protection SSRF) et limite la taille / la durée
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { parseProductPage, isShortLink, cleanProductUrl, googleRedirectTarget, type Preview } from './parse.ts'
-import { fillGaps } from './fallback.ts'
+import type { Preview } from './parse.ts'
+import { computePreview } from './core.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -13,125 +13,6 @@ const CORS = {
 }
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
-
-const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
-const MAX_BYTES = 2_000_000
-const MAX_REDIRECTS = 4
-
-function isPrivateIp(ip: string): boolean {
-  if (ip.includes(':')) {
-    const v = ip.toLowerCase()
-    if (v === '::1' || v === '::') return true
-    if (v.startsWith('fc') || v.startsWith('fd') || v.startsWith('fe8') || v.startsWith('fe9') || v.startsWith('fea') || v.startsWith('feb')) return true
-    const mapped = v.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
-    return mapped ? isPrivateIp(mapped[1]) : false
-  }
-  const p = ip.split('.').map(Number)
-  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true
-  const [a, b] = p
-  return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) ||
-    (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224
-}
-
-async function assertPublic(u: URL): Promise<void> {
-  if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('Adresse non autorisée')
-  if (u.port && u.port !== '80' && u.port !== '443') throw new Error('Port non autorisé')
-  if (u.username || u.password) throw new Error('Adresse non autorisée')
-  const host = u.hostname.toLowerCase()
-  if (host === 'localhost' || host.endsWith('.local') || host.endsWith('.internal') || host.endsWith('.localhost')) {
-    throw new Error('Adresse non autorisée')
-  }
-  if (/^[\d.]+$/.test(host) || host.startsWith('[')) {
-    if (isPrivateIp(host.replace(/^\[|\]$/g, ''))) throw new Error('Adresse non autorisée')
-    return
-  }
-  const [a, aaaa] = await Promise.all([
-    Deno.resolveDns(host, 'A').catch(() => [] as string[]),
-    Deno.resolveDns(host, 'AAAA').catch(() => [] as string[]),
-  ])
-  const all = [...a, ...aaaa]
-  if (all.length === 0) throw new Error('Site introuvable')
-  if (all.some(isPrivateIp)) throw new Error('Adresse non autorisée')
-}
-
-async function fetchHtml(start: URL): Promise<{ html: string; finalUrl: string }> {
-  let url = start
-  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    await assertPublic(url)
-    const res = await fetch(url, {
-      redirect: 'manual',
-      signal: AbortSignal.timeout(8000),
-      headers: { 'User-Agent': UA, 'Accept': 'text/html,application/xhtml+xml', 'Accept-Language': 'fr-BE,fr;q=0.9,en;q=0.6' },
-    })
-    if (res.status >= 300 && res.status < 400 && res.headers.get('location')) {
-      url = new URL(res.headers.get('location')!, url)
-      continue
-    }
-    if (res.status >= 400) throw new Error(`Le site refuse la lecture automatique (code ${res.status})`)
-    const type = res.headers.get('content-type') ?? ''
-    if (!/html|xml/i.test(type)) throw new Error('Ce lien ne mène pas à une page web')
-
-    // lecture plafonnée
-    const reader = res.body?.getReader()
-    if (!reader) throw new Error('Page vide')
-    const chunks: Uint8Array[] = []
-    let total = 0
-    while (total < MAX_BYTES) {
-      const { done, value } = await reader.read()
-      if (done || !value) break
-      chunks.push(value)
-      total += value.length
-    }
-    reader.cancel().catch(() => {})
-    const buf = new Uint8Array(total)
-    let off = 0
-    for (const c of chunks) { buf.set(c, off); off += c.length }
-    const charset = type.match(/charset=([\w-]+)/i)?.[1]?.toLowerCase()
-    let html: string
-    try { html = new TextDecoder(charset && charset !== 'utf-8' ? charset : 'utf-8').decode(buf) }
-    catch { html = new TextDecoder('utf-8').decode(buf) }
-    return { html, finalUrl: url.toString() }
-  }
-  throw new Error('Trop de redirections')
-}
-
-/** Suit les redirections d'un lien court (amzn.eu…) sans lire la page : renvoie l'adresse de destination */
-async function resolveShort(start: URL): Promise<URL> {
-  let url = start
-  for (let hop = 0; hop <= MAX_REDIRECTS && isShortLink(url); hop++) {
-    const google = googleRedirectTarget(url)
-    if (google) { url = new URL(google); continue }
-    await assertPublic(url)
-    const res = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': UA } })
-    res.body?.cancel().catch(() => {})
-    const loc = res.headers.get('location')
-    if (res.status < 300 || res.status >= 400 || !loc) break
-    url = new URL(loc, url)
-  }
-  return url
-}
-
-/** JSON d'une adresse publique (fiche Shopify, service de secours), plafonné en taille et en durée */
-async function fetchJson(raw: string, headers: Record<string, string> = {}): Promise<unknown> {
-  const u = new URL(raw)
-  await assertPublic(u)
-  const res = await fetch(u, { redirect: 'follow', signal: AbortSignal.timeout(7000), headers: { 'User-Agent': UA, Accept: 'application/json', ...headers } })
-  if (!res.ok) { res.body?.cancel().catch(() => {}); throw new Error(`HTTP ${res.status}`) }
-  const text = await res.text()
-  if (text.length > MAX_BYTES) throw new Error('Réponse trop grande')
-  return JSON.parse(text)
-}
-
-/** L'adresse répond-elle avec une image ? (couverture de livre) */
-async function fetchOk(raw: string): Promise<boolean> {
-  const u = new URL(raw)
-  await assertPublic(u)
-  const res = await fetch(u, { method: 'GET', redirect: 'follow', signal: AbortSignal.timeout(6000), headers: { 'User-Agent': UA } })
-  res.body?.cancel().catch(() => {})
-  return res.ok && /^image\//i.test(res.headers.get('content-type') ?? '')
-}
-
-const NET = { json: fetchJson, ok: fetchOk, microlinkKey: Deno.env.get('MICROLINK_API_KEY') || undefined }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
@@ -147,33 +28,5 @@ Deno.serve(async (req) => {
   let raw: string
   try { raw = String((await req.json()).url ?? '').trim() } catch { return json({ error: 'Requête invalide' }, 400) }
   if (!raw || raw.length > 2000) return json({ found: false, reason: 'Lien manquant' } satisfies Preview)
-
-  // 1) lien court résolu + lien produit nettoyé (renvoyé même si la page ne se laisse pas lire)
-  let start: URL
-  try { start = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`) } catch { return json({ found: false, reason: 'Lien invalide' } satisfies Preview) }
-  let target = start
-  try { if (isShortLink(start)) target = await resolveShort(start) } catch { /* on garde le lien tel quel */ }
-  const clean = cleanProductUrl(target.toString())
-  const url = clean !== start.toString() && !isShortLink(new URL(clean)) ? clean : undefined
-
-  // 2) lecture de la fiche
-  try {
-    const { html, finalUrl } = await fetchHtml(new URL(clean))
-    let preview = parseProductPage(html, finalUrl)
-    // 3) pas d'image : solutions de secours (fiche Shopify, couverture de livre, service d'aperçu)
-    if (!preview.image) preview = await fillGaps(preview, new URL(finalUrl), NET)
-    if (!preview.found && !preview.reason) preview.reason = 'Aucune information produit lisible sur cette page'
-    return json({ ...preview, url })
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : 'Lecture impossible'
-    const reason = msg.includes('abort') || msg.includes('timed out') ? 'Le site met trop de temps à répondre' : msg
-    // le site refuse la lecture : on tente quand même les solutions de secours
-    let dest: URL | undefined
-    try { dest = new URL(clean) } catch { /* lien invalide */ }
-    if (dest && !/Adresse non autorisée|Port non autorisé|Site introuvable/.test(msg)) {
-      const rescued = await fillGaps({ found: false, reason }, dest, NET)
-      if (rescued.found) return json({ ...rescued, url })
-    }
-    return json({ found: false, url, reason } satisfies Preview)
-  }
+  return json(await computePreview(raw))
 })

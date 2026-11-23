@@ -20,13 +20,16 @@ export const SHORT_HOSTS = ['amzn.eu', 'amzn.to', 'a.co', 'amzn.asia',
 
 export function isShortLink(u: URL): boolean {
   const h = u.hostname.toLowerCase().replace(/^www\./, '')
-  return SHORT_HOSTS.includes(h) || googleRedirectTarget(u) !== undefined
+  return SHORT_HOSTS.includes(h) || googleRedirectTarget(u) !== undefined ||
+    // page d'attente de Google quand share.google est ouvert depuis un serveur
+    (/^(www\.)?google\.[a-z.]+$/i.test(u.hostname) && u.pathname === '/share.google')
 }
 
-/** Lien de redirection Google (google.xx/url?q=…, /aclk?…&adurl=…) → adresse de destination */
+/** Lien de redirection Google (google.xx/url?q=…, /aclk?…&adurl=…, /imgres?imgrefurl=…) → adresse de destination */
 export function googleRedirectTarget(u: URL): string | undefined {
-  if (!/^(www\.)?google\.[a-z.]+$/i.test(u.hostname) || !/^\/(url|aclk)$/.test(u.pathname)) return undefined
-  const dest = u.searchParams.get('q') || u.searchParams.get('url') || u.searchParams.get('adurl')
+  if (!/^(www\.)?google\.[a-z.]+$/i.test(u.hostname) || !/^\/(url|aclk|imgres)$/.test(u.pathname)) return undefined
+  // /imgres : résultat de recherche d'images → page d'origine de l'image
+  const dest = u.searchParams.get('imgrefurl') || u.searchParams.get('q') || u.searchParams.get('url') || u.searchParams.get('adurl')
   return dest && /^https?:\/\//i.test(dest) ? dest : undefined
 }
 

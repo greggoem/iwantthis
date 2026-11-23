@@ -35,6 +35,7 @@ export default function SharedLists() {
   const [sort, setSort] = useState<Sort>('name')
   const [openEv, setOpenEv] = useState<Record<string, boolean>>({})
   const [overrides, setOverrides] = useState<Override[]>([])
+  const [keepers, setKeepers] = useState<Record<string, { id: string; name: string }[]>>({})   // listes d'enfant : les parents qui la gèrent
 
   useEffect(() => {
     (async () => {
@@ -50,11 +51,25 @@ export default function SharedLists() {
       if (r.length) {
         const { data: p } = await supabase.from('profiles').select('id,display_name').in('id', r.map(x => x.owner_id))
         setNames(Object.fromEntries((p ?? []).map((x: { id: string; display_name: string }) => [x.id, x.display_name])))
+        const kids = r.filter(x => x.child_name).map(x => x.id)
+        if (kids.length) {
+          const { data: k } = await supabase.rpc('list_keepers', { p_lists: kids })
+          const m: Record<string, { id: string; name: string }[]> = {}
+          for (const x of (k as { list_id: string; user_id: string; display_name: string }[]) ?? []) (m[x.list_id] ??= []).push({ id: x.user_id, name: x.display_name })
+          setKeepers(m)
+        }
       }
       setLoading(false)
     })()
   }, [session])
 
+  const keeperText = (r: Row) => {
+    const me = session!.user.id
+    const ks = keepers[r.id] ?? (names[r.owner_id] ? [{ id: r.owner_id, name: names[r.owner_id] }] : [])
+    if (r.owner_id === me || ks.some(k => k.id === me)) return ' · votre enfant'
+    const n = ks.map(k => k.name)
+    return n.length ? ` · liste tenue par ${n.length > 1 ? `${n.slice(0, -1).join(', ')} et ${n[n.length - 1]}` : n[0]}` : ''
+  }
   const submit = (e: FormEvent) => {
     e.preventDefault()
     const m = paste.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)
@@ -69,7 +84,7 @@ export default function SharedLists() {
     const m: Record<string, Ev[]> = {}
     for (const e of events) {
       const ids = new Set((e.event_members ?? []).map(x => x.user_id))
-      for (const r of rows) if (ids.has(r.owner_id) && kidShownIn(r, e.id, overrides)) (m[r.id] ??= []).push(e)
+      for (const r of rows) if ((ids.has(r.owner_id) || keepers[r.id]?.some(k => ids.has(k.id))) && kidShownIn(r, e.id, overrides)) (m[r.id] ??= []).push(e)
     }
     for (const k in m) m[k].sort((a, b) => {
       const fa = a.event_date >= today, fb = b.event_date >= today
@@ -77,7 +92,7 @@ export default function SharedLists() {
       return fa ? a.event_date.localeCompare(b.event_date) : b.event_date.localeCompare(a.event_date)
     })
     return m
-  }, [events, rows, overrides, today])
+  }, [events, rows, overrides, keepers, today])
 
   const shown = useMemo(() => {
     const nm = (r: Row) => listPerson(r, names, '')
@@ -126,7 +141,7 @@ export default function SharedLists() {
         <div className="item-main">
           <p className="pcard-name">
             <Link className="pcard-link" to={`/listes/${r.id}`}>{listPerson(r, names)}</Link>
-            <span className="small muted wish-count">{r.child_age ? `${formatAge(r.child_age)} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name ? (r.owner_id === session!.user.id ? ' · votre enfant' : names[r.owner_id] ? ` · liste tenue par ${names[r.owner_id]}` : '') : ''}</span>
+            <span className="small muted wish-count">{r.child_age ? `${formatAge(r.child_age)} · ` : ''}{(n => n === 0 ? 'aucune envie pour l\'instant' : `${n} envie${n > 1 ? 's' : ''}`)(r.items?.[0]?.count ?? 0)}{r.child_name ? keeperText(r) : ''}</span>
           </p>
           {withEvents && ev.length > 0 && (
             <div className="pcard-evs">

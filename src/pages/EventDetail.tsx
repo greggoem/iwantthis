@@ -26,7 +26,7 @@ const imageFrom = (dt: DataTransfer | null): File | undefined =>
   Array.from(dt?.files ?? []).find(f => f.type.startsWith('image/')) ?? Array.from(dt?.items ?? []).find(i => i.type.startsWith('image/'))?.getAsFile() ?? undefined
 
 const envies = (n: number) => n === 0 ? 'aucune envie' : `${n} envie${n > 1 ? 's' : ''}`
-interface KidRow { id: string; owner_id: string; child_name: string; child_age: string | null; child_color: string | null; in_events: boolean; managed_kind: string | null; count: number }
+interface KidRow { id: string; owner_id: string; child_name: string; child_age: string | null; child_color: string | null; in_events: boolean; managed_kind: string | null; count: number; managers: string[] }
 interface Override { event_id: string; list_id: string; shown: boolean }
 
 export default function EventDetail() {
@@ -74,11 +74,12 @@ export default function EventDetail() {
     const { data: m } = await supabase.from('event_members').select('event_id,user_id,in_draw,profiles(display_name)').eq('event_id', id!)
     const mem = ((m as unknown as MemberRow[]) ?? []).sort((a, b) => (a.profiles?.display_name ?? '').localeCompare(b.profiles?.display_name ?? ''))
     setMembers(mem)
-    const [w, dr, inv, ov] = await Promise.all([
-      supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,managed_kind,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)),
+    const [w, dr, inv, ov, kl] = await Promise.all([
+      supabase.from('wishlists').select('id,owner_id,child_name,child_age,child_color,in_events,managed_kind,items(count)').eq('items.is_group', false).in('owner_id', mem.map(k => k.user_id)).is('child_name', null),
       supabase.rpc('event_draws', { p_event: id! }),
       supabase.from('event_invites').select('id,name,email').eq('event_id', id!).order('created_at'),   // visible de l'organisateur seulement
       supabase.from('event_child_lists').select('event_id,list_id,shown').eq('event_id', id!),
+      supabase.rpc('event_child_lists_info', { p_event: id! }),   // listes gérées, y compris à deux parents
     ])
     setOverrides((ov.data as Override[]) ?? [])
     setInvites((inv.data as Invite[]) ?? [])
@@ -87,7 +88,7 @@ export default function EventDetail() {
     const wl = all.filter(l => !l.child_name)
     setLists(Object.fromEntries(wl.map(l => [l.owner_id, l.id])))
     setCounts(Object.fromEntries(wl.map(l => [l.owner_id, l.items?.[0]?.count ?? 0])))
-    setKidLists(all.filter(l => l.child_name).map(l => ({ id: l.id, owner_id: l.owner_id, child_name: l.child_name!, child_age: l.child_age, child_color: l.child_color, in_events: l.in_events, managed_kind: l.managed_kind, count: l.items?.[0]?.count ?? 0 })))
+    setKidLists(((kl.data as (Omit<KidRow, 'count'> & { count: number | string })[]) ?? []).map(l => ({ ...l, managers: l.managers ?? [l.owner_id], count: Number(l.count) || 0 })))
     setHasDraws(((dr.data as unknown[]) ?? []).length > 0)
     setLoading(false)
   }, [id])
@@ -95,6 +96,12 @@ export default function EventDetail() {
   useEffect(() => { load() }, [load])
 
   const name = (uid: string) => members.find(m => m.user_id === uid)?.profiles?.display_name ?? '—'
+  const whoManages = (k: KidRow) => {
+    const ids = k.managers.length ? k.managers : [k.owner_id]
+    const names = ids.filter(u => u !== me && members.some(m => m.user_id === u)).map(name)
+    if (ids.includes(me)) names.push('vous')
+    return names.length > 1 ? `${names.slice(0, -1).join(', ')} et ${names[names.length - 1]}` : names[0] ?? name(k.owner_id)
+  }
   const openEdit = () => { if (!ev) return; setEName(ev.name); setEDate(ev.event_date); setETime(ev.event_time?.slice(0, 5) ?? ''); setEPlace(ev.location ?? ''); setEditing(true) }
   const drawOn = hasDraws
   const goDraws = () => document.getElementById('tirage')?.scrollIntoView({ behavior: 'smooth' })
@@ -434,7 +441,7 @@ export default function EventDetail() {
           <li key={g.kid.id} className="card item">
             <div className="item-main">
               <strong>{g.kid.child_name}</strong>
-              <span className="tag">{managedTag(g.kid.managed_kind, g.kid.owner_id === me ? 'vous' : name(g.kid.owner_id))}</span>
+              <span className="tag">{managedTag(g.kid.managed_kind, whoManages(g.kid))}</span>
               <span className="small muted wish-count">{envies(g.kid.count)}</span>
             </div>
             <div className="item-actions">

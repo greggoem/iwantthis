@@ -71,8 +71,8 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Créez un groupe',
-        text: <>Dans le menu <strong>⋯</strong>, choisissez <strong>Nouveau groupe</strong> <N n={1} /> : une collection de livres, plusieurs modèles au choix… Si un seul cadeau suffit, cochez <strong>Un seul à choisir</strong> : dès qu'un proche en achète un, les autres ne sont plus proposés.</>,
-        shots: [{ src: 'orga-1-groupe', alt: 'Menu ⋯ avec « Nouveau groupe »' }],
+        text: <>Dans le menu <strong>⋯</strong>, choisissez <strong>Nouveau groupe d'envies</strong> <N n={1} /> : une collection de livres, plusieurs modèles au choix… Si un seul cadeau suffit, cochez <strong>Un seul à choisir</strong> : dès qu'un proche en achète un, les autres ne sont plus proposés.</>,
+        shots: [{ src: 'orga-1-groupe', alt: 'Menu ⋯ avec « Nouveau groupe d’envies »' }],
       },
       {
         title: 'Favoris, tri et affichage',

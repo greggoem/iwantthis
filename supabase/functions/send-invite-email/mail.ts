@@ -49,6 +49,36 @@ export function build(m: InviteMail, site: string, appName: string): { subject: 
   return { subject, html, text, link }
 }
 
+/** Proposition liée à une liste d'enfant : la gérer à deux (manage) ou la récupérer (give) */
+export interface OfferMail { to_email: string; to_name: string | null; child_name: string; from_name: string; kind: 'manage' | 'give' }
+
+export function buildOffer(m: OfferMail, site: string, appName: string): { subject: string; html: string; text: string; link: string } {
+  const base = site.replace(/#.*$/, '').replace(/\/?$/, '/')
+  const link = `${base}#/login?email=${encodeURIComponent(m.to_email)}`
+  const hello = m.to_name ? `Bonjour ${m.to_name},` : 'Bonjour,'
+  const manage = m.kind === 'manage'
+  const subject = manage
+    ? `👪 ${m.from_name} vous propose de gérer avec lui la liste de ${m.child_name}`
+    : `🎁 ${m.from_name} vous confie votre liste d'envies`
+  const lines = manage
+    ? [`<strong>${esc(m.from_name)}</strong> vous propose de gérer avec lui la liste d'envies de <strong>${esc(m.child_name)}</strong> sur ${esc(appName)}.`,
+       `Vous pourrez ajouter ses envies et voir ce qui a été acheté pour lui. Vos événements restent les vôtres : ${esc(m.from_name)} ne les voit pas, et vous ne voyez pas les siens.`]
+    : [`<strong>${esc(m.from_name)}</strong> tenait votre liste d'envies sur ${esc(appName)}. C'est maintenant à vous de la gérer : vous y retrouvez toutes vos envies.`,
+       `Ce que vos proches achètent pour vous reste une surprise jusqu'au jour J.`]
+  const plain = (h: string) => h.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  const cta = manage ? 'Voir la proposition' : 'Récupérer ma liste'
+  const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#fffaf1;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2150">
+<div style="max-width:560px;margin:0 auto;padding:28px 20px">
+  <p style="font-size:16px;line-height:1.55;margin:0 0 14px">${esc(hello)}</p>
+  ${lines.map(l => `<p style="font-size:16px;line-height:1.55;margin:0 0 14px">${l}</p>`).join('\n  ')}
+  <p style="margin:22px 0"><a href="${esc(link)}" style="display:inline-block;background:#ff4d8d;color:#fff;text-decoration:none;font-weight:700;padding:13px 22px;border-radius:14px">${cta}</a></p>
+  <p style="font-size:13px;line-height:1.5;color:#6b5f9a;margin:0 0 6px">Connectez-vous ou créez votre compte avec cette adresse e-mail (${esc(m.to_email)}) : la proposition vous attend dans « Ma liste ». Vous restez libre de refuser.</p>
+  <p style="font-size:12px;color:#9a90bf;margin:14px 0 0">Si le bouton ne marche pas : ${esc(link)}</p>
+</div></body></html>`
+  const text = `${hello}\n\n${lines.map(plain).join('\n\n')}\n\n${cta} : ${link}\n\nConnectez-vous ou créez votre compte avec cette adresse e-mail (${m.to_email}) : la proposition vous attend dans « Ma liste ». Vous restez libre de refuser.\n`
+  return { subject, html, text, link }
+}
+
 /** « Nom <adresse@domaine> » ou « adresse@domaine » */
 export function parseFrom(from: string): { name?: string; email: string } {
   const m = from.match(/^\s*(.*?)\s*<([^<>\s]+@[^<>\s]+)>\s*$/)

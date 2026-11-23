@@ -24,6 +24,7 @@ export default function ListView() {
   const me = session!.user.id
   const [list, setList] = useState<Wishlist | null>(null)
   const [owner, setOwner] = useState('')
+  const [managers, setManagers] = useState<string[]>([])   // liste d'enfant : ses parents (propriétaire et co-parents)
   const [keeper, setKeeper] = useState('')   // liste d'enfant : le parent qui la tient
   const [items, setItems] = useState<Item[]>([])
   const [claims, setClaims] = useState<Record<string, Claim>>({})
@@ -47,21 +48,26 @@ export default function ListView() {
     if (!l) { setList(null); setLoading(false); return }
     const wl = l as Wishlist
     setList(wl)
-    const [p, it, cl, ev, ov] = await Promise.all([
+    const [p, it, cl, ev, ov, kp] = await Promise.all([
       supabase.from('profiles').select('display_name').eq('id', wl.owner_id).maybeSingle(),
       supabase.from('items').select('*').eq('list_id', wl.id).order('created_at'),
       supabase.from('item_claims').select('*'),
       supabase.from('events').select('id,name,event_date,event_members(user_id)'),
       wl.child_name ? supabase.from('event_child_lists').select('event_id,list_id,shown').eq('list_id', wl.id) : Promise.resolve({ data: [] }),
+      wl.child_name ? supabase.rpc('list_keepers', { p_lists: [wl.id] }) : Promise.resolve({ data: [] }),
     ])
+    const ks = ((kp.data as { user_id: string; display_name: string }[] | null) ?? [])
+    const kIds = new Set([wl.owner_id, ...ks.map(k => k.user_id)])
+    setManagers([...kIds])
     const parent = (p.data as { display_name: string } | null)?.display_name ?? 'Cette personne'
     setOwner(wl.child_name || parent)
-    setKeeper(wl.child_name ? parent : '')
+    const kNames = ks.filter(k => k.user_id !== me).map(k => k.display_name)
+    setKeeper(wl.child_name ? (kNames.length ? (kNames.length > 1 ? `${kNames.slice(0, -1).join(', ')} et ${kNames[kNames.length - 1]}` : kNames[0]) : parent) : '')
     setItems((it.data as Item[]) ?? [])
     const ids = new Set(((it.data as Item[]) ?? []).map(i => i.id))
     setClaims(Object.fromEntries(((cl.data as Claim[]) ?? []).filter(c => ids.has(c.item_id)).map(c => [c.item_id, c])))
     const common = ((ev.data as unknown as (CommonEvent & { event_members: { user_id: string }[] })[]) ?? [])
-      .filter(e => e.event_members.some(m => m.user_id === wl.owner_id) && kidShownIn(wl, e.id, (ov.data as { event_id: string; list_id: string; shown: boolean }[]) ?? []))
+      .filter(e => e.event_members.some(m => (wl.child_name ? kIds.has(m.user_id) : m.user_id === wl.owner_id)) && kidShownIn(wl, e.id, (ov.data as { event_id: string; list_id: string; shown: boolean }[]) ?? []))
       .sort((a, b) => a.event_date.localeCompare(b.event_date))
     setEvents(common)
     setLoading(false)
@@ -150,7 +156,7 @@ export default function ListView() {
   if (loading) return <Spinner />
   if (!list) return <Notice>Liste introuvable, ou vous n'y avez pas accès. Demandez le lien de partage à la personne.</Notice>
   if (list.owner_id === me && !list.child_name) return <Navigate to="/" replace />
-  const myKid = list.owner_id === me   // liste de mon enfant : je vois et marque les achats ici
+  const myKid = list.owner_id === me || (!!list.child_name && managers.includes(me))   // liste de mon enfant : je vois et marque les achats ici
 
   const { tops, kids } = groupTree(items)
   const gallery = prefs.view === 'gallery'

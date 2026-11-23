@@ -25,6 +25,7 @@ import ListPills from '../components/ListPills'
 import ChildForm, { type ChildDraft } from '../components/ChildForm'
 import DeviceTip from '../components/DeviceTip'
 import { formatAge, isKid, lastListId, rememberList } from '../lib/kids'
+import { GiveListModal, ManageListModal, OffersCard, managedBy, type ListOffer, type ManagersInfo } from '../components/ListManagers'
 
 /** groupId : '' = liste, un identifiant = groupe existant, NEW_GROUP = groupe à créer avec newGroup / newPickOne */
 interface Draft { title: string; url: string; details: string; price: string; image: string; groupId: string; newGroup: string; newPickOne: boolean; listId?: string }
@@ -260,7 +261,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
         <select value={d.groupId} onChange={e => setD(prev => ({ ...prev, groupId: e.target.value }))}>
           <option value="">{tgt?.kid ? `Liste de ${tgt.name}` : 'Ma liste'} (sans groupe)</option>
           {shownGroups.map(g => <option key={g.id} value={g.id}>Groupe : {g.title}</option>)}
-          <option value={NEW_GROUP}>＋ Nouveau groupe…</option>
+          <option value={NEW_GROUP}>＋ Nouveau groupe d'envies…</option>
         </select>
       </label>
       {d.groupId === NEW_GROUP && (
@@ -414,7 +415,7 @@ function ShareModal({ list, onClose }: { list: Wishlist; onClose: () => void }) 
 /* ---------- Page ---------- */
 type ModalState = null | { kind: 'share' } | { kind: 'add' } | { kind: 'edit'; item: Item }
   | { kind: 'group' } | { kind: 'editGroup'; item: Item } | { kind: 'kids'; item: Item }
-  | { kind: 'child'; list: Wishlist | null }
+  | { kind: 'child'; list: Wishlist | null } | { kind: 'manage' } | { kind: 'give' }
 
 export default function MyList() {
   const [params, setParams] = useSearchParams()
@@ -432,6 +433,8 @@ export default function MyList() {
   const [bulk, setBulk] = useState(false)
   const [loading, setLoading] = useState(true)
   const [prefs, setPrefs, cycleSort] = useViewPrefs()
+  const [offers, setOffers] = useState<ListOffer[]>([])
+  const [info, setInfo] = useState<ManagersInfo | null>(null)   // qui gère la liste d'enfant affichée
 
   // données envoyées par le raccourci navigateur (#/?add=1&u=…&t=…&i=…&p=…)
   const prefill: Draft | null = params.get('add') === '1' ? (() => {
@@ -450,11 +453,14 @@ export default function MyList() {
     const { data, error } = await supabase.rpc('ensure_my_list')
     if (error) { setErr(errMsg(error)); setLoading(false); return }
     const mine = (Array.isArray(data) ? data[0] : data) as Wishlist
-    const { data: k } = await supabase.from('wishlists').select('*').eq('owner_id', mine.owner_id).not('child_name', 'is', null).order('created_at')
+    const [{ data: k }, { data: of }] = await Promise.all([supabase.rpc('my_child_lists'), supabase.rpc('my_list_offers')])
+    setOffers((of as ListOffer[]) ?? [])
     const all = [mine, ...((k as Wishlist[]) ?? [])]
     setLists(all)
     const l = all.find(x => x.id === wanted) ?? mine
     setList(l)
+    if (l.child_name) supabase.rpc('list_managers_info', { p_list: l.id }).then(({ data }) => setInfo((data as ManagersInfo) ?? null))
+    else setInfo(null)
     const [it, cl] = await Promise.all([
       supabase.from('items').select('*').eq('list_id', l.id).order('created_at'),
       supabase.from('item_claims').select('*'),   // le serveur ne renvoie que les achats déjà « révélés »
@@ -468,6 +474,7 @@ export default function MyList() {
   useEffect(() => { if (prefill && !loading) setModal({ kind: 'add' }) /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [loading, params.get('add')])
 
   const kidList = isKid(list)
+  const isOwner = !!list && list.owner_id === profile?.id
   const pick = (id: string) => setParams(id === lists[0]?.id ? {} : { liste: id })
   // cadeaux reçus : « nouveaux » tant que la personne ne les a pas découverts, puis archivés
   // (liste d'enfant : le parent voit les achats au fil de l'eau, rien n'est archivé)
@@ -608,6 +615,12 @@ export default function MyList() {
     setMsg(`La liste de ${c.name} est prête : ajoutez ses envies.`)
     return null
   }
+  const leaveList = async (target: Wishlist) => {
+    if (!(await confirm({ title: `Arrêter de gérer la liste de ${target.child_name} ?`, message: 'Elle disparaîtra de vos listes. Les autres parents continuent de la gérer.', confirmLabel: 'Arrêter', danger: true }))) return
+    const { error } = await supabase.rpc('remove_list_manager', { p_list: target.id, p_user: profile?.id })
+    if (error) { setErr(errMsg(error)); return }
+    setParams({}); setMsg(`Vous ne gérez plus la liste de ${target.child_name}.`); load()
+  }
   const deleteChild = async (target: Wishlist) => {
     if (!(await confirm({ title: `Supprimer la liste de ${target.child_name} ?`, message: 'Toutes ses envies seront supprimées. Vos proches ne la verront plus.', confirmLabel: 'Supprimer', danger: true }))) return
     const { error } = await supabase.rpc('delete_child_list', { p_list: target.id })
@@ -712,21 +725,25 @@ export default function MyList() {
       <div className="page-head">
         <div className="title-block">
           <h1 className="title-input" style={{ margin: 0, paddingLeft: 0, paddingRight: 0 }}>{kidList ? `La liste d'envies de ${list!.child_name}` : 'Ma liste d\'envies'}</h1>
-          {kidList && <p className="muted title-sub">{list!.managed_kind === 'proche' ? 'Liste sans compte' : 'Liste d\'enfant'} · gérée par vous{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}<br />Achats cachés ici · <Link to={`/listes/${list!.id}`}>voir les achats</Link></p>}
+          {kidList && <p className="muted title-sub">{list!.managed_kind === 'proche' ? 'Liste sans compte' : 'Liste d\'enfant'} · {managedBy(info, profile?.id)}{list!.child_age ? ` · ${formatAge(list!.child_age)}` : ''}<br />Achats cachés ici · <Link to={`/listes/${list!.id}`}>voir les achats</Link></p>}
         </div>
         <div className="page-actions">
           <button className="btn" onClick={() => setModal({ kind: 'share' })}><Icon name="share" size={17} /> <span>Partager</span></button>
           <button className="btn btn-primary" onClick={() => setModal({ kind: 'add' })}><Icon name="plus" size={18} /> <span>Ajouter</span></button>
           <ActionMenu label="Plus d'options pour la liste" actions={[
-            { icon: 'plus', label: 'Nouveau groupe', onClick: () => setModal({ kind: 'group' }) },
+            { icon: 'plus', label: 'Nouveau groupe d\'envies', onClick: () => setModal({ kind: 'group' }) },
             { icon: 'plus', label: 'Ajouter un enfant ou un proche sans compte', onClick: () => setModal({ kind: 'child', list: null }) },
             kidList && { icon: 'pencil', label: `Modifier la liste de ${list!.child_name}`, onClick: () => setModal({ kind: 'child', list }) },
-            kidList && { icon: 'trash', label: `Supprimer la liste de ${list!.child_name}`, danger: true, onClick: () => deleteChild(list!) },
+            kidList && isOwner && info && { icon: 'users', label: 'Partager la gestion', onClick: () => setModal({ kind: 'manage' }) },
+            kidList && isOwner && info && { icon: 'gift', label: `Donner à ${list!.child_name} sa propre liste`, onClick: () => setModal({ kind: 'give' }) },
+            kidList && !isOwner && { icon: 'logout', label: 'Arrêter de gérer cette liste', danger: true, onClick: () => leaveList(list!) },
+            kidList && isOwner && { icon: 'trash', label: `Supprimer la liste de ${list!.child_name}`, danger: true, onClick: () => deleteChild(list!) },
           ]} />
         </div>
       </div>
 
       <Notice>{err}</Notice><Notice kind="ok">{msg}</Notice>
+      <OffersCard offers={offers} onDone={(m, id) => { setMsg(m); setParams(id ? { liste: id } : {}); load() }} />
 
       {fresh.length > 0 && (
         <section className="gifts-banner" aria-live="polite">
@@ -839,11 +856,13 @@ export default function MyList() {
               : { name: '', age: '', color: nextColor(), inEvents: true, kind: 'enfant' }}
             submitLabel={n => modal.list ? 'Enregistrer' : `Créer la liste de ${n}`}
             onCancel={closeModal} onSubmit={c => saveChild(c, modal.list)}
-            onDelete={modal.list ? () => deleteChild(modal.list!) : undefined} />
+            onDelete={modal.list && modal.list.owner_id === profile?.id ? () => deleteChild(modal.list!) : undefined} />
         </Modal>
       )}
+      {modal?.kind === 'manage' && list && info && <ManageListModal list={list} info={info} onClose={closeModal} onChanged={m => { closeModal(); if (m) setMsg(m); load() }} />}
+      {modal?.kind === 'give' && list && info && profile && <GiveListModal list={list} info={info} myId={profile.id} onClose={closeModal} onChanged={m => { closeModal(); if (m) setMsg(m); load() }} />}
       {modal?.kind === 'group' && (
-        <Modal title="Nouveau groupe" onClose={closeModal}>
+        <Modal title="Nouveau groupe d'envies" onClose={closeModal}>
           <p className="muted">Pour une même envie avec plusieurs liens : une collection de livres, plusieurs modèles au choix…</p>
           <GroupForm initial={{ title: '', pickOne: false, details: '' }} withLinks submitLabel="Créer le groupe" onCancel={closeModal} onSubmit={addGroup} />
         </Modal>

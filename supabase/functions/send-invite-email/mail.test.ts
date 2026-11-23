@@ -1,7 +1,7 @@
 function assert(c: unknown, msg = 'assertion'): void { if (!c) throw new Error(msg) }
 function assertEquals(a: unknown, b: unknown): void { if (JSON.stringify(a) !== JSON.stringify(b)) throw new Error(`${JSON.stringify(a)} != ${JSON.stringify(b)}`) }
 function assertStringIncludes(a: string, b: string): void { if (!a.includes(b)) throw new Error(`« ${b} » absent de « ${a.slice(0, 80)}… »`) }
-import { build, esc, parseFrom, providerRequest } from './mail.ts'
+import { build, buildOffer, esc, parseFrom, providerRequest } from './mail.ts'
 
 const m = { invite_name: 'Marie <b>', invite_email: 'marie@x.be', event_name: 'Noël en famille', event_date: '2026-12-25', invite_code: 'abc123', image_url: 'https://x.test/a.jpg', organizer: 'Greg' }
 
@@ -33,3 +33,13 @@ Deno.test('requêtes Brevo / Resend', () => {
   assertEquals(JSON.parse(String(r.init.body)).to, ['x@y.be'])
 })
 Deno.test('esc', () => assertEquals(esc(`<a href="x">'&`), '&lt;a href=&quot;x&quot;&gt;&#39;&amp;'))
+
+Deno.test('propositions de liste', () => {
+  const g = buildOffer({ to_email: 'leo@x.be', to_name: null, child_name: 'Léo', from_name: 'Greg et Julie', kind: 'give' }, 'https://s.test/', 'I Want This')
+  assertEquals(g.link, 'https://s.test/#/login?email=leo%40x.be')
+  assertStringIncludes(g.subject, 'vous confie')
+  assertStringIncludes(g.text, 'Bonjour,')
+  const m = buildOffer({ to_email: 'j@x.be', to_name: 'Julie <i>', child_name: 'Léo', from_name: 'Greg', kind: 'manage' }, 'https://s.test/', 'I Want This')
+  assertStringIncludes(m.html, 'Julie &lt;i&gt;')
+  assertStringIncludes(m.text, 'Greg vous propose de gérer')
+})

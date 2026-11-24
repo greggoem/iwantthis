@@ -104,3 +104,32 @@ test.describe('Fichiers statiques', () => {
       expect((await request.get(f)).ok(), f).toBeTruthy()
   })
 })
+
+test.describe('Référencement', () => {
+  test('robots.txt et sitemap.xml', async ({ request }) => {
+    const robots = await request.get('robots.txt')
+    expect(robots.ok()).toBeTruthy()
+    expect(await robots.text()).toContain('Sitemap: https://iwantthis.gift/sitemap.xml')
+    const sitemap = await request.get('sitemap.xml')
+    expect(sitemap.ok()).toBeTruthy()
+    expect(await sitemap.text()).toContain('<loc>https://iwantthis.gift/tirage-au-sort/</loc>')
+  })
+
+  test("l'accueil est lisible sans JavaScript (robots des IA)", async ({ request }) => {
+    const html = await (await request.get('./')).text()
+    expect(html).toContain('<h1>Offrez ce qui fait vraiment plaisir.</h1>')
+    expect(html).toContain('application/ld+json')
+  })
+
+  for (const slug of ['comment-ca-marche', 'tirage-au-sort', 'listes-enfants']) {
+    test(`page publique /${slug}/`, async ({ page, problems }, info) => {
+      const r = await page.goto(`${slug}/`)
+      expect(r?.status()).toBe(200)
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://iwantthis.gift/${slug}/`)
+      await expectNoHorizontalOverflow(page)
+      await checkA11y(page, info, slug)
+      void problems
+    })
+  }
+})

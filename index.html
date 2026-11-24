@@ -24,6 +24,47 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://iwantthis.gift/" />
+    <!-- Propriété Google Search Console (compte de Greg) : ne pas supprimer -->
+    <meta name="google-site-verification" content="RIgFIQjK_1wxW2Ankq3X-dgtlCN8ggl0HlKzdRun0f8" />
+    <!-- Référencement : description de l'application lisible sans JavaScript (Google, Bing, robots des IA) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "I Want This",
+        "url": "https://iwantthis.gift/",
+        "description": "Listes d'envies à partager en famille : chacun crée sa liste de cadeaux, ses proches indiquent ce qu'ils achètent (sans doublon, la surprise reste entière), avec événements, tirage au sort Secret Santa et listes d'enfants.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "inLanguage": "fr",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "publisher": { "@type": "Organization", "name": "I Want This", "url": "https://iwantthis.gift/" }
+      }
+    </script>
+    <!-- Le contenu statique de l'accueil (dans #root) est destiné aux visiteurs non connectés et aux robots.
+         Pour une personne connectée ou un lien direct (#/…, ?l=, ?e=, retour d'e-mail), on le masque
+         pendant le chargement pour éviter un affichage furtif ; React le remplace de toute façon. -->
+    <script>
+      (function () {
+        try {
+          var app = false;
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i) || '';
+            if (k.indexOf('sb-') === 0 && k.slice(-11) === '-auth-token') { app = true; break; }
+          }
+          var h = location.hash;
+          if (h && h !== '#' && h !== '#/') app = true;
+          if (location.search && location.search !== '?') app = true;
+          if (app) document.documentElement.className += ' iwt-app';
+        } catch (e) {}
+      })();
+    </script>
+    <style>
+      .iwt-app #root > .seo-shell { display: none; }
+      .seo-shell ol { list-style: none; padding: 0; margin: 0; }
+    </style>
     <!-- Umami : mesure d'audience sans cookie. Les adresses sont nettoyées avant envoi :
          route du HashRouter remise en chemin, identifiants et jetons de partage masqués, paramètres retirés. -->
     <script>
@@ -51,7 +92,66 @@
     ></script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="land seo-shell">
+      <header class="land-top">
+        <div class="land-in row between">
+          <a class="logo" href="/" style="text-decoration:none;color:inherit"><span class="logo-name">I Want This</span></a>
+          <div class="row">
+            <a class="btn btn-ghost" href="/#/login">Connexion</a>
+            <a class="btn btn-primary" href="/#/login?mode=up">Créer ma liste</a>
+          </div>
+        </div>
+      </header>
+      <main>
+        <section class="land-hero">
+          <div class="land-in">
+            <p class="land-kicker">Listes de cadeaux partagées</p>
+            <h1>Offrez ce qui fait vraiment plaisir.</h1>
+            <p class="land-sub">Chacun crée sa liste d'envies et la partage en un lien. Ses proches indiquent ce qu'ils achètent : pas de doublon, et le propriétaire garde la surprise.</p>
+            <p><a class="btn btn-primary btn-lg" href="/#/login?mode=up">Créer ma liste</a> <a class="btn btn-lg" href="/#/login">J'ai déjà un compte</a></p>
+            <p class="small muted land-note">Gratuit · sans application à installer</p>
+          </div>
+        </section>
+        <section class="land-sec">
+          <div class="land-in">
+            <h2>Comment ça marche</h2>
+            <ol class="land-steps">
+              <li class="land-step"><h3>Créez votre liste</h3><p class="small muted">Collez le lien d'un produit : l'image et le prix sont récupérés pour vous. Ajoutez la taille, la couleur… ou une simple idée.</p></li>
+              <li class="land-step"><h3>Partagez un lien</h3><p class="small muted">Envoyez-le par WhatsApp ou e-mail. Vos proches se connectent et découvrent vos envies, sur ordinateur comme sur téléphone.</p></li>
+              <li class="land-step"><h3>Ils achètent, sans doublon</h3><p class="small muted">Chacun indique « J'ai acheté ce cadeau ». Les autres invités le voient aussitôt : plus jamais deux fois le même pull.</p></li>
+              <li class="land-step"><h3>La surprise reste entière</h3><p class="small muted">Vous ne voyez rien de ce qui est acheté avant la date de remise. Le lendemain, tout s'affiche, et c'est ensuite rangé dans vos archives.</p></li>
+            </ol>
+            <p class="center" style="margin-top:1.5rem"><a href="/comment-ca-marche/">Le guide complet : comment ça marche</a></p>
+          </div>
+        </section>
+        <section class="land-sec land-alt">
+          <div class="land-in">
+            <h2>Tout pour les fêtes en famille</h2>
+            <div class="land-feats">
+              <div class="land-feat"><div><h3>Image et prix automatiques</h3><p class="small muted">À partir du lien, la fiche du magasin est lue quand il le permet. Sinon, un raccourci pour votre navigateur ou une saisie à la main.</p></div></div>
+              <div class="land-feat"><div><h3>Événements</h3><p class="small muted">Noël, anniversaire, crémaillère… Créez un événement avec une date et invitez la famille ou les amis par un lien.</p></div></div>
+              <div class="land-feat"><div><h3><a href="/tirage-au-sort/">Tirage au sort</a></h3><p class="small muted">Un « Secret Santa » en un clic, avec des exclusions (un couple, par exemple). Personne ne voit le tirage des autres.</p></div></div>
+              <div class="land-feat"><div><h3><a href="/listes-enfants/">Listes d'enfants</a></h3><p class="small muted">Votre enfant n'a pas d'e-mail ? Tenez sa liste depuis votre compte : vos proches la voient comme les autres.</p></div></div>
+              <div class="land-feat"><div><h3>Surprise garantie</h3><p class="small muted">Le secret est protégé par le serveur, pas seulement caché à l'écran : le propriétaire ne peut pas lire les achats avant la date.</p></div></div>
+            </div>
+          </div>
+        </section>
+        <section class="land-sec">
+          <div class="land-in land-narrow">
+            <h2>Questions fréquentes</h2>
+            <details class="land-faq"><summary>Est-ce gratuit ?</summary><p>Oui. Créer un compte, une liste, des événements et un tirage au sort ne coûte rien.</p></details>
+            <details class="land-faq"><summary>Mes proches doivent-ils créer un compte ?</summary><p>Oui, c'est rapide et gratuit. C'est ce qui permet de savoir qui a acheté quoi, tout en le cachant au propriétaire de la liste.</p></details>
+            <details class="land-faq"><summary>Puis-je savoir ce qu'on m'offre ?</summary><p>Non, volontairement. Les achats ne deviennent visibles pour vous que le lendemain de la date de remise du cadeau, choisie par la personne qui achète (par exemple la date de l'événement) : la fête a souvent lieu le soir, la surprise reste donc entière jusqu'au bout.</p></details>
+            <details class="land-faq"><summary>Comment fonctionne le tirage au sort ?</summary><p>L'organisateur ajoute d'éventuelles exclusions, puis lance le tirage. Chacun découvre uniquement la personne à qui il doit offrir un cadeau, organisateur compris.</p></details>
+            <details class="land-faq"><summary>Puis-je me désinscrire ?</summary><p>Oui, à tout moment : dans Mon profil, « Supprimer mon compte » efface votre compte, votre liste et vos achats. Vos événements sont transmis à un autre invité.</p></details>
+            <details class="land-faq"><summary>Pourquoi des liens « partenaires » ?</summary><p>Certains liens vers des magasins peuvent rapporter une petite commission au site. Le prix pour vous ne change pas.</p></details>
+          </div>
+        </section>
+      </main>
+      <footer class="footer">
+        <a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/tirage-au-sort/">Tirage au sort</a> · <a href="/listes-enfants/">Listes d'enfants</a> · <a href="/presse.html">Presse</a> · <a href="/privacy.html">Confidentialité</a>
+      </footer>
+    </div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

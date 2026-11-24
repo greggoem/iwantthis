@@ -1,0 +1,7 @@
+# I Want This — tous les robots sont les bienvenus sur les pages publiques
+# (moteurs de recherche et assistants IA : Google, Bing, ChatGPT, Claude, Perplexity…).
+# Les listes et événements ne sont pas accessibles sans compte : rien à indexer derrière la connexion.
+User-agent: *
+Allow: /
+
+Sitemap: https://iwantthis.gift/sitemap.xml

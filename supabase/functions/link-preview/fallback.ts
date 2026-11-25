@@ -1,6 +1,6 @@
 // Solutions de secours quand la fiche produit ne donne pas d'image (site qui bloque la lecture, page sans og:image…).
 // Partie pure (testée sous Node) + appels réseau injectés, pour garder les tests hors ligne.
-import type { Preview } from './parse.ts'
+import { isJunkImage, type Preview } from './parse.ts'
 
 export type JsonFetcher = (url: string, headers?: Record<string, string>) => Promise<unknown>
 export type OkFetcher = (url: string) => Promise<boolean>
@@ -56,7 +56,7 @@ export async function microlink(target: URL, net: { json: JsonFetcher; microlink
 export async function fillGaps(p: Preview, target: URL, net: { json: JsonFetcher; ok: OkFetcher; microlinkKey?: string }): Promise<Preview> {
   const out: Preview = { ...p, site: p.site ?? target.hostname.replace(/^www\./, '') }
   const merge = (x: Partial<Preview>) => {
-    if (!out.image && x.image) out.image = x.image
+    if (!out.image && x.image && !isJunkImage(x.image)) out.image = x.image
     if (!out.title && x.title) out.title = x.title
     if (out.price === undefined && x.price !== undefined) out.price = x.price
   }

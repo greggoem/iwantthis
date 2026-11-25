@@ -17,10 +17,18 @@ export async function fetchPreview(url: string): Promise<Preview> {
   try {
     const { data, error } = await supabase.functions.invoke('link-preview', { body: { url } })
     if (error || !data) return { found: false, reason: 'Service de lecture indisponible pour le moment' }
-    return data as Preview
+    const p = data as Preview
+    if (isJunkImage(p.image)) { delete p.image; p.found = Boolean(p.title || p.price !== undefined) }
+    return p
   } catch {
     return { found: false, reason: 'Service de lecture indisponible pour le moment' }
   }
+}
+
+/** Image inutilisable : pixel de suivi publicitaire (Amazon « fls-… /uedata »), image 1×1, espaceur… */
+export function isJunkImage(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /(^|\.)fls-[a-z]+\.amazon\.|\/uedata|\/batch\/\d+\/OP\/|[\/_.-](1x1|spacer|pixel|transparent)\.(gif|png)\b|^data:/i.test(url)
 }
 
 /** Le prix n'est repris que s'il est en euros (ou sans devise indiquée) */

@@ -21,7 +21,9 @@ function readProduct() {
   P = P || m('product:price:amount') || m('og:price:amount')
   C = C || m('product:price:currency')
   if (!P) { var a = q('.a-price .a-offscreen,#priceblock_ourprice'); if (a) P = a.textContent }
-  var i = m('og:image') || (q('#landingImage') || {}).src || m('twitter:image') || ''
+  var li = q('#landingImage,#imgBlkFront')
+  var bad = function (u) { return !u || /fls-[a-z]+\.amazon\.|\/uedata|\/batch\/\d+\/OP\/|^data:/i.test(u) }
+  var i = [m('og:image'), li && (li.getAttribute('data-old-hires') || li.src), m('twitter:image')].filter(function (u) { return !bad(u) })[0] || ''
   var t = m('og:title') || (q('#productTitle') || {}).textContent || document.title
   return { u: location.href, t: (t || '').trim().slice(0, 200), i: i, p: String(P || ''), c: C || '' }
 }

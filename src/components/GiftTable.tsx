@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode, type SyntheticEvent } from 'react'
 import { createPortal } from 'react-dom'
 import type { Item } from '../lib/types'
 import { formatPrice } from '../lib/format'
 import { safeUrl } from '../lib/affiliate'
+import { isJunkImage } from '../lib/preview'
 import { SORT_LABEL, type SortKey, type ViewMode, type ViewPrefs } from '../lib/view'
 import ItemLink, { ItemAnchor } from './ItemLink'
 import Icon from './Icon'
@@ -10,11 +11,17 @@ import Icon from './Icon'
 const ZOOM = 280
 
 /** Miniature. Avec `zoom`, une grande image apparaît au survol (souris uniquement) */
+/** Image chargée mais minuscule (pixel de suivi 1×1) : traitée comme absente */
+const tinyIsBroken = (set: (b: boolean) => void) => (e: SyntheticEvent<HTMLImageElement>) => {
+  const im = e.currentTarget
+  if (im.naturalWidth > 0 && im.naturalWidth < 16 && im.naturalHeight < 16) set(true)
+}
+
 export function Thumb({ src, alt, large, zoom }: { src: string | null; alt: string; large?: boolean; zoom?: boolean }) {
   const [broken, setBroken] = useState(false)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   useEffect(() => { setBroken(false) }, [src])   // une nouvelle image repart de zéro (l'ancienne avait pu échouer)
-  const ok = Boolean(src && safeUrl(src) && !broken)
+  const ok = Boolean(src && safeUrl(src) && !broken && !isJunkImage(src))
 
   const show = (e: MouseEvent<HTMLDivElement>) => {
     if (!zoom || !ok || !window.matchMedia('(hover: hover)').matches) return
@@ -28,7 +35,7 @@ export function Thumb({ src, alt, large, zoom }: { src: string | null; alt: stri
   return (
     <div className={`thumb ${large ? 'thumb-lg' : ''}`} onMouseEnter={show} onMouseLeave={() => setPos(null)}>
       {ok
-        ? <img src={src!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+        ? <img src={src!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} onLoad={tinyIsBroken(setBroken)} />
         : <Icon name="gift" size={22} />}
       {pos && createPortal(
         <div className="zoom-pop" style={{ left: pos.x, top: pos.y, width: ZOOM, height: ZOOM }} aria-hidden="true">
@@ -42,11 +49,11 @@ export function Thumb({ src, alt, large, zoom }: { src: string | null; alt: stri
 export function Pic({ src, alt }: { src: string | null; alt: string }) {
   const [broken, setBroken] = useState(false)
   useEffect(() => { setBroken(false) }, [src])
-  const ok = src && safeUrl(src) && !broken
+  const ok = src && safeUrl(src) && !broken && !isJunkImage(src)
   return (
     <div className="pic">
       {ok
-        ? <img src={src!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} />
+        ? <img src={src!} alt={alt} loading="lazy" referrerPolicy="no-referrer" onError={() => setBroken(true)} onLoad={tinyIsBroken(setBroken)} />
         : <Icon name="gift" size={40} />}
     </div>
   )

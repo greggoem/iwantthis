@@ -33,6 +33,12 @@ export function googleRedirectTarget(u: URL): string | undefined {
   return dest && /^https?:\/\//i.test(dest) ? dest : undefined
 }
 
+/** Image inutilisable : pixel de suivi publicitaire (Amazon « fls-… /uedata »), image 1×1, espaceur… */
+export function isJunkImage(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /(^|\.)fls-[a-z]+\.amazon\.|\/uedata|\/batch\/\d+\/OP\/|[\/_.-](1x1|spacer|pixel|transparent)\.(gif|png)\b|^data:/i.test(url)
+}
+
 /** Fiche Amazon → https://www.amazon.xx/dp/ASIN (retire ref=, tag= d'autrui, suivi…). Autres liens : inchangés. */
 export function cleanProductUrl(raw: string): string {
   let u: URL
@@ -184,10 +190,8 @@ export function parseProductPage(html: string, finalUrl: string): Preview {
   const titleTag = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
   const title = (meta['og:title'] || ld.name || amz.title || meta['twitter:title'] || (titleTag ? decodeEntities(titleTag) : '')).replace(/\s+/g, ' ').trim().slice(0, 200) || undefined
 
-  const image = absoluteHttp(
-    meta['og:image:secure_url'] || meta['og:image'] || meta['twitter:image'] || meta['twitter:image:src'] || ld.image || amz.image,
-    finalUrl,
-  )
+  const image = [meta['og:image:secure_url'], meta['og:image'], amz.image, meta['twitter:image'], meta['twitter:image:src'], ld.image]
+    .map((c) => absoluteHttp(c, finalUrl)).find((c) => c && !isJunkImage(c))
 
   let price = parsePrice(meta['product:price:amount'] ?? meta['og:price:amount'] ?? meta['price'])
   let currency = (meta['product:price:currency'] ?? meta['og:price:currency'] ?? meta['pricecurrency'])?.toUpperCase()

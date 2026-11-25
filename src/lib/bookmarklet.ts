@@ -17,7 +17,7 @@ for(var k in o)w(o[k],d+1)})(L,0);
 P=P||m('product:price:amount')||m('og:price:amount');
 C=C||m('product:price:currency');
 if(!P){var a=q('.a-price .a-offscreen,#priceblock_ourprice');if(a)P=a.textContent}
-var i=m('og:image')||(q('#landingImage')||{}).src||m('twitter:image')||'';
+var li=q('#landingImage,#imgBlkFront'),bad=function(u){return !u||/fls-[a-z]+[.]amazon[.]|uedata|batch.[0-9]+.OP.|^data:/i.test(u)};var i=[m('og:image'),li&&(li.getAttribute('data-old-hires')||li.src),m('twitter:image')].filter(function(u){return !bad(u)})[0]||'';
 var t=m('og:title')||(q('#productTitle')||{}).textContent||document.title;
 window.open(${JSON.stringify(site)}+'#/?add=1&u='+encodeURIComponent(location.href)+'&t='+encodeURIComponent((t||'').trim().slice(0,200))+'&i='+encodeURIComponent(i)+'&p='+encodeURIComponent(P||'')+'&c='+encodeURIComponent(C||''),'_blank');
 })()`

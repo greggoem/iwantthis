@@ -1,5 +1,5 @@
 // Lecture d'une fiche produit (titre, image, prix), partagée par « link-preview » et l'actualisation groupée de l'admin.
-import { parseProductPage, isShortLink, cleanProductUrl, googleRedirectTarget, type Preview } from './parse.ts'
+import { parseProductPage, isShortLink, cleanProductUrl, googleRedirectTarget, isJunkImage, type Preview } from './parse.ts'
 import { fillGaps, microlink } from './fallback.ts'
 
 export const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
@@ -134,6 +134,7 @@ export async function computePreview(raw: string): Promise<Preview> {
   if (isShortLink(target)) {
     try {
       viaMicrolink = await microlink(start, NET)
+      if (isJunkImage(viaMicrolink.image)) delete viaMicrolink.image
       if (viaMicrolink.url) {
         let u = new URL(viaMicrolink.url)
         const g = googleRedirectTarget(u)

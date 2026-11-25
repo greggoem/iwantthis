@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { supabase, errMsg, listShareUrl, APP_NAME } from '../lib/supabase'
 import { parsePrice } from '../lib/price'
 import { safeUrl } from '../lib/affiliate'
-import { fetchPreview, euroPrice } from '../lib/preview'
+import { fetchPreview, euroPrice, isJunkImage } from '../lib/preview'
 import CropCapture, { canCaptureScreen, grabScreen } from '../components/ScreenCapture'
 import { deleteItemImage, uploadItemImage } from '../lib/itemImage'
 import { useAuth } from '../lib/auth'
@@ -438,7 +438,7 @@ export default function MyList() {
 
   // données envoyées par le raccourci navigateur (#/?add=1&u=…&t=…&i=…&p=…)
   const prefill: Draft | null = params.get('add') === '1' ? (() => {
-    const u = safeUrl(params.get('u')), img = safeUrl(params.get('i'))
+    const u = safeUrl(params.get('u')), img = isJunkImage(params.get('i')) ? null : safeUrl(params.get('i'))   // pixel de suivi : on relira la fiche
     const cur = (params.get('c') ?? '').toUpperCase()
     const price = !cur || cur === 'EUR' ? parsePrice(params.get('p')) : undefined
     return {
@@ -665,7 +665,7 @@ export default function MyList() {
     if (!p.found) { if (!quiet) setErr(`« ${it.title} » : ${p.reason ?? 'lecture impossible'}`); return !!better }
     const price = euroPrice(p)
     const patch: { image_url?: string; price?: number } = {}
-    if (p.image && p.image !== it.image_url && !isOwnImage(it.image_url) && !(keepImage && it.image_url)) patch.image_url = p.image
+    if (p.image && p.image !== it.image_url && !isOwnImage(it.image_url) && !(keepImage && it.image_url && !isJunkImage(it.image_url))) patch.image_url = p.image
     if (price !== undefined) patch.price = price
     if (Object.keys(patch).length === 0) { if (!quiet) setMsg(`« ${it.title} » : rien de nouveau (prix inchangé ou absent, image conservée).`); return !!better }
     const { error } = await supabase.from('items').update(patch).eq('id', it.id)

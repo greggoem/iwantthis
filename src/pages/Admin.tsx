@@ -305,13 +305,13 @@ function PreviewChecks() {
           {s.last ? (
             <>
               <span className="small muted">{fmtDate(s.last.ran_at)} à {new Date(s.last.ran_at).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}</span>
-              <span className="small">{plural(s.last.tried, 'envie relue', 'envies relues')}, {plural(s.last.fixed, 'complétée', 'complétées')}{s.last.fixed ? ` (${detail(s.last)})` : ''}.</span>
+              <span className="small">{plural(s.last.tried, 'envie relue', 'envies relues')}, {plural(s.last.fixed, 'complétée', 'complétées')}{detail(s.last) ? ` (${detail(s.last)})` : ''}.</span>
             </>
           ) : <span className="small muted">Pas encore de passage.</span>}
         </div>
         <div className="card reminder">
           <strong>Sur 7 jours</strong>
-          <span className="small">{plural(s.week.fixed, 'envie complétée', 'envies complétées')}{s.week.fixed ? ` (${detail(s.week)})` : ''}</span>
+          <span className="small">{plural(s.week.fixed, 'envie complétée', 'envies complétées')}{detail(s.week) ? ` (${detail(s.week)})` : ''}</span>
           <span className="small muted">{plural(s.week.runs, 'passage', 'passages')}, {plural(s.week.tried, 'lecture', 'lectures')}</span>
         </div>
         <div className="card reminder">

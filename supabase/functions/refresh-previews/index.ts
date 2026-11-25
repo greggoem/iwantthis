@@ -71,5 +71,8 @@ Deno.serve(async (req) => {
   }
   await Promise.all([worker(), worker(), worker()])
   const fixed = results.filter((r) => r.changed.length).length
+  const count = (k: string) => results.filter((r) => r.changed.includes(k)).length
+  // trace pour l'administration (passages automatiques et lancés à la main)
+  await db.from('preview_check_runs').insert({ candidates: todo.length, tried: results.length, fixed, images: count('image_url'), prices: count('price'), titles: count('title') })
   return json({ candidates: todo.length, tried: results.length, fixed, results })
 })

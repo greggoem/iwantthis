@@ -284,6 +284,46 @@ const REMINDERS: Record<ReminderStat['kind'], { title: string; who: string; what
 }
 
 /** Relances par e-mail : une seule fois par personne et par type */
+interface PreviewRun { ran_at: string; candidates: number; tried: number; fixed: number; images: number; prices: number; titles: number }
+interface PreviewStats { last: PreviewRun | null; week: { runs: number; tried: number; fixed: number; images: number; prices: number }; no_image: number; no_price: number }
+
+/** Vérification quotidienne des envies incomplètes (lien sans image ou sans prix) */
+function PreviewChecks() {
+  const [s, setS] = useState<PreviewStats | null>(null)
+  useEffect(() => { supabase.rpc('admin_preview_checks').then(({ data }) => setS((data as PreviewStats) ?? null)) }, [])
+  if (!s) return null
+  const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`
+  const detail = (r: { images: number; prices: number; titles?: number }) =>
+    [r.images ? plural(r.images, 'image', 'images') : '', r.prices ? plural(r.prices, 'prix', 'prix') : '', r.titles ? plural(r.titles, 'titre', 'titres') : ''].filter(Boolean).join(', ')
+  return (
+    <section className="reminders">
+      <h3 style={{ margin: '0 0 .2rem' }}>Envies incomplètes</h3>
+      <p className="small muted" style={{ margin: '0 0 .6rem' }}>Chaque nuit (4h07 et 4h37), les envies avec un lien mais sans image, sans prix ou sans titre sont relues. Une envie qui reste incomplète est retentée chaque semaine ; rien de déjà rempli n'est modifié.</p>
+      <div className="reminder-grid">
+        <div className="card reminder">
+          <strong>Dernière vérification</strong>
+          {s.last ? (
+            <>
+              <span className="small muted">{fmtDate(s.last.ran_at)} à {new Date(s.last.ran_at).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' })}</span>
+              <span className="small">{plural(s.last.tried, 'envie relue', 'envies relues')}, {plural(s.last.fixed, 'complétée', 'complétées')}{s.last.fixed ? ` (${detail(s.last)})` : ''}.</span>
+            </>
+          ) : <span className="small muted">Pas encore de passage.</span>}
+        </div>
+        <div className="card reminder">
+          <strong>Sur 7 jours</strong>
+          <span className="small">{plural(s.week.fixed, 'envie complétée', 'envies complétées')}{s.week.fixed ? ` (${detail(s.week)})` : ''}</span>
+          <span className="small muted">{plural(s.week.runs, 'passage', 'passages')}, {plural(s.week.tried, 'lecture', 'lectures')}</span>
+        </div>
+        <div className="card reminder">
+          <strong>Encore incomplètes</strong>
+          <span className="small">{plural(s.no_image, 'envie sans image', 'envies sans image')}</span>
+          <span className="small">{plural(s.no_price, 'envie sans prix', 'envies sans prix')}</span>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Reminders() {
   const confirm = useConfirm()
   const [stats, setStats] = useState<ReminderStat[] | null>(null)
@@ -376,6 +416,7 @@ function UsersTab({ onDenied }: { onDenied: () => void }) {
   return (
     <div>
       <Reminders />
+      <PreviewChecks />
       <Notice>{err}</Notice>
       <div className="users-bar">
         <input type="search" placeholder="Rechercher un e-mail ou un prénom" value={q} onChange={e => setQ(e.target.value)} aria-label="Rechercher" />

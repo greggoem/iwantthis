@@ -415,8 +415,6 @@ function UsersTab({ onDenied }: { onDenied: () => void }) {
   const tot = (k: 'wishes' | 'gifts') => shown.reduce((s, r) => s + r[k], 0)
   return (
     <div>
-      <Reminders />
-      <PreviewChecks />
       <Notice>{err}</Notice>
       <div className="users-bar">
         <input type="search" placeholder="Rechercher un e-mail ou un prénom" value={q} onChange={e => setQ(e.target.value)} aria-label="Rechercher" />
@@ -448,7 +446,7 @@ function UsersTab({ onDenied }: { onDenied: () => void }) {
 
 /** Espace réservé aux administrateurs : statistiques, inscrits et partenaires */
 export default function Admin() {
-  const [tab, setTab] = useState<'stats' | 'users' | 'partners'>('stats')
+  const [tab, setTab] = useState<'stats' | 'users' | 'auto' | 'partners'>('stats')
   const [denied, setDenied] = useState(false)
   const deny = useCallback(() => setDenied(true), [])
   if (denied) return <Navigate to="/" replace />
@@ -458,9 +456,10 @@ export default function Admin() {
       <div className="admin-tabs" role="tablist">
         <button role="tab" aria-selected={tab === 'stats'} className={tab === 'stats' ? 'on' : ''} onClick={() => setTab('stats')}><Icon name="chart" size={16} /> Statistiques</button>
         <button role="tab" aria-selected={tab === 'users'} className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}><Icon name="users" size={16} /> Inscrits</button>
+        <button role="tab" aria-selected={tab === 'auto'} className={tab === 'auto' ? 'on' : ''} onClick={() => setTab('auto')}><Icon name="clock" size={16} /> Automatismes</button>
         <button role="tab" aria-selected={tab === 'partners'} className={tab === 'partners' ? 'on' : ''} onClick={() => setTab('partners')}><Icon name="gift" size={16} /> Partenaires</button>
       </div>
-      {tab === 'stats' ? <StatsTab onDenied={deny} /> : tab === 'users' ? <UsersTab onDenied={deny} /> : <PartnersTab />}
+      {tab === 'stats' ? <StatsTab onDenied={deny} /> : tab === 'users' ? <UsersTab onDenied={deny} /> : tab === 'auto' ? <div className="stack"><Reminders /><PreviewChecks /></div> : <PartnersTab />}
       <p className="small muted"><Link to="/reglages">← Réglages</Link></p>
     </div>
   )

@@ -1008,3 +1008,66 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .reminders { margin-bottom: 1.2rem; }
 .reminder-grid { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .reminder { display: flex; flex-direction: column; gap: .35rem; margin: 0; }
+
+/* ---------- Tirages au sort : version visuelle ---------- */
+.draw-card{gap:1rem}
+.draw-title{gap:.3rem}
+.draw-title strong{font-size:1.15rem}
+.draw-status{align-self:flex-start;display:inline-flex;align-items:center;gap:.3rem;font-size:.78rem;font-weight:600;padding:3px 10px;border-radius:999px}
+.draw-status.ok{background:var(--ok-bg);color:var(--ok)}
+.draw-status.wait{background:#fff4e0;color:#8a5a00}
+.draw-mystery{display:flex;flex-direction:column;align-items:center;gap:.35rem;width:100%;padding:1.4rem 1rem;border:2px dashed var(--accent);border-radius:18px;background:color-mix(in srgb,var(--accent) 8%,var(--surface));color:var(--ink);font:inherit;cursor:pointer;transition:transform .15s}
+.draw-mystery:hover{transform:translateY(-2px)}
+.draw-mystery strong{font-size:1.1rem}
+.draw-mystery .small{color:var(--muted)}
+.draw-mystery-box{font-size:2.6rem;line-height:1;animation:drawWiggle 2.4s ease-in-out infinite}
+@keyframes drawWiggle{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-8deg)}90%{transform:rotate(8deg)}95%{transform:rotate(-4deg)}}
+@media (prefers-reduced-motion:reduce){.draw-mystery-box{animation:none}}
+.draw-results{display:flex;flex-direction:column;gap:.7rem}
+.draw-gift{display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.2rem 1rem;border-radius:18px;background:var(--fill);text-align:center;animation:drawPop .35s ease-out}
+@keyframes drawPop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.draw-gift-who{font-size:.85rem;color:var(--muted)}
+.draw-gift-name{font-size:1.5rem;line-height:1.15}
+.draw-gift .btn{margin-top:.3rem}
+.draw-hide{align-self:center;color:var(--muted)}
+.center{text-align:center}
+.draw-waiting{display:flex;align-items:center;gap:.8rem;padding:1rem;border-radius:16px;background:var(--fill)}
+.draw-waiting>span:first-child{font-size:1.8rem}
+.draw-stack{display:flex;align-items:center;gap:.7rem;width:100%;padding:0;border:0;background:none;color:var(--ink);font:inherit;cursor:pointer;text-align:left}
+.draw-avatars{display:flex}
+.draw-avatars .pdot{box-shadow:0 0 0 2px var(--surface)}
+.draw-avatars .pdot+.pdot{margin-left:-9px}
+.draw-more{width:34px;height:34px;font-size:.78rem;background:var(--fill);color:var(--ink)}
+.draw-stack-txt{display:inline-flex;align-items:center;gap:.25rem;font-size:.9rem;font-weight:600;color:var(--muted)}
+.draw-chev{display:inline-flex;transition:transform .2s}.draw-chev.up{transform:rotate(180deg)}
+.draw-people{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:.7rem .4rem}
+.draw-person{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:.8rem;font-weight:500;text-align:center;overflow-wrap:anywhere}
+.draw-launch{width:100%;justify-content:center;padding:.85rem 1rem;font-size:1.05rem}
+.draw-org{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;padding-top:.8rem;border-top:1px solid var(--line-soft)}
+
+/* éditeur */
+.draw-editor{gap:1.1rem}
+.draw-name{font-size:1.15rem;font-weight:600;padding:.8rem 1rem}
+.draw-step{display:flex;flex-direction:column;gap:.6rem}
+.draw-step-head{display:flex;align-items:center;gap:.55rem}
+.draw-step-head strong{flex:1;font-size:1.02rem}
+.draw-step-n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:999px;background:var(--ink);color:var(--surface);font-size:.8rem;font-weight:700;flex:none}
+.draw-count{font-weight:700}
+.draw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:.5rem}
+.draw-grid.small-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr))}
+.draw-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:.3rem;padding:.6rem .3rem;border:2px solid transparent;border-radius:16px;background:var(--fill);color:var(--ink);font:inherit;cursor:pointer;opacity:.45;filter:grayscale(.7);transition:opacity .15s,filter .15s,border-color .15s,transform .1s}
+.draw-tile:active{transform:scale(.96)}
+.draw-tile.on{opacity:1;filter:none;border-color:var(--ink);background:var(--surface)}
+.draw-pairing .draw-tile{opacity:1;filter:none}
+.draw-pairing .draw-tile.on{border-color:var(--accent)}
+.draw-tile-dot{position:relative;display:inline-flex}
+.draw-tick{position:absolute;right:-3px;bottom:-3px;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:999px;background:var(--ok);color:#fff;box-shadow:0 0 0 2px var(--surface)}
+.draw-tile-name{font-size:.82rem;font-weight:600;text-align:center;line-height:1.15;overflow-wrap:anywhere}
+.draw-tile-tag{font-size:.68rem;color:var(--muted);text-align:center;line-height:1.1}
+.draw-pairs{display:flex;flex-direction:column;gap:.45rem}
+.draw-pair{display:flex;align-items:center;gap:.45rem;padding:.45rem .55rem;border-radius:14px;background:var(--fill)}
+.draw-pair-name{font-weight:600;font-size:.9rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.draw-way{flex:none;width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--accent);font-size:1.1rem;font-weight:700;cursor:pointer}
+.draw-pair-x{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer}
+.draw-pair-x:hover{background:var(--surface);color:var(--danger)}
+.draw-pairing{display:flex;flex-direction:column;gap:.55rem;padding:.75rem;border-radius:16px;border:2px dashed var(--accent)}

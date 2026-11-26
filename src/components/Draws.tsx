@@ -18,6 +18,14 @@ interface Draw { id: string; name: string; done_at: string | null; done_count: n
 
 const plural = (n: number, w: string) => `${n} ${w}${n > 1 ? 's' : ''}`
 
+/** Couleur pastel stable par prénom : chaque personne a la sienne, d'un tirage à l'autre */
+const TINTS = ['bleu', 'vert', 'jaune', 'violet', 'corail']
+export function tint(name: string): string {
+  let h = 0
+  for (const ch of name.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return TINTS[h % TINTS.length]
+}
+
 /** Regroupe les exclusions réciproques : « A ↔ B » */
 function groupBlocks(blocks: Block[], name: (pid: string) => string) {
   const seen = new Set<string>()
@@ -45,6 +53,7 @@ export default function Draws({ eventId, isOrg, me, candidates, pendingInvites, 
   const [busy, setBusy] = useState('')
   const [shown, setShown] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<Draw | 'new' | null>(null)
+  const [showPeople, setShowPeople] = useState<Record<string, boolean>>({})
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc('event_draws', { p_event: eventId })
@@ -122,62 +131,82 @@ export default function Draws({ eventId, isOrg, me, candidates, pendingInvites, 
           const iAmIn = d.participants.some(p => p.pid === me)
           const stale = Boolean(d.done_at) && d.done_count !== d.participants.length
           const open = !!shown[d.id]
+          const people = [...d.participants].sort((x, y) => x.name.localeCompare(y.name, 'fr', { sensitivity: 'base' }))
+          const peopleOpen = !!showPeople[d.id]
           return (
-            <section key={d.id} className="card draw-card">
+            <section key={d.id} className={`card draw-card${d.done_at ? ' is-done' : ''}`}>
               <div className="draw-top">
                 <div className="draw-title">
                   <strong>{d.name}</strong>
-                  <span className="small muted">{plural(d.participants.length, 'participant')}{d.done_at ? ` · tiré le ${formatDateShort(d.done_at)}` : ''}</span>
+                  <span className={`draw-status ${d.done_at ? 'ok' : 'wait'}`}>
+                    {d.done_at ? <><Icon name="check" size={13} /> Tiré le {formatDateShort(d.done_at)}</> : 'Pas encore tiré'}
+                  </span>
                 </div>
-                {d.done_at ? <span className="tag tag-ok">Tiré</span> : <span className="tag tag-wait">Pas encore tiré</span>}
                 {isOrg && (
                   <ActionMenu label={`Options du tirage ${d.name}`} actions={[
-                    { icon: 'pencil', label: 'Modifier (nom, participants, exclusions)', onClick: () => setEditing(d) },
+                    { icon: 'pencil', label: 'Modifier les participants', onClick: () => setEditing(d) },
+                    !!d.done_at && { icon: 'dice', label: 'Refaire le tirage', onClick: () => run(d) },
                     !!d.done_at && { icon: 'x', label: 'Annuler le tirage', onClick: () => reset(d) },
                     { icon: 'trash', label: 'Supprimer ce tirage', danger: true, onClick: () => remove(d) },
                   ]} />
                 )}
               </div>
 
+              {/* résultat : la grande carte cadeau */}
               {d.done_at && d.mine.length > 0 && (open ? (
                 <div className="draw-results">
                   {d.mine.map(m => {
                     const href = listLink(m)
                     return (
-                      <div key={m.giver} className="draw-result">
-                        <PersonDot name={m.receiver_name ?? '?'} color={m.receiver_kind === 'kid' ? (m.receiver_color ?? 'corail') : undefined} size={34} />
-                        <div className="draw-result-txt">
-                          <span className="small muted">{m.giver_kind === 'me' ? 'Vous offrez à' : `${m.giver_name} offre à`}</span>
-                          <strong>{m.receiver_name ?? 'une personne qui a quitté l\'événement'}</strong>
-                        </div>
-                        {href && <Link className="btn btn-sm" to={href}>Voir sa liste</Link>}
+                      <div key={m.giver} className="draw-gift">
+                        <span className="draw-gift-who">{m.giver_kind === 'me' ? 'Vous offrez à' : `${m.giver_name} offre à`}</span>
+                        <PersonDot name={m.receiver_name ?? '?'} color={m.receiver_kind === 'kid' ? (m.receiver_color ?? 'corail') : tint(m.receiver_name ?? '?')} size={64} />
+                        <strong className="draw-gift-name">{m.receiver_name ?? 'une personne qui a quitté l\'événement'}</strong>
+                        {href && <Link className="btn btn-primary" to={href}><Icon name="gift" size={16} /> Voir sa liste</Link>}
                       </div>
                     )
                   })}
-                  {d.mine.some(m => m.giver_kind === 'kid') && <p className="small muted" style={{ margin: 0 }}>Vous voyez le résultat de vos enfants parce que ce sont vos listes.</p>}
-                  <div><button type="button" className="btn btn-ghost btn-sm" onClick={() => setShown(s => ({ ...s, [d.id]: false }))}>Masquer</button></div>
+                  {d.mine.some(m => m.giver_kind === 'kid') && <p className="small muted center" style={{ margin: 0 }}>Vous voyez aussi le résultat de vos enfants.</p>}
+                  <button type="button" className="linklike small draw-hide" onClick={() => setShown(s => ({ ...s, [d.id]: false }))}>Cacher le résultat</button>
                 </div>
               ) : (
-                <button type="button" className="btn btn-primary draw-reveal" onClick={() => setShown(s => ({ ...s, [d.id]: true }))}>
-                  <Icon name="dice" size={17} /> {d.mine.length > 1 ? 'Découvrir les résultats' : 'Découvrir à qui j\'offre'}
+                <button type="button" className="draw-mystery" onClick={() => setShown(s => ({ ...s, [d.id]: true }))}>
+                  <span className="draw-mystery-box" aria-hidden>🎁</span>
+                  <strong>{d.mine.length > 1 ? 'Découvrir les résultats' : 'Découvrir à qui j\'offre'}</strong>
+                  <span className="small">Touchez pour ouvrir</span>
                 </button>
               ))}
               {d.done_at && !d.mine.length && iAmIn && <p className="small muted" style={{ margin: 0 }}>Pas encore de résultat pour vous : le tirage a eu lieu avant votre arrivée.</p>}
-              {!d.done_at && !isOrg && (iAmIn || d.mine.length > 0) && <p className="small muted" style={{ margin: 0 }}>Le tirage n'a pas encore eu lieu. L'organisateur le lancera.</p>}
+              {!d.done_at && !isOrg && (iAmIn || d.mine.length > 0) && (
+                <div className="draw-waiting"><span aria-hidden>⏳</span><span>Le tirage n'a pas encore eu lieu.<br /><span className="small muted">L'organisateur le lancera bientôt.</span></span></div>
+              )}
               {stale && <Notice kind="info">Les participants ont changé depuis le tirage{isOrg ? ' : pensez à le refaire.' : ' : demandez à l\'organisateur de le refaire.'}</Notice>}
 
-              <div className="draw-people">
-                {d.participants.map(p => (
-                  <span key={p.pid} className="draw-chip"><PersonDot name={p.name} color={p.kind === 'kid' ? (p.color ?? 'corail') : undefined} size={22} />{p.name}</span>
-                ))}
-              </div>
+              {/* participants : pastilles empilées, la liste complète au toucher */}
+              <button type="button" className="draw-stack" onClick={() => setShowPeople(s => ({ ...s, [d.id]: !peopleOpen }))} aria-expanded={peopleOpen}>
+                <span className="draw-avatars">
+                  {people.slice(0, 7).map(p => <PersonDot key={p.pid} name={p.name} color={p.kind === 'kid' ? (p.color ?? 'corail') : tint(p.name)} size={34} />)}
+                  {people.length > 7 && <span className="pdot draw-more">+{people.length - 7}</span>}
+                </span>
+                <span className="draw-stack-txt">{plural(people.length, 'participant')}<span className={`draw-chev${peopleOpen ? ' up' : ''}`}><Icon name="chevron" size={15} /></span></span>
+              </button>
+              {peopleOpen && (
+                <div className="draw-people">
+                  {people.map(p => (
+                    <span key={p.pid} className="draw-person"><PersonDot name={p.name} color={p.kind === 'kid' ? (p.color ?? 'corail') : tint(p.name)} size={40} /><span>{p.name}</span></span>
+                  ))}
+                </div>
+              )}
 
+              {isOrg && !d.done_at && (
+                <button type="button" className="btn btn-primary draw-launch" disabled={d.participants.length < 2 || busy === d.id} onClick={() => run(d)}>
+                  <Icon name="dice" size={18} /> {busy === d.id ? 'Tirage en cours…' : 'Lancer le tirage'}
+                </button>
+              )}
               {isOrg && (
-                <div className="row wrap gap">
-                  <button type="button" className={`btn btn-sm ${d.done_at ? '' : 'btn-primary'}`} disabled={d.participants.length < 2 || busy === d.id} onClick={() => run(d)}>
-                    <Icon name="dice" size={15} /> {busy === d.id ? 'Tirage…' : d.done_at ? 'Refaire' : 'Lancer le tirage'}
-                  </button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(d)}>Modifier</button>
+                <div className="draw-org">
+                  <button type="button" className="btn btn-sm" onClick={() => setEditing(d)}><Icon name="users" size={15} /> Modifier</button>
+                  {d.done_at && <button type="button" className="btn btn-sm btn-ghost" disabled={busy === d.id} onClick={() => run(d)}><Icon name="dice" size={15} /> {busy === d.id ? 'Tirage…' : 'Refaire'}</button>}
                   {d.participants.length < 2 && <span className="small muted">Il faut au moins 2 participants.</span>}
                 </div>
               )}
@@ -209,15 +238,17 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
   const [name, setName] = useState(draw?.name ?? (isFirst ? 'Tirage au sort' : ''))
   const [picked, setPicked] = useState<Set<string>>(() => new Set(draw ? draw.participants.map(p => p.pid) : isFirst ? candidates.filter(c => c.kind === 'user').map(c => c.pid) : []))
   const [blocks, setBlocks] = useState<Block[]>(draw?.blocks ?? [])
-  const [a, setA] = useState(''); const [b, setB] = useState(''); const [both, setBoth] = useState(true)
+  const [first, setFirst] = useState<string | null>(null)   // 1re personne choisie pour une exclusion
+  const [pairing, setPairing] = useState(false)
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
 
-  const label = (c: DrawCandidate) => {
-    const others = draws.filter(d => d.id !== draw?.id && d.participants.some(p => p.pid === c.pid)).map(d => `« ${d.name} »`)
-    const base = c.kind === 'kid' ? `Sans compte · géré par ${c.owner_id === me ? 'vous' : c.ownerName}` : c.pid === me ? 'Vous' : 'Invité'
-    return others.length ? `${base} · aussi dans ${others.join(', ')}` : base
+  const cand = (pid: string) => candidates.find(c => c.pid === pid)
+  const nm = (pid: string) => cand(pid)?.name ?? '—'
+  const dot = (pid: string, size: number) => {
+    const c = cand(pid)
+    return <PersonDot name={c?.name ?? '?'} color={c?.kind === 'kid' ? (c.color ?? 'corail') : tint(c?.name ?? '?')} size={size} />
   }
-  const nm = (pid: string) => candidates.find(c => c.pid === pid)?.name ?? '—'
+  const otherDraws = (pid: string) => draws.filter(d => d.id !== draw?.id && d.participants.some(p => p.pid === pid)).map(d => d.name)
   const toggle = (pid: string) => setPicked(s => {
     const n = new Set(s)
     if (n.has(pid)) { n.delete(pid); setBlocks(bl => bl.filter(x => x.giver !== pid && x.receiver !== pid)) } else n.add(pid)
@@ -226,17 +257,25 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
   const sorted = [...candidates].sort((x, y) => x.name.localeCompare(y.name, 'fr', { sensitivity: 'base' }))
   const inDraw = sorted.filter(c => picked.has(c.pid))
   const allOn = candidates.every(c => picked.has(c.pid))
-  const addBlock = () => {
-    if (!a || !b || a === b) { setErr('Choisissez deux personnes différentes.'); return }
-    setErr('')
+  const pairs = groupBlocks(blocks, nm)
+
+  // exclusion : on touche une personne, puis une autre → elles ne se tirent pas (dans les deux sens)
+  const tapPair = (pid: string) => {
+    if (!first) { setFirst(pid); return }
+    if (first === pid) { setFirst(null); return }
     setBlocks(bl => {
       const n = [...bl]
       const add = (g: string, r: string) => { if (!n.some(x => x.giver === g && x.receiver === r)) n.push({ giver: g, receiver: r }) }
-      add(a, b); if (both) add(b, a)
+      add(first, pid); add(pid, first)
       return n
     })
-    setA(''); setB('')
+    setFirst(null); setPairing(false)
   }
+  const removePair = (g: { a: string; b: string; both: boolean }) =>
+    setBlocks(bl => bl.filter(x => !((x.giver === g.a && x.receiver === g.b) || (g.both && x.giver === g.b && x.receiver === g.a))))
+  // ⇄ → → : la 2e personne peut quand même offrir à la 1re
+  const toggleWay = (g: { a: string; b: string; both: boolean }) =>
+    setBlocks(bl => g.both ? bl.filter(x => !(x.giver === g.b && x.receiver === g.a)) : [...bl, { giver: g.b, receiver: g.a }])
 
   const save = async (e: FormEvent) => {
     e.preventDefault()
@@ -261,61 +300,79 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
   }
 
   return (
-    <Modal title={draw ? `Modifier « ${draw.name} »` : 'Nouveau tirage'} onClose={onClose} wide>
-      <form className="stack" onSubmit={save}>
-        <label>Nom du tirage
-          <input value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Par exemple : Les enfants" autoFocus={!draw} />
-        </label>
-        <div className="row between">
-          <strong>Qui participe ?</strong>
-          <span className="row gap small">
-            <span className="muted">{plural(picked.size, 'sélectionné')}</span>
-            <button type="button" className="linklike" onClick={() => setPicked(allOn ? new Set() : new Set(candidates.map(c => c.pid)))}>{allOn ? 'Tout décocher' : 'Tout cocher'}</button>
-          </span>
-        </div>
-        <div className="draw-pick">
-          {sorted.map(c => (
-            <label key={c.pid} className="draw-pick-row">
-              <input type="checkbox" checked={picked.has(c.pid)} onChange={() => toggle(c.pid)} />
-              <PersonDot name={c.name} color={c.kind === 'kid' ? (c.color ?? 'corail') : undefined} size={30} />
-              <span className="draw-pick-txt"><strong>{c.name}</strong><span className="small muted">{label(c)}</span></span>
-            </label>
-          ))}
-        </div>
-        {draw?.done_at && <p className="small muted" style={{ margin: 0 }}>Ce tirage a déjà eu lieu : après une modification, pensez à le refaire.</p>}
+    <Modal title={draw ? 'Modifier le tirage' : 'Nouveau tirage'} onClose={onClose} wide>
+      <form className="stack draw-editor" onSubmit={save}>
+        <input className="draw-name" value={name} maxLength={60} onChange={e => setName(e.target.value)} placeholder="Nom du tirage, par exemple : Les enfants" aria-label="Nom du tirage" autoFocus={!draw} />
 
-        <details className="draw-excl" open={blocks.length > 0}>
-          <summary>Qui ne doit pas s'offrir de cadeau ?{blocks.length > 0 ? ` (${groupBlocks(blocks, nm).length})` : ''}</summary>
-          <p className="small muted">Par exemple un couple, un frère et une sœur, ou deux personnes qui se sont tirées l'an dernier.</p>
-          {blocks.length > 0 && (
-            <ul className="plain">
-              {groupBlocks(blocks, nm).map(g => (
-                <li key={g.label} className="row between">
-                  <span>{g.label}</span>
-                  <button type="button" className="btn btn-ghost btn-sm danger" onClick={() => setBlocks(bl => bl.filter(x => !((x.giver === g.a && x.receiver === g.b) || (g.both && x.giver === g.b && x.receiver === g.a))))}>Retirer</button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <div className="row wrap gap">
-            <select value={a} onChange={e => setA(e.target.value)} aria-label="Personne A">
-              <option value="">Personne A…</option>
-              {inDraw.map(c => <option key={c.pid} value={c.pid}>{c.name}</option>)}
-            </select>
-            <span className="muted">ne doit pas offrir à</span>
-            <select value={b} onChange={e => setB(e.target.value)} aria-label="Personne B">
-              <option value="">Personne B…</option>
-              {inDraw.filter(c => c.pid !== a).map(c => <option key={c.pid} value={c.pid}>{c.name}</option>)}
-            </select>
+        <div className="draw-step">
+          <div className="draw-step-head">
+            <span className="draw-step-n">1</span>
+            <strong>Qui participe ?</strong>
+            <span className="draw-count">{picked.size}<span className="muted"> / {candidates.length}</span></span>
+            <button type="button" className="linklike small" onClick={() => setPicked(allOn ? new Set() : new Set(candidates.map(c => c.pid)))}>{allOn ? 'Aucun' : 'Tous'}</button>
           </div>
-          <label className="radio small"><input type="checkbox" checked={both} onChange={e => setBoth(e.target.checked)} /> Dans les deux sens (B non plus à A)</label>
-          <div><button type="button" className="btn btn-sm" onClick={addBlock}>Ajouter l'exclusion</button></div>
-        </details>
+          <p className="small muted" style={{ margin: 0 }}>Touchez une personne pour l'ajouter ou la retirer.</p>
+          <div className="draw-grid">
+            {sorted.map(c => {
+              const on = picked.has(c.pid)
+              const also = otherDraws(c.pid)
+              return (
+                <button key={c.pid} type="button" className={`draw-tile${on ? ' on' : ''}`} aria-pressed={on} onClick={() => toggle(c.pid)}
+                  title={also.length ? `Aussi dans : ${also.join(', ')}` : undefined}>
+                  <span className="draw-tile-dot">{dot(c.pid, 52)}{on && <span className="draw-tick"><Icon name="check" size={13} /></span>}</span>
+                  <span className="draw-tile-name">{c.pid === me ? 'Vous' : c.name}</span>
+                  {c.kind === 'kid' && <span className="draw-tile-tag">sans compte</span>}
+                  {also.length > 0 && <span className="draw-tile-tag">aussi « {also[0]} »</span>}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
+        <div className="draw-step">
+          <div className="draw-step-head">
+            <span className="draw-step-n">2</span>
+            <strong>Qui ne doit pas tomber sur qui ?</strong>
+            <span className="small muted">facultatif</span>
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>Un couple, un frère et une sœur, ceux qui se sont tirés l'an dernier…</p>
+          {pairs.length > 0 && (
+            <div className="draw-pairs">
+              {pairs.map(g => (
+                <div key={g.label} className="draw-pair">
+                  {dot(g.a, 36)}<span className="draw-pair-name">{g.a === me ? 'Vous' : nm(g.a)}</span>
+                  <button type="button" className="draw-way" onClick={() => toggleWay(g)} title={g.both ? 'Ni l\'un ni l\'autre (toucher pour un seul sens)' : `Seulement ${nm(g.a)} → ${nm(g.b)} (toucher pour les deux sens)`}>
+                    {g.both ? '⇄' : '→'}
+                  </button>
+                  {dot(g.b, 36)}<span className="draw-pair-name">{g.b === me ? 'Vous' : nm(g.b)}</span>
+                  <button type="button" className="draw-pair-x" onClick={() => removePair(g)} aria-label={`Retirer ${g.label}`}><Icon name="x" size={16} /></button>
+                </div>
+              ))}
+            </div>
+          )}
+          {pairing ? (
+            <div className="draw-pairing">
+              <p className="small" style={{ margin: 0 }}>{first ? (first === me ? <>Sur qui <strong>vous</strong> ne devez pas tomber ?</> : <>Avec qui <strong>{nm(first)}</strong> ne doit-il pas tomber ?</>) : 'Touchez la première personne'}</p>
+              <div className="draw-grid small-grid">
+                {inDraw.map(c => (
+                  <button key={c.pid} type="button" className={`draw-tile${first === c.pid ? ' on' : ''}`} onClick={() => tapPair(c.pid)}>
+                    <span className="draw-tile-dot">{dot(c.pid, 40)}</span>
+                    <span className="draw-tile-name">{c.pid === me ? 'Vous' : c.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setPairing(false); setFirst(null) }}>Fermer</button></div>
+            </div>
+          ) : (
+            <div><button type="button" className="btn btn-sm" disabled={inDraw.length < 2} onClick={() => setPairing(true)}><Icon name="plus" size={15} /> Ajouter une exception</button></div>
+          )}
+        </div>
+
+        {draw?.done_at && <Notice kind="info">Ce tirage a déjà eu lieu : après une modification, pensez à le refaire.</Notice>}
         <Notice>{err}</Notice>
         <div className="row gap modal-actions">
           <button type="button" className="btn btn-ghost" onClick={onClose}>Annuler</button>
-          <button className="btn btn-primary" disabled={busy}>{busy ? 'Enregistrement…' : draw ? 'Enregistrer' : 'Créer le tirage'}</button>
+          <button className="btn btn-primary" disabled={busy || picked.size < 2}>{busy ? 'Enregistrement…' : draw ? 'Enregistrer' : `Créer le tirage (${picked.size})`}</button>
         </div>
       </form>
     </Modal>

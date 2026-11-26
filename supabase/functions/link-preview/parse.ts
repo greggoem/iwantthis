@@ -5,6 +5,8 @@ export interface Preview {
   found: boolean
   title?: string
   image?: string
+  /** autres photos du produit trouvées sur la page (la première est « image ») */
+  images?: string[]
   price?: number
   currency?: string
   site?: string
@@ -113,8 +115,8 @@ function walk(node: any, visit: (o: any) => void, depth = 0) {
   for (const k of Object.keys(node)) walk(node[k], visit, depth + 1)
 }
 
-function jsonLd(html: string): { price?: number; currency?: string; image?: string; name?: string } {
-  const res: { price?: number; currency?: string; image?: string; name?: string } = {}
+function jsonLd(html: string): { price?: number; currency?: string; image?: string; images: string[]; name?: string } {
+  const res: { price?: number; currency?: string; image?: string; images: string[]; name?: string } = { images: [] }
   const re = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi
   let m: RegExpExecArray | null
   while ((m = re.exec(html))) {
@@ -125,10 +127,10 @@ function jsonLd(html: string): { price?: number; currency?: string; image?: stri
       const type = ([] as string[]).concat(o['@type'] ?? []).map(String)
       if (type.includes('Product')) {
         if (!res.name && typeof o.name === 'string') res.name = o.name
-        if (!res.image) {
-          const im = Array.isArray(o.image) ? o.image[0] : o.image
-          const u = typeof im === 'string' ? im : im?.url
-          if (typeof u === 'string') res.image = u
+        for (const im of ([] as unknown[]).concat(o.image ?? [])) {
+          // deno-lint-ignore no-explicit-any
+          const u = typeof im === 'string' ? im : (im as any)?.url ?? (im as any)?.contentUrl
+          if (typeof u === 'string') { if (!res.image) res.image = u; res.images.push(u) }
         }
       }
       if (type.includes('Offer') || type.includes('AggregateOffer') || 'priceCurrency' in o) {
@@ -161,6 +163,13 @@ function absoluteHttp(u: string | undefined, base: string): string | undefined {
 }
 
 /** Pages Amazon : balises propres au site, utilisées seulement si les métadonnées standard manquent */
+/** Toutes les photos Amazon de la galerie produit (« hiRes » puis « large ») */
+function amazonGallery(html: string): string[] {
+  const out: string[] = []
+  for (const m of html.matchAll(/"(?:hiRes|large)"\s*:\s*"(https:[^"]+)"/g)) out.push(m[1])
+  return out
+}
+
 function amazonFallback(html: string, finalUrl: string): { title?: string; image?: string; price?: number; currency?: string } {
   if (!/(^|\.)amazon\./i.test(new URL(finalUrl).hostname)) return {}
   const rawTitle = html.match(/id=["']productTitle["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]
@@ -193,13 +202,34 @@ export function parseProductPage(html: string, finalUrl: string): Preview {
   const image = [meta['og:image:secure_url'], meta['og:image'], amz.image, meta['twitter:image'], meta['twitter:image:src'], ld.image]
     .map((c) => absoluteHttp(c, finalUrl)).find((c) => c && !isJunkImage(c))
 
+  // autres photos proposées au choix : toutes les og:image, galerie JSON-LD, galerie Amazon
+  const allOg = [...html.matchAll(/<meta\s[^>]*>/gi)].map((m) => attrs(m[0]))
+    .filter((a) => /^(og:image(:secure_url|:url)?|twitter:image(:src)?)$/i.test(a.property || a.name || '')).map((a) => a.content)
+  const amzAll = /(^|\.)amazon\./i.test(new URL(finalUrl).hostname) ? amazonGallery(html) : []
+  const images = uniqueImages([image, ...allOg, ...ld.images, ...amzAll].map((c) => absoluteHttp(c, finalUrl)))
+
   let price = parsePrice(meta['product:price:amount'] ?? meta['og:price:amount'] ?? meta['price'])
-  let currency = (meta['product:price:currency'] ?? meta['og:price:currency'] ?? meta['pricecurrency'])?.toUpperCase()
+  let currency: string | undefined = (meta['product:price:currency'] ?? meta['og:price:currency'] ?? meta['pricecurrency'])?.toUpperCase()
   if (price === undefined && ld.price !== undefined) { price = ld.price; currency = currency ?? ld.currency }
   if (price === undefined) price = microdataPrice(html)
   if (price === undefined && amz.price !== undefined) { price = amz.price; currency = currency ?? amz.currency }
   if (price !== undefined && !currency) currency = ld.currency
 
   const found = Boolean(image || price !== undefined || title)
-  return { found, title, image, price, currency, site: new URL(finalUrl).hostname.replace(/^www\./, '') }
+  return { found, title, image, images: images.length > 1 ? images : undefined, price, currency, site: new URL(finalUrl).hostname.replace(/^www\./, '') }
+}
+
+/** Liste d'images sans doublons (même fichier en plusieurs tailles compris), sans pixels de suivi, au plus 12 */
+export function uniqueImages(list: (string | undefined)[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const u of list) {
+    if (!u || isJunkImage(u) || !/^https?:/i.test(u)) continue
+    // Amazon : « …/I/71abc._AC_SX679_.jpg » et « …/I/71abc.jpg » sont la même photo
+    const k = u.replace(/\._[A-Z0-9_,]+_\./i, '.').replace(/[?#].*$/, '').replace(/^http:/, 'https:')
+    if (seen.has(k)) continue
+    seen.add(k); out.push(u)
+    if (out.length >= 12) break
+  }
+  return out
 }

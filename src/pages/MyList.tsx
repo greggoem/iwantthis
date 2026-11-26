@@ -63,6 +63,9 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
   const [sending, setSending] = useState(false)
   const [shot, setShot] = useState<HTMLCanvasElement | null>(null)
   const [menu, setMenu] = useState(false)
+  /** photos trouvées sur la page du produit, proposées au choix */
+  const [choices, setChoices] = useState<string[]>([])
+  const [looking, setLooking] = useState(false)
   const { session } = useAuth()
   const fileRef = useRef<HTMLInputElement>(null)
   const uploaded = useRef<string[]>([])   // images envoyées pendant cette saisie (nettoyées si abandon / remplacées)
@@ -82,6 +85,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
       lastUrl.current = p.url
       setD(prev => ({ ...prev, url: p.url! }))
     }
+    setChoices(p.images ?? [])
     if (!p.found) { setHint(`Lecture automatique impossible (${p.reason ?? 'site non lisible'}). Complétez les champs à la main, et ajoutez une image si besoin.`); return }
     const price = euroPrice(p)
     const fromShare = preferRead.current
@@ -93,8 +97,24 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
       price: prev.price === '' && price !== undefined ? String(price) : prev.price,
     }))
     preferRead.current = false
-    const bits = [p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
+    const nPhotos = p.images?.length ?? 0
+    const bits = [nPhotos > 1 ? `${nPhotos} photos` : p.image ? 'image' : null, price !== undefined ? `prix ${formatPrice(price)}` : null].filter(Boolean)
     setHint(bits.length ? `Trouvé sur ${p.site} : ${bits.join(' et ')}. Modifiable.` : `Rien de plus trouvé sur ${p.site} : renseignez le prix si vous le connaissez.`)
+  }
+
+  // « Voir les photos du site » : relit la fiche pour proposer toutes ses photos
+  const lookPhotos = async () => {
+    const u = safeUrl(d.url)
+    if (!u) return
+    setLooking(true); setHint('')
+    const p = await fetchPreview(u.toString())
+    setLooking(false)
+    const list = p.images?.length ? p.images : p.image ? [p.image] : []
+    setChoices(list)
+    if (list.length === 0) setHint(`Aucune photo trouvée sur ${p.site ?? 'ce site'}${p.reason ? ` (${p.reason})` : ''}. Vous pouvez ajouter la vôtre.`)
+    else if (list.length === 1 && !d.image) setD(prev => ({ ...prev, image: list[0] }))
+    else if (list.length === 1) setHint(`Une seule photo sur ${p.site} : ${list[0] === d.image ? 'c\'est déjà celle-ci' : 'touchez-la pour la prendre'}.`)
+    if (list.length === 1 && d.image && list[0] !== d.image) setChoices([d.image, list[0]])
   }
 
   // lecture automatique : tout de suite au collage, ou peu après l'arrêt de la saisie
@@ -235,6 +255,7 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
               <>
                 <div className="imgmenu-back" onClick={() => setMenu(false)} />
                 <div className="imgmenu" role="menu">
+                  {safeUrl(d.url) && <button type="button" role="menuitem" onClick={() => { setMenu(false); lookPhotos() }}>Voir les photos du site</button>}
                   <button type="button" role="menuitem" onClick={() => { setMenu(false); fileRef.current?.click() }}>Choisir une photo ou un fichier</button>
                   {canCaptureScreen() && <button type="button" role="menuitem" onClick={() => { setMenu(false); capture() }}>Capturer l'écran</button>}
                   {d.image && <button type="button" role="menuitem" className="danger" onClick={() => { setMenu(false); setD(prev => ({ ...prev, image: '' })) }}>Retirer l'image</button>}
@@ -256,6 +277,14 @@ function ItemForm({ initial, groups, onSubmit, onCancel, submitLabel, stepped = 
           </label>
         </div>
       </div>
+      {(choices.length > 1 || looking) && (
+        <div className="photo-pick">
+          <span className="small muted">{looking ? 'Recherche des photos sur le site…' : 'Photos trouvées sur le site · touchez celle que vous préférez'}</span>
+          <div className="photo-pick-row">
+            {choices.map(u => <PhotoChoice key={u} src={u} on={d.image === u} onPick={() => setD(prev => ({ ...prev, image: u }))} />)}
+          </div>
+        </div>
+      )}
       {stepped && urlField}
       <label>Où l'ajouter ?
         <select value={d.groupId} onChange={e => setD(prev => ({ ...prev, groupId: e.target.value }))}>
@@ -888,5 +917,18 @@ export default function MyList() {
         </Modal>
       )}
     </div>
+  )
+}
+
+/** Vignette d'une photo proposée ; masquée si elle ne se charge pas ou si c'est une icône minuscule */
+function PhotoChoice({ src, on, onPick }: { src: string; on: boolean; onPick: () => void }) {
+  const [bad, setBad] = useState(false)
+  if (bad) return null
+  return (
+    <button type="button" className={`photo-choice${on ? ' on' : ''}`} aria-pressed={on} onClick={onPick} title={on ? 'Photo choisie' : 'Choisir cette photo'}>
+      <img src={src} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setBad(true)}
+        onLoad={e => { const i = e.currentTarget; if (i.naturalWidth < 60 || i.naturalHeight < 60) setBad(true) }} />
+      {on && <span className="photo-choice-tick"><Icon name="check" size={13} /></span>}
+    </button>
   )
 }

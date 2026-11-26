@@ -4,6 +4,8 @@ export interface Preview {
   found: boolean
   title?: string
   image?: string
+  /** autres photos du produit trouvées sur la page, à proposer au choix */
+  images?: string[]
   price?: number
   currency?: string
   site?: string
@@ -19,6 +21,7 @@ export async function fetchPreview(url: string): Promise<Preview> {
     if (error || !data) return { found: false, reason: 'Service de lecture indisponible pour le moment' }
     const p = data as Preview
     if (isJunkImage(p.image)) { delete p.image; p.found = Boolean(p.title || p.price !== undefined) }
+    p.images = (p.images ?? []).filter(u => typeof u === 'string' && /^https:\/\//i.test(u) && !isJunkImage(u))
     return p
   } catch {
     return { found: false, reason: 'Service de lecture indisponible pour le moment' }

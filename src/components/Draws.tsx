@@ -126,7 +126,7 @@ export default function Draws({ eventId, isOrg, me, candidates, pendingInvites, 
         </section>
       )}
 
-      <div className="draws">
+      <div className={`draws${draws.length === 1 ? ' one' : ''}`}>
         {draws.map(d => {
           const iAmIn = d.participants.some(p => p.pid === me)
           const stale = Boolean(d.done_at) && d.done_count !== d.participants.length
@@ -172,8 +172,11 @@ export default function Draws({ eventId, isOrg, me, candidates, pendingInvites, 
               ) : (
                 <button type="button" className="draw-mystery" onClick={() => setShown(s => ({ ...s, [d.id]: true }))}>
                   <span className="draw-mystery-box" aria-hidden>🎁</span>
-                  <strong>{d.mine.length > 1 ? 'Découvrir les résultats' : 'Découvrir à qui j\'offre'}</strong>
-                  <span className="small">Touchez pour ouvrir</span>
+                  <span className="draw-mystery-txt">
+                    <strong>{d.mine.length > 1 ? 'Vos résultats vous attendent' : 'À qui allez-vous offrir ?'}</strong>
+                    <span className="small">C'est secret : vous seul le verrez.</span>
+                  </span>
+                  <span className="draw-mystery-cta">Ouvrir</span>
                 </button>
               ))}
               {d.done_at && !d.mine.length && iAmIn && <p className="small muted" style={{ margin: 0 }}>Pas encore de résultat pour vous : le tirage a eu lieu avant votre arrivée.</p>}

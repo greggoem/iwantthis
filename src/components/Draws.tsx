@@ -311,18 +311,15 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
             <span className="draw-count">{picked.size}<span className="muted"> / {candidates.length}</span></span>
             <button type="button" className="linklike small" onClick={() => setPicked(allOn ? new Set() : new Set(candidates.map(c => c.pid)))}>{allOn ? 'Aucun' : 'Tous'}</button>
           </div>
-          <p className="small muted" style={{ margin: 0 }}>Touchez une personne pour l'ajouter ou la retirer.</p>
-          <div className="draw-grid">
+                    <div className="draw-chips">
             {sorted.map(c => {
               const on = picked.has(c.pid)
               const also = otherDraws(c.pid)
+              const tip = [c.kind === 'kid' ? 'sans compte' : '', also.length ? `aussi dans : ${also.join(', ')}` : ''].filter(Boolean).join(' · ')
               return (
-                <button key={c.pid} type="button" className={`draw-tile${on ? ' on' : ''}`} aria-pressed={on} onClick={() => toggle(c.pid)}
-                  title={also.length ? `Aussi dans : ${also.join(', ')}` : undefined}>
-                  <span className="draw-tile-dot">{dot(c.pid, 52)}{on && <span className="draw-tick"><Icon name="check" size={13} /></span>}</span>
-                  <span className="draw-tile-name">{c.pid === me ? 'Vous' : c.name}</span>
-                  {c.kind === 'kid' && <span className="draw-tile-tag">sans compte</span>}
-                  {also.length > 0 && <span className="draw-tile-tag">aussi « {also[0]} »</span>}
+                <button key={c.pid} type="button" className={`draw-chip${on ? ' on' : ''}`} aria-pressed={on} onClick={() => toggle(c.pid)} title={tip || undefined}>
+                  {dot(c.pid, 26)}<span>{c.pid === me ? 'Vous' : c.name}</span>
+                  {on && <Icon name="check" size={14} />}
                 </button>
               )
             })}
@@ -335,29 +332,27 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
             <strong>Qui ne doit pas tomber sur qui ?</strong>
             <span className="small muted">facultatif</span>
           </div>
-          <p className="small muted" style={{ margin: 0 }}>Un couple, un frère et une sœur, ceux qui se sont tirés l'an dernier…</p>
-          {pairs.length > 0 && (
-            <div className="draw-pairs">
+                    {pairs.length > 0 && (
+            <div className="draw-chips">
               {pairs.map(g => (
-                <div key={g.label} className="draw-pair">
-                  {dot(g.a, 36)}<span className="draw-pair-name">{g.a === me ? 'Vous' : nm(g.a)}</span>
-                  <button type="button" className="draw-way" onClick={() => toggleWay(g)} title={g.both ? 'Ni l\'un ni l\'autre (toucher pour un seul sens)' : `Seulement ${nm(g.a)} → ${nm(g.b)} (toucher pour les deux sens)`}>
+                <span key={g.label} className="draw-xchip">
+                  {dot(g.a, 24)}<span className="draw-xname">{g.a === me ? 'Vous' : nm(g.a)}</span>
+                  <button type="button" className="draw-way" onClick={() => toggleWay(g)} title={g.both ? 'Dans les deux sens (toucher pour un seul sens)' : 'Dans un seul sens (toucher pour les deux sens)'}>
                     {g.both ? '⇄' : '→'}
                   </button>
-                  {dot(g.b, 36)}<span className="draw-pair-name">{g.b === me ? 'Vous' : nm(g.b)}</span>
-                  <button type="button" className="draw-pair-x" onClick={() => removePair(g)} aria-label={`Retirer ${g.label}`}><Icon name="x" size={16} /></button>
-                </div>
+                  {dot(g.b, 24)}<span className="draw-xname">{g.b === me ? 'Vous' : nm(g.b)}</span>
+                  <button type="button" className="draw-pair-x" onClick={() => removePair(g)} aria-label={`Retirer ${g.label}`}><Icon name="x" size={14} /></button>
+                </span>
               ))}
             </div>
           )}
           {pairing ? (
             <div className="draw-pairing">
               <p className="small" style={{ margin: 0 }}>{first ? (first === me ? <>Sur qui <strong>vous</strong> ne devez pas tomber ?</> : <>Avec qui <strong>{nm(first)}</strong> ne doit-il pas tomber ?</>) : 'Touchez la première personne'}</p>
-              <div className="draw-grid small-grid">
+              <div className="draw-chips">
                 {inDraw.map(c => (
-                  <button key={c.pid} type="button" className={`draw-tile${first === c.pid ? ' on' : ''}`} onClick={() => tapPair(c.pid)}>
-                    <span className="draw-tile-dot">{dot(c.pid, 40)}</span>
-                    <span className="draw-tile-name">{c.pid === me ? 'Vous' : c.name}</span>
+                  <button key={c.pid} type="button" className={`draw-chip on${first === c.pid ? ' first' : ''}`} onClick={() => tapPair(c.pid)}>
+                    {dot(c.pid, 26)}<span>{c.pid === me ? 'Vous' : c.name}</span>
                   </button>
                 ))}
               </div>

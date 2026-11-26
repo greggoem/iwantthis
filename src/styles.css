@@ -1071,3 +1071,16 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .draw-pair-x{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border:0;border-radius:999px;background:none;color:var(--muted);cursor:pointer}
 .draw-pair-x:hover{background:var(--surface);color:var(--danger)}
 .draw-pairing{display:flex;flex-direction:column;gap:.55rem;padding:.75rem;border-radius:16px;border:2px dashed var(--accent)}
+
+/* Tirages : éditeur compact en pastilles */
+.draw-chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.draw-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.25rem .65rem .25rem .25rem;border-radius:999px;border:1.5px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:.9rem;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.draw-chip > :first-child{opacity:.5;filter:grayscale(.8)}
+.draw-chip.on{border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);font-weight:600}
+.draw-chip.on > :first-child{opacity:1;filter:none}
+.draw-chip.first{border-color:var(--accent);background:var(--accent);color:#fff}
+.draw-chip:active{transform:scale(.96)}
+.draw-xchip{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .25rem .2rem .2rem;border-radius:999px;background:var(--fill);font-size:.88rem;font-weight:600;max-width:100%}
+.draw-xname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:9em}
+.draw-xchip .draw-way{width:26px;height:26px;font-size:.9rem;border:0;background:none}
+.draw-xchip .draw-pair-x{width:24px;height:24px}

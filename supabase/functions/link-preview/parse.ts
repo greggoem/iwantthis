@@ -162,7 +162,6 @@ function absoluteHttp(u: string | undefined, base: string): string | undefined {
   } catch { return undefined }
 }
 
-/** Pages Amazon : balises propres au site, utilisées seulement si les métadonnées standard manquent */
 /** Toutes les photos Amazon de la galerie produit (« hiRes » puis « large ») */
 function amazonGallery(html: string): string[] {
   const out: string[] = []
@@ -170,6 +169,7 @@ function amazonGallery(html: string): string[] {
   return out
 }
 
+/** Pages Amazon : balises propres au site, utilisées seulement si les métadonnées standard manquent */
 function amazonFallback(html: string, finalUrl: string): { title?: string; image?: string; price?: number; currency?: string } {
   if (!/(^|\.)amazon\./i.test(new URL(finalUrl).hostname)) return {}
   const rawTitle = html.match(/id=["']productTitle["'][^>]*>([\s\S]*?)<\/span>/i)?.[1]

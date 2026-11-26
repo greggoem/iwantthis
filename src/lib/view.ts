@@ -4,7 +4,8 @@ import type { Item } from './types'
 export type ViewMode = 'list' | 'gallery'
 export type SortKey = 'title' | 'price' | 'store' | 'status'
 export type SortDir = 'asc' | 'desc'
-export interface ViewPrefs { view: ViewMode; key: SortKey | null; dir: SortDir }
+/** `added` : sens de l'ordre d'ajout (par défaut les plus récentes d'abord) */
+export interface ViewPrefs { view: ViewMode; key: SortKey | null; dir: SortDir; added: SortDir }
 
 const STORE = 'iwt.view'
 const KEYS: SortKey[] = ['title', 'price', 'store', 'status']
@@ -16,8 +17,9 @@ function read(): ViewPrefs {
       view: p.view === 'gallery' ? 'gallery' : 'list',
       key: KEYS.includes(p.key) ? p.key : null,
       dir: p.dir === 'desc' ? 'desc' : 'asc',
+      added: p.added === 'asc' ? 'asc' : 'desc',
     }
-  } catch { return { view: 'list', key: null, dir: 'asc' } }
+  } catch { return { view: 'list', key: null, dir: 'asc', added: 'desc' } }
 }
 
 /** Mode d'affichage (liste / galerie) et tri, mémorisés sur cet appareil */
@@ -54,8 +56,12 @@ const collator = new Intl.Collator('fr', { numeric: true, sensitivity: 'base' })
  * `statusOf` donne un nombre par envie (0 = à offrir … 1 = pris) ; un groupe est valorisé par ses éléments.
  */
 export function sortItems(list: Item[], prefs: ViewPrefs, kidsOf: (g: Item) => Item[], statusOf: (it: Item) => number): Item[] {
-  // ordre d'ajout : les favoris d'abord
-  if (!prefs.key) return [...list].sort((a, b) => Number(!!b.is_favorite) - Number(!!a.is_favorite))
+  // ordre d'ajout (les plus récentes d'abord, sauf si inversé) : les favoris toujours en tête
+  if (!prefs.key) {
+    const s = prefs.added === 'asc' ? 1 : -1
+    return [...list].sort((a, b) => Number(!!b.is_favorite) - Number(!!a.is_favorite) ||
+      s * (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0))
+  }
   const sign = prefs.dir === 'asc' ? 1 : -1
   const val = (it: Item): string | number | null => {
     const ks = it.is_group ? kidsOf(it) : []

@@ -68,14 +68,20 @@ export function ViewBar({ prefs, onChange, left }: { prefs: ViewPrefs; onChange:
         <label className="sortsel">
           <span className="sr-only">Trier par</span>
           <select value={prefs.key ?? ''} onChange={e => onChange({ key: (e.target.value || null) as SortKey | null, dir: 'asc' })} aria-label="Trier par">
-            <option value="">Ordre d'ajout</option>
+            <option value="">{prefs.added === 'desc' ? 'Les plus récentes' : 'Les plus anciennes'}</option>
             {(Object.keys(SORT_LABEL) as SortKey[]).map(k => <option key={k} value={k}>{SORT_LABEL[k]}</option>)}
           </select>
-          {prefs.key && (
+          {prefs.key ? (
             <button type="button" className="icon-btn" title={prefs.dir === 'asc' ? 'Croissant' : 'Décroissant'}
               aria-label={prefs.dir === 'asc' ? 'Tri croissant : inverser' : 'Tri décroissant : inverser'}
               onClick={() => onChange({ dir: prefs.dir === 'asc' ? 'desc' : 'asc' })}>
               <span className={`sortarrow ${prefs.dir}`}><Icon name="chevron" size={16} /></span>
+            </button>
+          ) : (
+            <button type="button" className="icon-btn" title={prefs.added === 'desc' ? 'Les plus récentes d\'abord' : 'Les plus anciennes d\'abord'}
+              aria-label={prefs.added === 'desc' ? 'Les plus récentes d\'abord : inverser' : 'Les plus anciennes d\'abord : inverser'}
+              onClick={() => onChange({ added: prefs.added === 'desc' ? 'asc' : 'desc' })}>
+              <span className={`sortarrow ${prefs.added}`}><Icon name="chevron" size={16} /></span>
             </button>
           )}
         </label>

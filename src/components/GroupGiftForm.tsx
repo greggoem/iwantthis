@@ -280,7 +280,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
     <Modal title="Nouveau cadeau commun" onClose={onClose}>
       <div className="stack gg-form">
         {/* 1 · pour qui */}
-        <section className="stack-sm">
+        <section className="stack-sm gg-stepbox">
           {step(1, 'Pour qui ?')}
           {fromItem ? (
             <div className="gg-chips"><span className="gg-chip on"><PersonDot name={recipientName || '?'} color={tint(recipientName || '?')} size={26} />{recipientName}</span></div>
@@ -309,7 +309,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
 
         {/* 2 · le cadeau */}
         {recipientName && (
-          <section className="stack-sm">
+          <section className="stack-sm gg-stepbox">
             {step(2, 'Le cadeau')}
             {who === 'proche' && !fromItem && (
               wishes === null ? <p className="small muted">Lecture de sa liste…</p> : (
@@ -374,14 +374,15 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
         )}
 
         {/* 3 · qui met combien */}
-        <section className="stack-sm">
+        <section className="stack-sm gg-stepbox">
           {step(3, 'Qui met combien ?')}
           <div className="stack-sm">
-            <button type="button" className={`gg-mode${split === 'equal' ? ' on' : ''}`} aria-pressed={split === 'equal'} onClick={() => setSplit('equal')}>
-              <strong>Même part pour tous</strong><span>Tout le monde met la même somme</span>
-            </button>
+            <div className={`gg-mode gg-mode-box${split === 'equal' ? ' on' : ''}`}>
+              <button type="button" className="gg-mode-head" aria-pressed={split === 'equal'} onClick={() => setSplit('equal')}>
+                <strong>Même part pour tous</strong><span>Tout le monde met la même somme</span>
+              </button>
             {split === 'equal' && (
-              <div className="gg-sub stack-sm">
+              <div className="gg-mode-opts stack-sm">
                 <label className="gg-radio"><input type="radio" name="gg-eq" checked={!fixedOn} onChange={() => setFixedOn(false)} />
                   <span>Diviser le prix entre les participants{amount > 0 && peopleCount > 1 && <span className="muted"> (≈ {euros(Math.round(amount / peopleCount * 100) / 100)} chacun à {peopleCount})</span>}</span></label>
                 <label className="gg-radio"><input type="radio" name="gg-eq" checked={fixedOn} onChange={() => setFixedOn(true)} />
@@ -394,6 +395,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
                 )}
               </div>
             )}
+            </div>
             <button type="button" className={`gg-mode${split === 'free' ? ' on' : ''}`} aria-pressed={split === 'free'} onClick={() => setSplit('free')}>
               <strong>Chacun ce qu'il veut</strong><span>Chacun indique son montant</span>
             </button>
@@ -401,7 +403,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
         </section>
 
         {/* 4 · pour quand */}
-        <section className="stack-sm">
+        <section className="stack-sm gg-stepbox">
           {step(4, 'Pour quand ?')}
           <div className="gg-two">
             <label>Date de remise<input type="date" min={todayISO()} value={giveOn} onChange={e => setGiveOn(e.target.value)} /></label>
@@ -418,7 +420,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
         </section>
 
         {/* 5 · inviter */}
-        <section className="stack-sm">
+        <section className="stack-sm gg-stepbox">
           {step(5, 'Qui inviter ?')}
           {people.length > 0 && (
             <>

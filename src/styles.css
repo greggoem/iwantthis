@@ -1219,3 +1219,15 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gg-form .row input { flex: 1; min-width: 0; }
 .gg-chip-txt { display: inline-flex; flex-direction: column; line-height: 1.15; text-align: left; }
 .gg-chip-txt small { font-size: .7rem; font-weight: 400; color: var(--muted); }
+
+/* Formulaire du cadeau commun : étapes bien séparées */
+.gg-form { gap: 1rem; }
+.gg-stepbox { padding: 1rem 1rem 1.1rem; border: 1px solid var(--line); border-radius: 18px; background: color-mix(in srgb, var(--fill) 55%, var(--surface)); }
+.gg-stepbox > .gg-step { padding-bottom: .55rem; margin-bottom: .2rem; border-bottom: 1px solid var(--line); font-size: 1.02rem; }
+.gg-stepbox .gg-num { background: var(--accent); color: #fff; width: 24px; height: 24px; font-size: .8rem; }
+.gg-stepbox .gg-mode, .gg-stepbox .gg-gift, .gg-stepbox .gg-wish { background: var(--surface); }
+.gg-mode-box { padding: 0; cursor: default; }
+.gg-mode-head { display: flex; flex-direction: column; gap: .25rem; width: 100%; text-align: left; padding: .8rem .9rem; border: 0; background: none; font: inherit; color: var(--ink); cursor: pointer; border-radius: inherit; }
+.gg-mode-head span { font-size: .84rem; color: var(--muted); }
+.gg-mode-box.on .gg-mode-head span { color: var(--ink-2); }
+.gg-mode-opts { padding: .1rem .9rem .9rem; border-top: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line)); margin: 0 .9rem; padding-left: 0; padding-right: 0; padding-top: .7rem; }

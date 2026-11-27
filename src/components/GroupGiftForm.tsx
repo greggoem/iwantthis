@@ -183,10 +183,10 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
     let alive = true
     setWishes(null)
     ;(async () => {
-      // un enfant : sa liste (sauf si c'est le mien : on ne s'offre pas un cadeau sur sa propre liste) ; un proche : sa liste principale
+      // un enfant (le mien compris) : sa liste ; un proche : sa liste principale
       const kid = recipient.startsWith('k:') ? people.find(p => p.key === recipient)?.kid : undefined
       let ids: string[]
-      if (recipient.startsWith('k:')) ids = kid && !kid.mine ? [kid.list] : []
+      if (recipient.startsWith('k:')) ids = kid ? [kid.list] : []
       else {
         const { data: lists } = await supabase.from('wishlists').select('id').eq('owner_id', recipient).is('child_name', null)
         ids = ((lists as { id: string }[]) ?? []).map(l => l.id)
@@ -316,7 +316,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
                 <div className="gg-modes">
                   <button type="button" className={`gg-mode${source === 'list' ? ' on' : ''}`} disabled={!wishes.length} aria-pressed={source === 'list'} onClick={() => setSource('list')}>
                     <strong><Icon name="list" size={16} /> Dans sa liste</strong>
-                    <span>{wishes.length ? `${wishes.length} envie${wishes.length > 1 ? 's' : ''} encore libre${wishes.length > 1 ? 's' : ''}` : recipientWho?.kid?.mine ? 'C\'est la liste de votre enfant : choisissez « Autre chose »' : 'Sa liste n\'est pas partagée avec vous, ou tout est pris'}</span>
+                    <span>{wishes.length ? `${wishes.length} envie${wishes.length > 1 ? 's' : ''} encore libre${wishes.length > 1 ? 's' : ''}` : 'Sa liste n\'est pas partagée avec vous, ou tout est pris'}</span>
                   </button>
                   <button type="button" className={`gg-mode${source === 'other' ? ' on' : ''}`} aria-pressed={source === 'other'} onClick={useOther}>
                     <strong><Icon name="link" size={16} /> Autre chose</strong><span>Un lien, ou juste une idée</span>

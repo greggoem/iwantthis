@@ -119,7 +119,7 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Lancez un cadeau commun',
-        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le parmi vos proches et leurs enfants) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche, choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance directement un cadeau commun pour cette envie.</>,
+        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le parmi vos proches et leurs enfants) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche ou un enfant (le vôtre compris), choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance directement un cadeau commun pour cette envie.</>,
         shots: [{ src: 'commun-1-nouveau', alt: 'Formulaire « Nouveau cadeau commun »' }],
       },
       {

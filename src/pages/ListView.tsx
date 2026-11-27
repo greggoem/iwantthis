@@ -193,7 +193,7 @@ export default function ListView() {
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>Acheté</button>}
-          {!c && !obsolete && !myKid && !it.is_group && claimingId !== it.id && <IconButton icon="users" label="Offrir à plusieurs (cadeau commun)" onClick={() => setGgSeed({
+          {!c && !obsolete && !it.is_group && claimingId !== it.id && <IconButton icon="users" label="Offrir à plusieurs (cadeau commun)" onClick={() => setGgSeed({
             itemId: it.id, title: it.title, url: it.url, image: it.image_url, price: it.price === null ? null : Number(it.price), recipientName: owner, recipientId: list.child_name ? null : list.owner_id, recipientKid: list.child_name ? list.id : null,
             eventId: events.find(e => e.event_date >= todayISO())?.id ?? null, giveOn: events.find(e => e.event_date >= todayISO())?.event_date ?? null,
           })} />}

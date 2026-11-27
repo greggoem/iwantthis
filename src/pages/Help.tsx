@@ -119,12 +119,12 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Lancez un cadeau commun',
-        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le dans vos proches) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche, choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance directement un cadeau commun pour cette envie.</>,
+        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le parmi vos proches et leurs enfants) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche, choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance directement un cadeau commun pour cette envie.</>,
         shots: [{ src: 'commun-1-nouveau', alt: 'Formulaire « Nouveau cadeau commun »' }],
       },
       {
         title: 'Invitez et suivez les réponses',
-        text: <>Invitez vos proches, des adresses e-mail, ou partagez le lien <N n={1} /> : chacun répond <strong>Je participe</strong> ou <strong>Je ne participe pas</strong>. Vous voyez qui a répondu, relancez les autres et cochez qui a payé <N n={2} />. Vous pouvez nommer des co-organisateurs. La personne qui reçoit le cadeau, si elle est sur le site, ne voit jamais rien.</>,
+        text: <>Invitez vos proches, leurs enfants (c'est le parent qui tient la liste qui reçoit l'invitation), des adresses e-mail, ou partagez le lien <N n={1} /> : chacun répond <strong>Je participe</strong> ou <strong>Je ne participe pas</strong>. Vous voyez qui a répondu, relancez les autres et cochez qui a payé <N n={2} />. Vous pouvez nommer des co-organisateurs. La personne qui reçoit le cadeau, si elle est sur le site, ne voit jamais rien.</>,
         shots: [{ src: 'commun-2-suivi', alt: 'Suivi des réponses d\'un cadeau commun' }],
       },
       {

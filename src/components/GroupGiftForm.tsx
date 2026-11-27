@@ -10,8 +10,46 @@ import Icon from './Icon'
 import { Notice } from './ui'
 import { PersonDot } from './ListPills'
 import { tint } from './Draws'
+import { useAuth } from '../lib/auth'
 
 interface Person { user_id: string; display_name: string }
+/** Un proche (compte) ou un enfant (liste d'enfant visible) ; clé « k:<liste> » pour un enfant */
+export interface Who { key: string; name: string; sub?: string; color?: string | null; kid?: { list: string; owner: string; mine: boolean } }
+interface KidRow { id: string; child_name: string; child_color: string | null; owner_id: string }
+
+/** Proches et enfants visibles (listes d'enfant), pour « Pour qui » et « Qui inviter » */
+export function useWhos(): Who[] | null {
+  const { session } = useAuth()
+  const [whos, setWhos] = useState<Who[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      const [{ data: ppl }, { data: kids }] = await Promise.all([
+        supabase.rpc('my_people'),
+        supabase.from('wishlists').select('id,child_name,child_color,owner_id').not('child_name', 'is', null),
+      ])
+      const ks = (kids as KidRow[]) ?? []
+      const { data: keepers } = ks.length ? await supabase.rpc('list_keepers', { p_lists: ks.map(k => k.id) }) : { data: [] }
+      const me = session?.user.id
+      const by: Record<string, { ids: string[]; names: string[] }> = {}
+      for (const k of (keepers as { list_id: string; user_id: string; display_name: string }[]) ?? []) {
+        (by[k.list_id] ??= { ids: [], names: [] }).ids.push(k.user_id)
+        if (k.user_id !== me) by[k.list_id].names.push(k.display_name)
+      }
+      const people: Who[] = ((ppl as Person[]) ?? []).map(p => ({ key: p.user_id, name: p.display_name, color: tint(p.display_name) }))
+      const children: Who[] = ks.map(k => {
+        const mine = k.owner_id === me || Boolean(me && by[k.id]?.ids.includes(me))
+        const parents = by[k.id]?.names ?? []
+        return { key: `k:${k.id}`, name: k.child_name, color: k.child_color ?? tint(k.child_name),
+          sub: mine ? (parents.length ? `avec ${parents.join(' et ')}` : 'votre enfant') : parents.length ? `enfant de ${parents.join(' et ')}` : 'enfant',
+          kid: { list: k.id, owner: k.owner_id, mine } }
+      })
+      if (alive) setWhos([...people, ...children].sort((a, b) => a.name.localeCompare(b.name, 'fr')))
+    })()
+    return () => { alive = false }
+  }, [session])
+  return whos
+}
 interface Ev { id: string; name: string; event_date: string }
 interface Wish { id: string; title: string; url: string | null; image_url: string | null; price: number | null; is_group: boolean }
 
@@ -19,23 +57,25 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const num = (s: string) => Number(s.replace(',', '.').replace(/[^\d.]/g, ''))
 
-/** Les proches, avec recherche */
+/** Proches et enfants, avec recherche */
 export function PeoplePicker({ people, selected, onToggle, exclude = [], autoFocus }: {
-  people: Person[]; selected: Set<string>; onToggle: (id: string) => void; exclude?: (string | null | undefined)[]; autoFocus?: boolean
+  people: Who[]; selected: Set<string>; onToggle: (key: string) => void; exclude?: (string | null | undefined)[]; autoFocus?: boolean
 }) {
   const [q, setQ] = useState('')
-  const list = people.filter(p => !exclude.includes(p.user_id) && (!q.trim() || norm(p.display_name).includes(norm(q.trim()))))
+  const list = people.filter(p => !exclude.includes(p.key) && (!q.trim() || norm(`${p.name} ${p.sub ?? ''}`).includes(norm(q.trim()))))
   return (
     <div className="stack-sm">
       {people.length > 6 && (
-        <input type="search" placeholder="Rechercher un proche…" value={q} onChange={e => setQ(e.target.value)} autoFocus={autoFocus} aria-label="Rechercher un proche" />
+        <input type="search" placeholder="Rechercher un proche ou un enfant…" value={q} onChange={e => setQ(e.target.value)} autoFocus={autoFocus} aria-label="Rechercher un proche" />
       )}
       <div className="gg-chips">
         {list.map(p => {
-          const on = selected.has(p.user_id)
+          const on = selected.has(p.key)
           return (
-            <button key={p.user_id} type="button" className={`gg-chip${on ? ' on' : ''}`} aria-pressed={on} onClick={() => onToggle(p.user_id)}>
-              <PersonDot name={p.display_name} color={tint(p.display_name)} size={26} />{p.display_name}{on && <Icon name="check" size={14} />}
+            <button key={p.key} type="button" className={`gg-chip${on ? ' on' : ''}`} aria-pressed={on} onClick={() => onToggle(p.key)} title={p.sub}>
+              <PersonDot name={p.name} color={p.color ?? tint(p.name)} size={26} />
+              <span className="gg-chip-txt">{p.name}{p.sub && <small>{p.sub}</small>}</span>
+              {on && <Icon name="check" size={14} />}
             </button>
           )
         })}
@@ -78,14 +118,23 @@ export function EmailsInput({ emails, setEmails }: { emails: string[]; setEmails
 }
 
 /** Invite des adresses e-mail et leur envoie l'e-mail d'invitation */
-export async function sendGroupInvites(giftId: string, emails: string[]): Promise<{ sent: number; total: number; error?: string }> {
-  if (!emails.length) return { sent: 0, total: 0 }
-  const { data, error } = await supabase.rpc('invite_group_gift_emails', { p_gift: giftId, p_emails: emails })
-  if (error) return { sent: 0, total: emails.length, error: errMsg(error) }
-  const rows = (data as { id: string; email: string }[]) ?? []
-  const res = await Promise.all(rows.map(r => supabase.functions.invoke('send-invite-email', { body: { group_invite_id: r.id } })
+export async function sendGroupInvites(giftId: string, emails: string[], kidLists: string[] = []): Promise<{ sent: number; total: number; error?: string }> {
+  const ids: string[] = []
+  if (kidLists.length) {
+    // un enfant invité = le parent qui tient sa liste (notification + e-mail ; son adresse reste côté serveur)
+    const { data, error } = await supabase.rpc('invite_group_gift_lists', { p_gift: giftId, p_lists: kidLists })
+    if (error) return { sent: 0, total: emails.length + kidLists.length, error: errMsg(error) }
+    ids.push(...(((data as string[]) ?? []).filter(Boolean)))
+  }
+  if (emails.length) {
+    const { data, error } = await supabase.rpc('invite_group_gift_emails', { p_gift: giftId, p_emails: emails })
+    if (error) return { sent: 0, total: emails.length + kidLists.length, error: errMsg(error) }
+    ids.push(...((data as { id: string }[]) ?? []).map(r => r.id))
+  }
+  if (!ids.length) return { sent: 0, total: 0 }
+  const res = await Promise.all(ids.map(id => supabase.functions.invoke('send-invite-email', { body: { group_invite_id: id } })
     .then(({ data: d }) => Boolean((d as { sent?: boolean } | null)?.sent)).catch(() => false)))
-  return { sent: res.filter(Boolean).length, total: emails.length }
+  return { sent: res.filter(Boolean).length, total: ids.length }
 }
 
 /**
@@ -95,7 +144,8 @@ export async function sendGroupInvites(giftId: string, emails: string[]): Promis
 export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; onClose: () => void }) {
   const nav = useNavigate()
   const fromItem = Boolean(seed.itemId)
-  const [people, setPeople] = useState<Person[]>([])
+  const whos = useWhos()
+  const people = whos ?? []
   const [events, setEvents] = useState<Ev[]>([])
   const [who, setWho] = useState<'proche' | 'autre' | null>(fromItem ? 'proche' : null)
   const [recipient, setRecipient] = useState<string | null>(seed.recipientId ?? null)
@@ -123,7 +173,6 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
   const lastRead = useRef('')
 
   useEffect(() => {
-    supabase.rpc('my_people').then(({ data }) => setPeople((data as Person[]) ?? []))
     supabase.from('events').select('id,name,event_date').gte('event_date', todayISO()).order('event_date')
       .then(({ data }) => setEvents((data as Ev[]) ?? []))
   }, [])
@@ -134,8 +183,14 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
     let alive = true
     setWishes(null)
     ;(async () => {
-      const { data: lists } = await supabase.from('wishlists').select('id').eq('owner_id', recipient).is('child_name', null)
-      const ids = ((lists as { id: string }[]) ?? []).map(l => l.id)
+      // un enfant : sa liste (sauf si c'est le mien : on ne s'offre pas un cadeau sur sa propre liste) ; un proche : sa liste principale
+      const kid = recipient.startsWith('k:') ? people.find(p => p.key === recipient)?.kid : undefined
+      let ids: string[]
+      if (recipient.startsWith('k:')) ids = kid && !kid.mine ? [kid.list] : []
+      else {
+        const { data: lists } = await supabase.from('wishlists').select('id').eq('owner_id', recipient).is('child_name', null)
+        ids = ((lists as { id: string }[]) ?? []).map(l => l.id)
+      }
       if (!ids.length) { if (alive) { setWishes([]); setSource('other') } return }
       const [{ data: its }, { data: cl }] = await Promise.all([
         supabase.from('items').select('id,title,url,image_url,price,is_group').in('list_id', ids).order('created_at', { ascending: false }),
@@ -146,7 +201,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
       if (alive) { setWishes(free); setSource(free.length ? 'list' : 'other') }
     })()
     return () => { alive = false }
-  }, [who, recipient, fromItem])
+  }, [who, recipient, fromItem, whos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const pickWish = (w: Wish) => {
     if (itemId === w.id) { setItemId(null); return }
@@ -180,7 +235,12 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
   }
 
   const recipientName = fromItem ? (seed.recipientName ?? '')
-    : who === 'proche' ? (people.find(p => p.user_id === recipient)?.display_name ?? '') : who === 'autre' ? other.trim() : ''
+    : who === 'proche' ? (people.find(p => p.key === recipient)?.name ?? '') : who === 'autre' ? other.trim() : ''
+  const recipientWho = people.find(p => p.key === recipient)
+  const myKids = people.filter(p => p.kid?.mine).map(p => p.key)
+  // invités : comptes d'un côté, listes d'enfant (→ le parent qui la tient) de l'autre
+  const invitedUsers = [...invited].filter(k => !k.startsWith('k:'))
+  const invitedKids = [...invited].filter(k => k.startsWith('k:')).map(k => k.slice(2))
   const amount = num(price)
   const fixedAmount = num(fixed)
   const fromList = fromItem || (who === 'proche' && source === 'list')
@@ -198,19 +258,19 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
     setBusy(true)
     const useItem = fromList ? itemId : null
     const { data, error } = await supabase.rpc('create_group_gift', { p: {
-      item_id: useItem, recipient_id: useItem ? null : who === 'proche' ? recipient : null, recipient_name: recipientName,
+      item_id: useItem, recipient_id: useItem || !recipient || recipient.startsWith('k:') || who !== 'proche' ? null : recipient, recipient_name: recipientName,
       title: title.trim(), url: safeUrl(url)?.toString() ?? null, image_url: image || null, price: amount, split,
       fixed_share: split === 'equal' && fixedOn ? fixedAmount : null,
       give_on: giveOn, respond_by: respondBy || null, event_id: eventId || null,
-      organizers: [...orgs], invitees: [...invited].filter(id => !orgs.has(id)),
+      organizers: [...orgs], invitees: invitedUsers.filter(id => !orgs.has(id)),
     } })
     if (error) { setBusy(false); return setErr(errMsg(error)) }
     const id = data as string
-    const mail = await sendGroupInvites(id, emails)
+    const mail = await sendGroupInvites(id, emails, invitedKids)
     setBusy(false)
     onClose()
     const q = new URLSearchParams({ nouveau: '1' })
-    if (emails.length) q.set('mails', `${mail.sent}/${mail.total}`)
+    if (mail.total) q.set('mails', `${mail.sent}/${mail.total}`)
     nav(`/commun/${id}?${q}`)
   }
 
@@ -236,10 +296,11 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
               </div>
               {who === 'proche' && (recipient
                 ? <div className="row wrap">
-                    <span className="gg-chip on"><PersonDot name={recipientName} color={tint(recipientName)} size={26} />{recipientName}</span>
+                    <span className="gg-chip on"><PersonDot name={recipientName} color={recipientWho?.color ?? tint(recipientName)} size={26} /><span className="gg-chip-txt">{recipientName}{recipientWho?.sub && <small>{recipientWho.sub}</small>}</span></span>
                     <button type="button" className="linkbtn small" onClick={() => { setRecipient(null); setItemId(null) }}>Changer</button>
                   </div>
-                : <PeoplePicker people={people} selected={new Set()} onToggle={id => setRecipient(id)} autoFocus />)}
+                : whos === null ? <p className="small muted">Chargement de vos proches…</p>
+                : <PeoplePicker people={people} selected={new Set()} onToggle={id => { setRecipient(id); const n = new Set(invited); n.delete(id); setInvited(n) }} autoFocus />)}
               {who === 'autre' && <input autoFocus placeholder="Son prénom (ex. Mamy, Sophie…)" value={other} maxLength={80} onChange={e => setOther(e.target.value)} aria-label="Pour qui" />}
               {recipientName && <p className="small muted" style={{ margin: 0 }}>{recipientName} ne verra rien de ce cadeau commun.</p>}
             </>
@@ -255,7 +316,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
                 <div className="gg-modes">
                   <button type="button" className={`gg-mode${source === 'list' ? ' on' : ''}`} disabled={!wishes.length} aria-pressed={source === 'list'} onClick={() => setSource('list')}>
                     <strong><Icon name="list" size={16} /> Dans sa liste</strong>
-                    <span>{wishes.length ? `${wishes.length} envie${wishes.length > 1 ? 's' : ''} encore libre${wishes.length > 1 ? 's' : ''}` : 'Sa liste n\'est pas partagée avec vous, ou tout est pris'}</span>
+                    <span>{wishes.length ? `${wishes.length} envie${wishes.length > 1 ? 's' : ''} encore libre${wishes.length > 1 ? 's' : ''}` : recipientWho?.kid?.mine ? 'C\'est la liste de votre enfant : choisissez « Autre chose »' : 'Sa liste n\'est pas partagée avec vous, ou tout est pris'}</span>
                   </button>
                   <button type="button" className={`gg-mode${source === 'other' ? ' on' : ''}`} aria-pressed={source === 'other'} onClick={useOther}>
                     <strong><Icon name="link" size={16} /> Autre chose</strong><span>Un lien, ou juste une idée</span>
@@ -361,21 +422,22 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
           {step(5, 'Qui inviter ?')}
           {people.length > 0 && (
             <>
-              <span className="small muted">Vos proches sur le site</span>
-              <PeoplePicker people={people} selected={new Set([...invited, ...orgs])} exclude={[recipient, seed.recipientId]}
+              <span className="small muted">Vos proches et leurs enfants</span>
+              <PeoplePicker people={people} selected={new Set([...invited, ...orgs])} exclude={[recipient, seed.recipientId, seed.recipientKid ? `k:${seed.recipientKid}` : null, ...myKids]}
                 onToggle={id => { if (orgs.has(id)) toggle(orgs, setOrgs, id); else toggle(invited, setInvited, id) }} />
             </>
           )}
+          {invitedKids.length > 0 && <p className="small muted" style={{ margin: 0 }}>Pour un enfant, c'est le parent qui tient sa liste qui reçoit l'invitation (notification et e-mail).</p>}
           <span className="small muted">{people.length ? 'Et / ou par adresse e-mail' : 'Par adresse e-mail'}</span>
           <EmailsInput emails={emails} setEmails={setEmails} />
-          {invited.size + orgs.size > 0 && (
+          {invitedUsers.length + orgs.size > 0 && (
             <>
               <span className="small muted">Quelqu'un organise avec vous ? Touchez-le :</span>
               <div className="gg-chips">
-                {people.filter(p => invited.has(p.user_id) || orgs.has(p.user_id)).map(p => (
-                  <button key={p.user_id} type="button" className={`gg-chip gg-chip-sm${orgs.has(p.user_id) ? ' on' : ''}`} aria-pressed={orgs.has(p.user_id)}
-                    onClick={() => { toggle(orgs, setOrgs, p.user_id); const n = new Set(invited); n.add(p.user_id); setInvited(n) }}>
-                    {orgs.has(p.user_id) && <Icon name="check" size={13} />}{p.display_name}
+                {people.filter(p => !p.kid && (invited.has(p.key) || orgs.has(p.key))).map(p => (
+                  <button key={p.key} type="button" className={`gg-chip gg-chip-sm${orgs.has(p.key) ? ' on' : ''}`} aria-pressed={orgs.has(p.key)}
+                    onClick={() => { toggle(orgs, setOrgs, p.key); const n = new Set(invited); n.add(p.key); setInvited(n) }}>
+                    {orgs.has(p.key) && <Icon name="check" size={13} />}{p.name}
                   </button>
                 ))}
               </div>

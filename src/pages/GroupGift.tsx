@@ -9,7 +9,7 @@ import { tint } from '../components/Draws'
 import { useConfirm } from '../components/Confirm'
 import ActionMenu from '../components/ActionMenu'
 import ShareSheet from '../components/ShareSheet'
-import { PeoplePicker, EmailsInput, sendGroupInvites } from '../components/GroupGiftForm'
+import { PeoplePicker, EmailsInput, sendGroupInvites, useWhos } from '../components/GroupGiftForm'
 import Modal from '../components/Modal'
 import Icon from '../components/Icon'
 
@@ -293,26 +293,27 @@ export default function GroupGift() {
 
 /** Inviter des proches et/ou des adresses e-mail, ou nommer des co-organisateurs */
 function PickPeople({ g, organizer, onClose, onDone }: { g: GG; organizer: boolean; onClose: () => void; onDone: (msg: string) => void }) {
-  const [people, setPeople] = useState<{ user_id: string; display_name: string }[] | null>(null)
+  const people = useWhos()
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [emails, setEmails] = useState<string[]>([])
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
-  useEffect(() => { supabase.rpc('my_people').then(({ data }) => setPeople((data as { user_id: string; display_name: string }[]) ?? [])) }, [])
   const already = new Map(g.members.map(m => [m.id, m]))
-  const list = (people ?? []).filter(p => organizer ? !already.get(p.user_id)?.organizer : !already.has(p.user_id))
+  const list = (people ?? []).filter(p => organizer ? !p.kid && !already.get(p.key)?.organizer
+    : p.kid ? !p.kid.mine && !already.has(p.kid.owner) : !already.has(p.key))
   const save = async () => {
     setBusy(true); setErr('')
-    if (picked.size) {
-      const { error } = await supabase.rpc('invite_group_gift', { p_gift: g.id, p_users: [...picked], p_organizer: organizer })
+    const users = [...picked].filter(k => !k.startsWith('k:')), kids = [...picked].filter(k => k.startsWith('k:')).map(k => k.slice(2))
+    if (users.length) {
+      const { error } = await supabase.rpc('invite_group_gift', { p_gift: g.id, p_users: users, p_organizer: organizer })
       if (error) { setBusy(false); setErr(errMsg(error)); return }
     }
-    const mail = await sendGroupInvites(g.id, emails)
+    const mail = await sendGroupInvites(g.id, emails, kids)
     setBusy(false)
     if (mail.error) { setErr(mail.error); return }
     if (organizer) return onDone('Co-organisateur ajouté.')
     const parts = [picked.size ? `${picked.size} proche${picked.size > 1 ? 's' : ''} invité${picked.size > 1 ? 's' : ''}` : '',
-      emails.length ? (mail.sent === mail.total ? `${mail.total} e-mail${mail.total > 1 ? 's' : ''} envoyé${mail.total > 1 ? 's' : ''}` : `${mail.sent} e-mail${mail.sent > 1 ? 's' : ''} sur ${mail.total} envoyé${mail.sent > 1 ? 's' : ''} (partagez aussi le lien)`) : '']
+      mail.total ? (mail.sent === mail.total ? `${mail.total} e-mail${mail.total > 1 ? 's' : ''} envoyé${mail.total > 1 ? 's' : ''}` : `${mail.sent} e-mail${mail.sent > 1 ? 's' : ''} sur ${mail.total} envoyé${mail.sent > 1 ? 's' : ''} (partagez aussi le lien)`) : '']
     onDone(parts.filter(Boolean).join(' · ') + '.')
   }
   return (
@@ -320,7 +321,7 @@ function PickPeople({ g, organizer, onClose, onDone }: { g: GG; organizer: boole
       <div className="stack">
         {people === null ? <Spinner /> : list.length === 0
           ? <p className="muted" style={{ margin: 0 }}>{organizer ? 'Tous vos proches organisent déjà, ou vous n\'avez pas encore de proches sur le site.' : 'Tous vos proches sont déjà invités.'}</p>
-          : <>{!organizer && <span className="small muted">Vos proches sur le site</span>}
+          : <>{!organizer && <span className="small muted">Vos proches et leurs enfants (l'invitation va au parent)</span>}
               <PeoplePicker people={list} selected={picked} exclude={[]} autoFocus
                 onToggle={id => { const n = new Set(picked); if (n.has(id)) n.delete(id); else n.add(id); setPicked(n) }} /></>}
         {!organizer && <><span className="small muted">Et / ou par adresse e-mail</span><EmailsInput emails={emails} setEmails={setEmails} /></>}

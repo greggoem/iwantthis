@@ -1217,3 +1217,5 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gg-x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: .15rem; border: 0; border-radius: 999px; background: var(--fill); color: var(--muted); cursor: pointer; padding: 0; }
 .gg-mail-dot { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; border: 1.5px dashed var(--line); color: var(--muted); flex: none; }
 .gg-form .row input { flex: 1; min-width: 0; }
+.gg-chip-txt { display: inline-flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.gg-chip-txt small { font-size: .7rem; font-weight: 400; color: var(--muted); }

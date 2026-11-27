@@ -33,7 +33,7 @@ export interface GGCard {
 /** Ce qu'on sait déjà du cadeau quand on le lance depuis une envie */
 export interface GGSeed {
   itemId?: string; title?: string; url?: string | null; image?: string | null; price?: number | null
-  recipientId?: string | null; recipientName?: string; eventId?: string | null; giveOn?: string | null
+  recipientId?: string | null; recipientKid?: string | null; recipientName?: string; eventId?: string | null; giveOn?: string | null
 }
 
 export const euros = (n: number | null | undefined) =>

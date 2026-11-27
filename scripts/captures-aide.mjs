@@ -231,7 +231,7 @@ await shoot('offrir-2-liste', '#/listes/L2', [click('button:has-text("Acheté")'
   [{ n: 1, sel: '.claimbox', at: 'tl' }, { n: 2, sel: '.claimbox .btn-primary', at: 'tl' }])
 await shoot('offrir-3-a-offrir', '#/offrir', [], {}, [])
 // 6 bis · Cadeau commun
-await shoot('commun-1-nouveau', '#/offrir', [click('text=Nouveau cadeau commun'), click('.gg-chip-add'), fill('input[placeholder^="Son prénom"]', 'Mamy'), fill('input[aria-label="Le cadeau"]', 'Machine à espresso'), fill('.gg-euro input', '249')], {}, [{ n: 1, sel: '.gg-chip-add', at: 'tl' }, { n: 2, sel: '.gg-mode', at: 'tl' }])
+await shoot('commun-1-nouveau', '#/offrir', [click('text=Nouveau cadeau commun'), click(".gg-mode >> text=Quelqu'un d'autre"), fill('input[aria-label="Pour qui"]', 'Mamy'), fill('input[aria-label="Le cadeau"]', 'Machine à espresso'), fill('.gg-euro input', '249')], {}, [{ n: 1, sel: '.gg-mode >> nth=1', at: 'tl' }, { n: 2, sel: '.gg-form section:nth-of-type(3) .gg-mode', at: 'tl' }])
 await shoot('commun-2-suivi', '#/commun/G1', [], { gg: true }, [{ n: 1, sel: '.gg-actions .btn', at: 'tl' }, { n: 2, sel: '.gg-member input[type=checkbox]', at: 'l' }])
 await shoot('commun-3-fermer', '#/commun/G1', [click('text=Fermer la cagnotte')], { gg: true, ggFree: true }, [{ n: 1, sel: '.gg-option', at: 'tl' }])
 // 7 · La surprise

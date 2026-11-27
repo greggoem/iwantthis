@@ -1197,7 +1197,23 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gg-past summary { cursor: pointer; }
 .gg-past ul { margin: .5rem 0 0; padding-left: 1.1rem; }
 @media (max-width: 520px) {
-  .gg-modes, .gg-two { grid-template-columns: 1fr; }
+  .gg-two { grid-template-columns: 1fr; }
+  .gg-modes .gg-mode { padding: .65rem .7rem; }
+  .gg-modes .gg-mode span { font-size: .78rem; }
   .gg-head-img { width: 76px; height: 76px; }
   .gg-title { font-size: 1.25rem; }
 }
+.gg-mode strong { display: inline-flex; align-items: center; gap: .35rem; }
+.gg-mode:disabled { opacity: .55; cursor: default; }
+.gg-wishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: .5rem; max-height: 330px; overflow-y: auto; padding: .1rem; }
+.gg-wish { position: relative; display: flex; flex-direction: column; gap: .25rem; text-align: left; padding: .45rem; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; color: var(--ink); cursor: pointer; }
+.gg-wish.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+.gg-wish-img { display: grid; place-items: center; height: 86px; border-radius: 8px; background: var(--fill); color: var(--muted); overflow: hidden; }
+.gg-wish-img img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.gg-wish-t { font-size: .82rem; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gg-wish .photo-choice-tick { top: 6px; right: 6px; bottom: auto; }
+.gg-radio { flex-direction: row; align-items: flex-start; gap: .55rem; font-weight: 500; font-size: .9rem; cursor: pointer; }
+.gg-radio input { margin-top: .2rem; }
+.gg-x { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: .15rem; border: 0; border-radius: 999px; background: var(--fill); color: var(--muted); cursor: pointer; padding: 0; }
+.gg-mail-dot { display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 999px; border: 1.5px dashed var(--line); color: var(--muted); flex: none; }
+.gg-form .row input { flex: 1; min-width: 0; }

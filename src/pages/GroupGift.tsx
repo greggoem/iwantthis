@@ -9,6 +9,7 @@ import { tint } from '../components/Draws'
 import { useConfirm } from '../components/Confirm'
 import ActionMenu from '../components/ActionMenu'
 import ShareSheet from '../components/ShareSheet'
+import { PeoplePicker, EmailsInput, sendGroupInvites } from '../components/GroupGiftForm'
 import Modal from '../components/Modal'
 import Icon from '../components/Icon'
 
@@ -46,7 +47,14 @@ export default function GroupGift() {
 
   // juste créé : proposer tout de suite le lien à partager
   useEffect(() => {
-    if (g && sp.get('nouveau')) { setSharing(true); sp.delete('nouveau'); setSp(sp, { replace: true }) }
+    if (!g || !sp.get('nouveau')) return
+    const m = sp.get('mails')
+    if (m) {
+      const [sent, total] = m.split('/').map(Number)
+      setMsg(sent === total ? `Cadeau commun créé : ${total} invitation${total > 1 ? 's' : ''} envoyée${total > 1 ? 's' : ''} par e-mail.`
+        : `Cadeau commun créé. ${sent} e-mail${sent > 1 ? 's' : ''} sur ${total} envoyé${sent > 1 ? 's' : ''} : partagez aussi le lien.`)
+    }
+    setSharing(true); sp.delete('nouveau'); sp.delete('mails'); setSp(sp, { replace: true })
   }, [g, sp, setSp])
 
   const run = async (fn: () => PromiseLike<{ error: unknown }>, ok?: string) => {
@@ -67,7 +75,9 @@ export default function GroupGift() {
   const pct = Math.min(100, Math.round((g.total / g.price) * 100))
   const yesNames = g.members.filter(m => m.answer === 'yes').map(m => m.me ? 'vous' : m.name)
   // estimation de ma part en « même part pour tous » si je rejoins maintenant
-  const equalIfJoin = g.split === 'equal' ? g.price / Math.max(1, g.yes + (g.me.answer === 'yes' ? 0 : 1)) : null
+  const fixed = g.split === 'equal' && g.fixed_share ? Number(g.fixed_share) : null
+  const equalIfJoin = g.split === 'equal' ? (fixed ?? g.price / Math.max(1, g.yes + (g.me.answer === 'yes' ? 0 : 1))) : null
+  const approx = open && g.split === 'equal' && !fixed ? '≈ ' : ''
   const shareUrl = g.share_token ? groupGiftUrl(g.share_token) : ''
 
   const answer = async (a: 'yes' | 'no') => {
@@ -142,7 +152,7 @@ export default function GroupGift() {
         <div className="card stack gg-answer">
           <h2 className="gg-h2">Vous participez ?</h2>
           {g.split === 'equal' ? (
-            <div className="gg-share"><span>Votre part (même part pour tous)</span><strong>≈ {euros(Math.round((equalIfJoin ?? 0) * 100) / 100)}</strong></div>
+            <div className="gg-share"><span>{fixed ? 'Participation demandée à chacun' : 'Votre part (même part pour tous)'}</span><strong>{approx}{euros(Math.round((equalIfJoin ?? 0) * 100) / 100)}</strong></div>
           ) : (
             <>
               <label>Votre montant
@@ -158,7 +168,8 @@ export default function GroupGift() {
               {g.suggested !== null && <p className="small muted" style={{ margin: 0 }}>Suggestion : il reste {euros(Math.max(0, g.price - g.total))} à trouver entre les {g.pending} personne{g.pending > 1 ? 's' : ''} qui n'ont pas encore répondu.</p>}
             </>
           )}
-          {g.split === 'equal' && <p className="small muted" style={{ margin: 0 }}>{euros(g.price)} ÷ les participants : la part baisse si d'autres rejoignent. Vous serez prévenu du montant final.</p>}
+          {g.split === 'equal' && !fixed && <p className="small muted" style={{ margin: 0 }}>{euros(g.price)} ÷ les participants : la part baisse si d'autres rejoignent. Vous serez prévenu du montant final.</p>}
+          {fixed && g.total + fixed > g.price && <p className="small muted" style={{ margin: 0 }}>S'il y a plus que le prix, les organisateurs pourront réduire les parts ou ajouter un petit cadeau.</p>}
           <button className="btn btn-primary btn-lg" disabled={busy} onClick={() => answer('yes')}>Je participe</button>
           {mine !== 'no' && <button className="btn btn-lg" disabled={busy} onClick={() => answer('no')}>Je ne participe pas</button>}
           {editing && <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>Annuler</button>}
@@ -167,7 +178,7 @@ export default function GroupGift() {
         <div className={`card gg-mine ${mine === 'yes' ? 'yes' : ''}`}>
           {mine === 'yes' ? (
             <div className="row between wrap">
-              <span><Icon name="check" size={16} /> Vous participez{myShare !== null ? <> · {open ? 'part ' : 'votre part : '}<strong>{open && g.split === 'equal' ? '≈ ' : ''}{euros(myShare)}</strong></> : null}
+              <span><Icon name="check" size={16} /> Vous participez{myShare !== null ? <> · {open ? 'part ' : 'votre part : '}<strong>{approx}{euros(myShare)}</strong></> : null}
                 {!open && g.me.paid && <span className="chip chip-ok" style={{ marginLeft: 8 }}>payé</span>}</span>
               {open && <button className="btn btn-sm" onClick={() => setEditing(true)}>Modifier</button>}
             </div>
@@ -197,7 +208,7 @@ export default function GroupGift() {
           {open && (
             <div className="gg-actions">
               <button className="btn" onClick={() => setSharing(true)}><Icon name="share" size={16} /> Partager le lien</button>
-              <button className="btn" onClick={() => setPicking('invite')}><Icon name="users" size={16} /> Inviter des proches</button>
+              <button className="btn" onClick={() => setPicking('invite')}><Icon name="users" size={16} /> Inviter</button>
               {g.pending > 0 && <button className="btn" disabled={busy} onClick={remind}><Icon name="bell" size={16} /> Relancer ({g.pending})</button>}
             </div>
           )}
@@ -209,7 +220,7 @@ export default function GroupGift() {
                 <span className="grow">
                   <strong>{m.me ? 'Vous' : m.name}</strong>{m.organizer && <span className="gg-tag">organise</span>}<br />
                   <span className={`small ${m.answer === 'yes' ? 'gg-yes' : m.answer === 'no' ? 'muted' : 'gg-wait'}`}>
-                    {m.answer === 'yes' ? `Participe${m.amount !== null ? ` · ${open && g.split === 'equal' ? '≈ ' : ''}${euros(m.amount)}` : ''}` : m.answer === 'no' ? 'Ne participe pas' : 'Pas encore répondu'}
+                    {m.answer === 'yes' ? `Participe${m.amount !== null ? ` · ${approx}${euros(m.amount)}` : ''}` : m.answer === 'no' ? 'Ne participe pas' : 'Pas encore répondu'}
                   </span>
                 </span>
                 {m.answer === 'yes' && (
@@ -222,6 +233,19 @@ export default function GroupGift() {
                     { icon: 'trash', label: 'Retirer', danger: true, onClick: () => removeMember(m) },
                   ]} />
                 )}
+              </div>
+            ))}
+            {(g.invites ?? []).map(i => (
+              <div key={i.id} className="gg-member">
+                <span className="gg-mail-dot"><Icon name="mail" size={15} /></span>
+                <span className="grow" style={{ minWidth: 0 }}><strong className="ell" style={{ display: 'block' }}>{i.email}</strong><span className="small gg-wait">Invité par e-mail · pas encore répondu</span></span>
+                {open && <button className="btn btn-sm" disabled={busy} onClick={async () => {
+                  setErr(''); setMsg('')
+                  const { data } = await supabase.functions.invoke('send-invite-email', { body: { group_invite_id: i.id } })
+                  const d = data as { sent?: boolean; error?: string } | null
+                  if (d?.sent) setMsg(`E-mail renvoyé à ${i.email}.`); else setErr(d?.error ?? 'E-mail non envoyé : partagez plutôt le lien.')
+                }}>Renvoyer</button>}
+                <button className="icon-btn danger" aria-label={`Retirer l'invitation de ${i.email}`} title="Retirer" onClick={() => run(() => supabase.rpc('remove_group_gift_invite', { p_invite: i.id }))}><Icon name="x" size={16} /></button>
               </div>
             ))}
             <button className="linkbtn small gg-addorg" onClick={() => setPicking('org')}><Icon name="plus" size={13} /> Ajouter un co-organisateur</button>
@@ -267,10 +291,11 @@ export default function GroupGift() {
   )
 }
 
-/** Inviter des proches, ou nommer des co-organisateurs */
+/** Inviter des proches et/ou des adresses e-mail, ou nommer des co-organisateurs */
 function PickPeople({ g, organizer, onClose, onDone }: { g: GG; organizer: boolean; onClose: () => void; onDone: (msg: string) => void }) {
   const [people, setPeople] = useState<{ user_id: string; display_name: string }[] | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [emails, setEmails] = useState<string[]>([])
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   useEffect(() => { supabase.rpc('my_people').then(({ data }) => setPeople((data as { user_id: string; display_name: string }[]) ?? [])) }, [])
@@ -278,24 +303,31 @@ function PickPeople({ g, organizer, onClose, onDone }: { g: GG; organizer: boole
   const list = (people ?? []).filter(p => organizer ? !already.get(p.user_id)?.organizer : !already.has(p.user_id))
   const save = async () => {
     setBusy(true); setErr('')
-    const { error } = await supabase.rpc('invite_group_gift', { p_gift: g.id, p_users: [...picked], p_organizer: organizer })
+    if (picked.size) {
+      const { error } = await supabase.rpc('invite_group_gift', { p_gift: g.id, p_users: [...picked], p_organizer: organizer })
+      if (error) { setBusy(false); setErr(errMsg(error)); return }
+    }
+    const mail = await sendGroupInvites(g.id, emails)
     setBusy(false)
-    if (error) setErr(errMsg(error)); else onDone(organizer ? 'Co-organisateur ajouté.' : `${picked.size} proche${picked.size > 1 ? 's' : ''} invité${picked.size > 1 ? 's' : ''}.`)
+    if (mail.error) { setErr(mail.error); return }
+    if (organizer) return onDone('Co-organisateur ajouté.')
+    const parts = [picked.size ? `${picked.size} proche${picked.size > 1 ? 's' : ''} invité${picked.size > 1 ? 's' : ''}` : '',
+      emails.length ? (mail.sent === mail.total ? `${mail.total} e-mail${mail.total > 1 ? 's' : ''} envoyé${mail.total > 1 ? 's' : ''}` : `${mail.sent} e-mail${mail.sent > 1 ? 's' : ''} sur ${mail.total} envoyé${mail.sent > 1 ? 's' : ''} (partagez aussi le lien)`) : '']
+    onDone(parts.filter(Boolean).join(' · ') + '.')
   }
   return (
-    <Modal title={organizer ? 'Ajouter un co-organisateur' : 'Inviter des proches'} onClose={onClose}>
+    <Modal title={organizer ? 'Ajouter un co-organisateur' : 'Inviter'} onClose={onClose}>
       <div className="stack">
         {people === null ? <Spinner /> : list.length === 0
-          ? <p className="muted">{organizer ? 'Tous vos proches organisent déjà, ou vous n\'avez pas encore de proches sur le site.' : 'Tous vos proches sont déjà invités. Pour les autres, partagez le lien.'}</p>
-          : <div className="gg-chips">{list.map(p => {
-              const on = picked.has(p.user_id)
-              return <button key={p.user_id} type="button" className={`gg-chip${on ? ' on' : ''}`} aria-pressed={on}
-                onClick={() => { const n = new Set(picked); if (on) n.delete(p.user_id); else n.add(p.user_id); setPicked(n) }}>
-                <PersonDot name={p.display_name} color={tint(p.display_name)} size={26} />{p.display_name}</button>
-            })}</div>}
+          ? <p className="muted" style={{ margin: 0 }}>{organizer ? 'Tous vos proches organisent déjà, ou vous n\'avez pas encore de proches sur le site.' : 'Tous vos proches sont déjà invités.'}</p>
+          : <>{!organizer && <span className="small muted">Vos proches sur le site</span>}
+              <PeoplePicker people={list} selected={picked} exclude={[]} autoFocus
+                onToggle={id => { const n = new Set(picked); if (n.has(id)) n.delete(id); else n.add(id); setPicked(n) }} /></>}
+        {!organizer && <><span className="small muted">Et / ou par adresse e-mail</span><EmailsInput emails={emails} setEmails={setEmails} /></>}
         {organizer && <p className="small muted" style={{ margin: 0 }}>Un co-organisateur voit le détail des montants, coche qui a payé et peut fermer la cagnotte.</p>}
         {err && <Notice>{err}</Notice>}
-        <button className="btn btn-primary" disabled={busy || picked.size === 0} onClick={save}>{organizer ? 'Nommer co-organisateur' : `Inviter${picked.size ? ` (${picked.size})` : ''}`}</button>
+        <button className="btn btn-primary" disabled={busy || picked.size + emails.length === 0} onClick={save}>
+          {organizer ? 'Nommer co-organisateur' : `Inviter${picked.size + emails.length ? ` (${picked.size + emails.length})` : ''}`}</button>
       </div>
     </Modal>
   )
@@ -304,7 +336,7 @@ function PickPeople({ g, organizer, onClose, onDone }: { g: GG; organizer: boole
 /** Fermer la cagnotte : parts finales et, s'il y a plus que le prix, que faire du reste */
 function CloseModal({ g, onClose, onDone }: { g: GG; onClose: () => void; onDone: () => void }) {
   const surplus = Math.round((g.total - g.price) * 100) / 100
-  const over = g.split === 'free' && surplus > 0
+  const over = (g.split === 'free' || Boolean(g.fixed_share)) && surplus > 0
   const short = g.total < g.price ? Math.round((g.price - g.total) * 100) / 100 : 0
   const [choice, setChoice] = useState<'reduce' | 'extra' | 'voucher'>('reduce')
   const [extraItem, setExtraItem] = useState<string | null>(null)
@@ -313,7 +345,7 @@ function CloseModal({ g, onClose, onDone }: { g: GG; onClose: () => void; onDone
   const [busy, setBusy] = useState(false)
   const yes = g.members.filter(m => m.answer === 'yes')
   const ratio = over ? g.price / g.total : 1
-  const preview = yes.map(m => ({ m, v: g.split === 'equal' ? g.price / yes.length : (m.amount ?? 0) * (over && choice === 'reduce' ? ratio : 1) }))
+  const preview = yes.map(m => ({ m, v: g.split === 'equal' && !g.fixed_share ? g.price / yes.length : (m.amount ?? 0) * (over && choice === 'reduce' ? ratio : 1) }))
 
   const go = async () => {
     setErr('')

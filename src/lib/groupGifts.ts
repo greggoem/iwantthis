@@ -10,7 +10,7 @@ export interface GGMember {
 }
 
 export interface GroupGift {
-  id: string; title: string; url: string | null; image_url: string | null; price: number; split: 'equal' | 'free'
+  id: string; title: string; url: string | null; image_url: string | null; price: number; split: 'equal' | 'free'; fixed_share: number | null
   recipient_name: string; recipient_on_site: boolean; from_list: boolean; recipient_list: string | null
   give_on: string; respond_by: string | null; note: string | null; status: GGStatus
   surplus: 'reduce' | 'extra' | 'voucher' | null; extra_text: string | null
@@ -19,6 +19,7 @@ export interface GroupGift {
   total: number; yes: number; pending: number; suggested: number | null
   me: { answer: GGAnswer; amount: number | null; share: number | null; paid: boolean }
   members: GGMember[]
+  invites: { id: string; email: string; emailed: boolean }[]
   extras: { id: string; title: string; price: number; image_url: string | null }[]
 }
 

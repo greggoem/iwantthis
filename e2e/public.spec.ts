@@ -28,10 +28,10 @@ test.describe('Accueil (visiteur)', () => {
   test('les boutons « Créer ma liste » et « Connexion » mènent à la connexion', async ({ page, problems }) => {
     await page.goto('./')
     await page.getByRole('link', { name: /Créer ma liste/ }).first().click()
-    await expect(page.getByRole('button', { name: 'Créer mon compte' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Recevoir un code par e-mail/ })).toBeVisible()
     await page.goto('./')
     await page.getByRole('link', { name: 'Connexion' }).click()
-    await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Continuer avec Google' })).toBeVisible()
     void problems
   })
 })
@@ -41,10 +41,10 @@ test.describe('Connexion', () => {
     await page.goto('#/login')
     await expect(page.getByRole('button', { name: 'Continuer avec Google' })).toBeVisible()
     await capture(page, info, 'connexion')
-    await page.getByRole('button', { name: 'Créer un compte' }).click()
-    await expect(page.getByLabel(/Votre prénom/)).toBeVisible()
-    await capture(page, info, 'inscription')
-    await page.getByRole('button', { name: 'Connexion' }).click()
+    await expect(page.getByRole('button', { name: /Recevoir un code par e-mail/ })).toBeVisible()
+    await page.getByRole('button', { name: 'Se connecter avec un mot de passe' }).click()
+    await expect(page.getByRole('heading', { name: 'Connexion avec mot de passe' })).toBeVisible()
+    await capture(page, info, 'connexion-mot-de-passe')
     await page.getByRole('button', { name: 'Mot de passe oublié ?' }).click()
     await expect(page.getByRole('heading', { name: 'Mot de passe oublié' })).toBeVisible()
     await expectNoHorizontalOverflow(page)
@@ -55,7 +55,8 @@ test.describe('Connexion', () => {
   test('mauvais mot de passe : message clair', async ({ page }) => {
     // pas de fixture « problems » ici : la réponse 400 de Supabase est attendue
     await page.goto('#/login')
-    await page.getByLabel('E-mail').fill('iwt-test-a@iwantthis.gift')
+    await page.getByRole('button', { name: 'Se connecter avec un mot de passe' }).click()
+    await page.getByLabel('Votre adresse e-mail').fill('iwt-test-a@iwantthis.gift')
     await page.getByLabel('Mot de passe').fill('mauvais-mot-de-passe')
     await page.getByRole('button', { name: 'Se connecter' }).click()
     await expect(page.getByText('E-mail ou mot de passe incorrect.')).toBeVisible()
@@ -69,7 +70,7 @@ test.describe('Connexion', () => {
 
   test('un lien de partage sans compte propose de créer un compte', async ({ page, problems }) => {
     await page.goto('./?l=00000000-0000-0000-0000-000000000000')
-    await expect(page.getByText(/On vous a partagé une liste de cadeaux/)).toBeVisible()
+    await expect(page.getByText(/On vous a partagé une liste d'envies/)).toBeVisible()
     void problems
   })
 })

@@ -94,7 +94,9 @@ export async function useTheme(page: Page, theme: string) {
 
 export async function loginUI(page: Page, email: string) {
   await page.goto('#/login')
-  await page.getByLabel('E-mail').fill(email)
+  // connexion sans mot de passe par défaut : les comptes de test passent par « Se connecter avec un mot de passe »
+  await page.getByRole('button', { name: 'Se connecter avec un mot de passe' }).click()
+  await page.getByLabel('Votre adresse e-mail').fill(email)
   await page.getByLabel('Mot de passe').fill(PASSWORD)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page.getByRole('navigation', { name: 'Navigation principale' }).or(page.getByRole('navigation', { name: 'Navigation mobile' }))).toBeVisible()

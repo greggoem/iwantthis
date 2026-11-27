@@ -19,11 +19,11 @@ import { consumeShareTarget } from './lib/shareTarget'
 // Le titre personnalisé (aperçu des liens partagés) ne sert qu'aux robots : l'onglet reprend le nom du site
 document.title = 'I Want This'
 
-// Liens partagés « ?l=TOKEN » / « ?e=CODE » → routes internes #/l/TOKEN, #/e/CODE
+// Liens partagés « ?l=TOKEN » / « ?e=CODE » / « ?g=TOKEN » → routes internes #/l/TOKEN, #/e/CODE, #/g/TOKEN
 {
   const q = new URLSearchParams(window.location.search)
-  const l = q.get('l'), e = q.get('e')
-  if (l || e) window.history.replaceState(null, '', window.location.pathname + (l ? `#/l/${l}` : `#/e/${e}`))
+  const l = q.get('l'), e = q.get('e'), g = q.get('g')
+  if (l || e || g) window.history.replaceState(null, '', window.location.pathname + (l ? `#/l/${l}` : e ? `#/e/${e}` : `#/g/${g}`))
 }
 
 applyTheme(getTheme())   // avant le premier affichage : pas de clignotement

@@ -27,6 +27,7 @@ const shareBase = () => import.meta.env.VITE_SHARE_BASE || (/\.github\.io$/.test
 // ?l= / ?e= sont convertis en #/l/… / #/e/… au chargement (voir main.tsx).
 export const listShareUrl = (token: string) => `${shareBase()}?l=${token}`
 export const eventInviteUrl = (code: string) => `${shareBase()}?e=${code}`
+export const groupGiftUrl = (token: string) => `${shareBase()}?g=${token}`
 
 export function errMsg(e: unknown): string {
   const m = (e as { message?: string })?.message ?? String(e)

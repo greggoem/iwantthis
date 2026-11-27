@@ -14,6 +14,8 @@ import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
 import { groupTree } from '../lib/groups'
 import ClaimDateModal from '../components/ClaimDateModal'
+import GroupGiftForm from '../components/GroupGiftForm'
+import type { GGSeed } from '../lib/groupGifts'
 
 interface CommonEvent { id: string; name: string; event_date: string }
 
@@ -39,6 +41,7 @@ export default function ListView() {
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
   const [editClaim, setEditClaim] = useState<Item | null>(null)
+  const [ggSeed, setGgSeed] = useState<GGSeed | null>(null)
   // Après un achat : inviter à créer (ou partager) sa propre liste — moteur de bouche-à-oreille
   const [nudge, setNudge] = useState<{ title: string; empty: boolean } | null>(null)
   const [prefs, setPrefs, cycleSort] = useViewPrefs()
@@ -172,7 +175,8 @@ export default function ListView() {
   const sortedKids = (g: Item) => sortItems(kids[g.id] ?? [], prefs, () => [], statusOf)
   const row = (it: Item, group?: Item) => {
     const c = claims[it.id]
-    const mine = c?.claimed_by === me
+    const gg = c?.group_gift_id ?? null
+    const mine = c?.claimed_by === me && !gg
     const groupTaken = Boolean(group?.pick_one && (kids[group.id] ?? []).some(k => claims[k.id]))
     const obsolete = groupTaken && !c          // un autre élément du groupe a déjà été pris
     return (
@@ -182,11 +186,18 @@ export default function ListView() {
         kid={Boolean(group)}
         dim={obsolete}
         highlight={Boolean(c)}
-        status={c
+        status={gg
+          ? <span className="chip chip-ok"><Icon name="users" size={13} /><span className="ell">Cadeau commun</span></span>
+          : c
           ? <span className="chip chip-ok"><Icon name="check" size={13} /><span className="ell">Acheté</span></span>
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
           {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>Acheté</button>}
+          {!c && !obsolete && !myKid && !it.is_group && claimingId !== it.id && <IconButton icon="users" label="Offrir à plusieurs (cadeau commun)" onClick={() => setGgSeed({
+            itemId: it.id, title: it.title, url: it.url, image: it.image_url, price: it.price === null ? null : Number(it.price), recipientName: owner,
+            eventId: events.find(e => e.event_date >= todayISO())?.id ?? null, giveOn: events.find(e => e.event_date >= todayISO())?.event_date ?? null,
+          })} />}
+          {gg && c?.claimed_by === me && <Link to={`/commun/${gg}`} className="btn btn-sm">Suivi</Link>}
           {mine && <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditClaim(it)} />}
           {mine && <IconButton icon="x" label="Annuler mon achat" danger onClick={() => unclaim(it.id)} />}
           {!obsolete && <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />}
@@ -258,6 +269,7 @@ export default function ListView() {
         </div>
       )}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
+      {ggSeed && <GroupGiftForm seed={ggSeed} onClose={() => setGgSeed(null)} />}
       {editClaim && claims[editClaim.id] && (
         <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}
           eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on} discreet={claims[editClaim.id].discreet}

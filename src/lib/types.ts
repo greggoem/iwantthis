@@ -48,6 +48,7 @@ export interface Claim {
   reveal_on: string
   owner_seen_at?: string | null
   discreet?: boolean
+  group_gift_id?: string | null
 }
 
 export interface EventRow {

@@ -114,6 +114,27 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: 'commun', icon: 'users', title: 'Le cadeau commun',
+    intro: <>Plusieurs à offrir un même cadeau ? Chacun dit s'il participe et combien, et vous suivez qui a payé. Le site ne fait pas circuler d'argent.</>,
+    steps: [
+      {
+        title: 'Lancez un cadeau commun',
+        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Choisissez pour qui : un proche, ou <strong>Quelqu'un d'autre</strong> <N n={1} /> s'il n'est pas sur le site. Collez le lien du cadeau ou écrivez juste une idée et un objectif, puis choisissez <strong>Même part pour tous</strong> ou <strong>Chacun ce qu'il veut</strong> <N n={2} />. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance un cadeau commun pour cette envie, qui est alors réservée.</>,
+        shots: [{ src: 'commun-1-nouveau', alt: 'Formulaire « Nouveau cadeau commun »' }],
+      },
+      {
+        title: 'Invitez et suivez les réponses',
+        text: <>Partagez le lien ou invitez vos proches <N n={1} /> : chacun répond <strong>Je participe</strong> ou <strong>Je ne participe pas</strong>. Vous voyez qui a répondu, relancez les autres et cochez qui a payé <N n={2} />. Vous pouvez nommer des co-organisateurs. La personne qui reçoit le cadeau, si elle est sur le site, ne voit jamais rien.</>,
+        shots: [{ src: 'commun-2-suivi', alt: 'Suivi des réponses d\'un cadeau commun' }],
+      },
+      {
+        title: 'Fermez la cagnotte',
+        text: <>Touchez <strong>Fermer la cagnotte</strong> : chacun reçoit sa part finale. Si vous avez réuni plus que le prix <N n={1} />, réduisez les parts, ajoutez un petit cadeau ou un bon d'achat. Une fois le cadeau acheté, touchez <strong>Le cadeau est acheté</strong> : il rejoint ensuite vos cadeaux offerts.</>,
+        shots: [{ src: 'commun-3-fermer', alt: 'Fermer la cagnotte avec un surplus' }],
+      },
+    ],
+  },
+  {
     id: 'surprise', icon: 'lock', title: 'La surprise',
     intro: <>Vous ne voyez jamais ce qu'on vous offre avant le jour J : c'est protégé par le serveur, pas seulement caché à l'écran.</>,
     steps: [

@@ -115,6 +115,18 @@ async function mock(route, o) {
   if (p.endsWith('/rpc/ensure_my_list')) return ok(MINE)
   if (p.endsWith('/rpc/event_invite_info')) return ok({ id: null, name: EV.name, date: EV.event_date, time: '19:00:00', location: EV.location, image: null, by: 'Léa', members: 4 })
   if (p.endsWith('/rpc/is_admin')) return ok(false)
+  if (p.endsWith('/rpc/my_people')) return ok([MARC, JULIE, PAUL].map((id) => ({ user_id: id, display_name: NAMES[id] })))
+  if (p.endsWith('/rpc/my_group_gifts')) return ok(o.gg ? [{ id: 'G1', title: 'Machine à espresso', image_url: null, url: null, price: 249, recipient_name: 'Mamy', give_on: '2026-12-24', status: 'open', is_organizer: true, answer: 'yes', share: 62.25, paid: true, total: 249, yes: 4, with: [], organizers: ['Léa', 'Julie'] },
+    { id: 'G2', title: 'Week-end spa', image_url: null, url: null, price: 300, recipient_name: 'Sophie', give_on: '2026-12-19', status: 'open', is_organizer: false, answer: 'pending', share: null, paid: false, total: 120, yes: 3, with: [], organizers: ['Paul'] }] : [])
+  if (p.endsWith('/rpc/group_gift')) {
+    const m = (id, name, x = {}) => ({ id, name, organizer: false, answer: 'yes', me: false, amount: 62.25, paid: false, ...x })
+    return ok({ id: 'G1', title: 'Machine à espresso', url: null, image_url: null, price: 249, split: o.ggFree ? 'free' : 'equal', recipient_name: 'Mamy', recipient_on_site: false, from_list: false, recipient_list: null,
+      give_on: '2026-12-24', respond_by: '2026-12-15', note: 'Virement sur le compte de Léa, merci !', status: 'open', surplus: null, extra_text: null, event: { id: 'E1', name: 'Noël en famille' },
+      share_token: 'tok', is_organizer: true, created_by: ME, total: o.ggFree ? 300 : 249, yes: 4, pending: 1, suggested: null,
+      me: { answer: 'yes', amount: o.ggFree ? 100 : null, share: o.ggFree ? 100 : 62.25, paid: true },
+      members: [m(ME, 'Léa', { organizer: true, me: true, paid: true, amount: o.ggFree ? 100 : 62.25 }), m(JULIE, 'Julie', { organizer: true, paid: true, amount: o.ggFree ? 80 : 62.25 }), m(MARC, 'Marc', { amount: o.ggFree ? 70 : 62.25 }), m(PAUL, 'Paul', { amount: o.ggFree ? 50 : 62.25 }), m('x', 'Mamie Jo', { answer: 'pending', amount: null, paid: null })],
+      extras: [] })
+  }
   if (p.endsWith('/rpc/my_child_lists')) return ok(o.kids ? [TOM] : [])
   if (p.endsWith('/rpc/list_managers_info')) return ok({ owner: { id: ME, name: 'Léa' }, managers: [], invites: [], transfer: null })
   if (p.endsWith('/rpc/event_child_lists_info')) return ok(o.kids ? [{ ...TOM, managers: [ME], managed_kind: 'enfant', count: 3, mine: true, shown: true }] : [])
@@ -218,6 +230,10 @@ await shoot('offrir-1-proches', '#/listes', [], {},
 await shoot('offrir-2-liste', '#/listes/L2', [click('button:has-text("Acheté")')], {},
   [{ n: 1, sel: '.claimbox', at: 'tl' }, { n: 2, sel: '.claimbox .btn-primary', at: 'tl' }])
 await shoot('offrir-3-a-offrir', '#/offrir', [], {}, [])
+// 6 bis · Cadeau commun
+await shoot('commun-1-nouveau', '#/offrir', [click('text=Nouveau cadeau commun'), click('.gg-chip-add'), fill('input[placeholder^="Son prénom"]', 'Mamy'), fill('input[aria-label="Le cadeau"]', 'Machine à espresso'), fill('.gg-euro input', '249')], {}, [{ n: 1, sel: '.gg-chip-add', at: 'tl' }, { n: 2, sel: '.gg-mode', at: 'tl' }])
+await shoot('commun-2-suivi', '#/commun/G1', [], { gg: true }, [{ n: 1, sel: '.gg-actions .btn', at: 'tl' }, { n: 2, sel: '.gg-member input[type=checkbox]', at: 'l' }])
+await shoot('commun-3-fermer', '#/commun/G1', [click('text=Fermer la cagnotte')], { gg: true, ggFree: true }, [{ n: 1, sel: '.gg-option', at: 'tl' }])
 // 7 · La surprise
 await shoot('surprise-1', '#/', [], { kids: false }, [{ n: 1, sel: '.chip-quiet', at: 'tl' }])
 await shoot('surprise-2', '#/', [], { kids: false, revealed: true }, [{ n: 1, sel: '.gifts-banner .btn-primary', at: 'tl' }])

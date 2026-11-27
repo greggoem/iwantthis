@@ -1107,3 +1107,97 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .photo-choice:active{transform:scale(.96)}
 .photo-choice.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 30%,transparent)}
 .photo-choice-tick{position:absolute;right:4px;bottom:4px;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:999px;background:var(--accent);color:#fff}
+
+/* ============ Cadeaux communs ============ */
+.stack-sm { display: flex; flex-direction: column; gap: .5rem; }
+.linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; display: inline-flex; align-items: center; gap: .3rem; }
+.linkbtn.small { font-size: .85rem; }
+.gg-h2 { font-size: 1.05rem; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.gg-step { display: flex; align-items: center; gap: .55rem; font-size: .98rem; font-weight: 650; margin: 0; }
+.gg-num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 999px; background: var(--ink); color: var(--surface); font-size: .75rem; font-weight: 700; flex: none; }
+.gg-form section { padding-bottom: .4rem; }
+.gg-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.gg-chip { display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .75rem .25rem .25rem; border-radius: 999px; border: 1.5px dashed var(--line); background: none; color: var(--muted); font: inherit; font-size: .9rem; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+.gg-chip .pdot { opacity: .55; filter: grayscale(.7); }
+.gg-chip.on { border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); font-weight: 600; }
+.gg-chip.on .pdot { opacity: 1; filter: none; }
+.gg-chip-add { padding-left: .7rem; border-style: solid; color: var(--ink); }
+.gg-chip-sm { padding: .3rem .75rem; font-size: .85rem; }
+.gg-chip:active { transform: scale(.96); }
+.gg-tag { display: inline-block; margin-left: .35rem; padding: .05rem .45rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: color-mix(in srgb, var(--accent) 75%, var(--ink)); font-size: .7rem; font-weight: 650; vertical-align: 1px; }
+.gg-gift { display: flex; gap: .75rem; padding: .7rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.gg-gift-img, .gg-head-img, .gg-card-img, .gg-extra-img { flex: none; display: grid; place-items: center; background: var(--fill); color: var(--muted); overflow: hidden; }
+.gg-gift-img { width: 88px; height: 88px; border-radius: 12px; }
+.gg-gift-img img, .gg-head-img img, .gg-card-img img, .gg-extra-img img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.gg-price { font-weight: 500; }
+.gg-euro { display: flex; align-items: center; gap: .4rem; font-weight: 600; }
+.gg-euro input { max-width: 8rem; font-weight: 600; }
+.gg-euro-lg input { font-size: 1.3rem; padding: .55rem .7rem; max-width: 9rem; }
+.gg-modes, .gg-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.gg-mode, .gg-option { text-align: left; display: flex; flex-direction: column; gap: .25rem; padding: .8rem .9rem; border-radius: var(--radius); border: 1.5px solid var(--line); background: var(--surface); font: inherit; color: var(--ink); cursor: pointer; }
+.gg-mode span, .gg-option > span { font-size: .84rem; color: var(--muted); }
+.gg-mode.on, .gg-option.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.gg-mode.on span, .gg-option.on > span { color: var(--ink-2); }
+.gg-option > span.row { color: var(--ink); }
+
+.gg-page { gap: 1rem; }
+.gg-head { display: flex; gap: 1rem; align-items: center; }
+.gg-head-img { width: 96px; height: 96px; border-radius: 16px; }
+.gg-title { margin: 0; font-size: 1.45rem; line-height: 1.2; letter-spacing: -.02em; }
+.gg-title a { color: inherit; text-decoration: none; }
+.gg-status { display: inline-block; align-self: flex-start; padding: .15rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 650; white-space: nowrap; }
+.gg-st-open { background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: color-mix(in srgb, var(--accent) 70%, var(--ink)); }
+.gg-st-wait { background: #fef3c7; color: #92400e; }
+.gg-st-closed { background: #e0ecff; color: #1e40af; }
+.gg-st-bought { background: var(--ok-bg); color: var(--ok); }
+.gg-st-cancel { background: var(--fill); color: var(--muted); }
+.gg-progress { display: flex; flex-direction: column; gap: .55rem; }
+.gg-bar { height: 10px; border-radius: 999px; background: var(--fill); overflow: hidden; }
+.gg-bar > div, .gg-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width .3s; }
+.gg-bar > .full { background: var(--ok); }
+.gg-bar-sm { height: 6px; }
+.gg-dots { display: inline-flex; }
+.gg-dots .pdot { border: 2px solid var(--surface); margin-left: -6px; }
+.gg-dots .pdot:first-child { margin-left: 0; }
+.gg-share { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .75rem .9rem; border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); font-size: .9rem; }
+.gg-share strong { font-size: 1.3rem; }
+.gg-quick { display: flex; flex-wrap: wrap; gap: .4rem; }
+.gg-mine.yes { border-color: var(--chip-ok-line); background: var(--ok-bg); }
+.gg-mine.yes svg { color: var(--ok); vertical-align: -3px; }
+.gg-note { display: flex; gap: .55rem; align-items: flex-start; padding: .7rem .9rem; border-radius: 12px; background: var(--fill); font-size: .9rem; }
+.gg-note svg { flex: none; margin-top: 2px; color: var(--muted); }
+.gg-note span { flex: 1; white-space: pre-line; }
+.gg-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.gg-actions .btn { flex: 1 1 auto; }
+.gg-members { padding: 0; overflow: hidden; }
+.gg-members > p { padding: 0 1rem 1rem; }
+.gg-members-head { display: flex; justify-content: space-between; padding: .7rem 1rem; font-size: .72rem; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line-soft); }
+.gg-member { display: flex; align-items: center; gap: .7rem; padding: .65rem 1rem; border-bottom: 1px solid var(--line-soft); }
+.gg-member input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--ok); }
+.gg-yes { color: var(--ok); }
+.gg-wait { color: #b45309; }
+.gg-addorg { padding: .75rem 1rem; }
+.gg-banner { display: flex; flex-direction: column; gap: .2rem; padding: .9rem 1rem; border-radius: var(--radius); font-size: .9rem; }
+.gg-banner.ok { background: var(--ok-bg); color: #14532d; border: 1px solid var(--chip-ok-line); }
+.gg-banner.warn { background: #fef6e7; color: #7c4a03; border: 1px solid #f6dfae; }
+.gg-banner strong { font-size: 1rem; }
+.gg-sub { margin-left: .9rem; }
+.gg-extras { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .45rem; }
+.gg-extra { display: flex; gap: .5rem; align-items: center; text-align: left; padding: .45rem; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; color: var(--ink); cursor: pointer; }
+.gg-extra.on { border-color: var(--accent); }
+.gg-extra-img { width: 44px; height: 44px; border-radius: 8px; }
+.gg-finals { display: flex; flex-direction: column; gap: .3rem; padding: .75rem .9rem; border-radius: 12px; background: var(--fill); }
+
+.gg-section { gap: .7rem; }
+.gg-card { display: flex; gap: .8rem; align-items: center; text-decoration: none; color: inherit; transition: border-color .15s, transform .1s; }
+.gg-card:hover { border-color: #d3d3d9; }
+.gg-card-img { width: 60px; height: 60px; border-radius: 12px; }
+.gg-card-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: .3rem; }
+.gg-card-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gg-past summary { cursor: pointer; }
+.gg-past ul { margin: .5rem 0 0; padding-left: 1.1rem; }
+@media (max-width: 520px) {
+  .gg-modes, .gg-two { grid-template-columns: 1fr; }
+  .gg-head-img { width: 76px; height: 76px; }
+  .gg-title { font-size: 1.25rem; }
+}

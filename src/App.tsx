@@ -17,6 +17,8 @@ import Profile from './pages/Profile'
 import Settings from './pages/Settings'
 import Admin from './pages/Admin'
 import Notifications from './pages/Notifications'
+import GroupGift from './pages/GroupGift'
+import OpenGroupGift from './pages/OpenGroupGift'
 import ToGive from './pages/ToGive'
 import Confirm from './pages/Confirm'
 import Landing from './pages/Landing'
@@ -119,6 +121,8 @@ export default function App() {
           <Route path="listes/:id" element={<ListView />} />
           <Route path="l/:token" element={<OpenShared />} />
           <Route path="offrir" element={<ToGive />} />
+          <Route path="commun/:id" element={<GroupGift />} />
+          <Route path="g/:token" element={<OpenGroupGift />} />
           <Route path="evenements" element={<Events />} />
           <Route path="evenements/:id" element={<EventDetail />} />
           <Route path="e/:code" element={<JoinEvent />} />

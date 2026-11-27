@@ -37,7 +37,7 @@ export default function MyPurchases() {
     if (!session) return
     const { data, error } = await supabase.from('item_claims')
       .select('item_id,reveal_on,event_id,discreet,items(id,title,url,price,image_url,wishlists(owner_id,child_name)),events(name)')
-      .eq('claimed_by', session.user.id).order('reveal_on')
+      .eq('claimed_by', session.user.id).is('group_gift_id', null).order('reveal_on')
     if (error) { setErr(errMsg(error)); setRows([]); return }
     const claims = ((data as unknown as ClaimRow[]) ?? []).filter(c => c.items)
     const ownerIds = [...new Set(claims.map(c => c.items!.wishlists?.owner_id).filter(Boolean) as string[])]

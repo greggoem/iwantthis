@@ -193,7 +193,7 @@ export default function ToGive() {
     return <>
       {e.stage === 'buy' && <button className="btn btn-sm btn-primary" disabled={busy === e.key} onClick={() => markBought(e)}>C'est acheté</button>}
       {e.stage === 'bought' && <IconButton icon="refresh" label="Remettre à acheter" disabled={busy === e.key} onClick={() => setBought(e, false)} />}
-      <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditing(e)} />
+      <IconButton icon="pencil" label={e.stage === 'bought' ? 'Modifier le prix ou la date' : 'Modifier la date de remise'} onClick={() => setEditing(e)} />
       <IconButton icon="trash" label="Annuler ce cadeau" danger disabled={busy === e.key} onClick={() => cancel(e)} />
     </>
   }
@@ -310,8 +310,9 @@ export default function ToGive() {
 
       {editing?.claim && (
         <ClaimDateModal itemId={editing.claim.item_id} title={editing.title} ownerId={editing.claim.ownerId} ownerName={editing.who}
-          eventId={editing.eventId} revealOn={editing.date} discreet={Boolean(editing.claim.discreet)} onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); setMsg(`Date de remise de « ${editing.title} » mise à jour.`); load() }} />
+          eventId={editing.eventId} revealOn={editing.date} discreet={Boolean(editing.claim.discreet)}
+          price={editing.stage === 'bought' ? { paid: editing.paid, list: editing.price } : undefined} onClose={() => setEditing(null)}
+          onSaved={() => { setEditing(null); setMsg(`« ${editing.title} » mis à jour.`); load() }} />
       )}
       {pricing && <PriceModal title={pricing.title} onClose={() => setPricing(null)} onDone={p => setBought(pricing, true, p)} />}
       {creating && <GroupGiftForm onClose={() => { setCreating(false); load() }} />}

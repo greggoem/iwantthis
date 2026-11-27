@@ -108,7 +108,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Vos cadeaux à offrir',
-        text: <>La page <strong>À offrir</strong> fait le point <N n={1} /> : <strong>à choisir</strong> (les personnes tirées au sort pour vous ou vos enfants, les cadeaux communs qui attendent votre réponse), <strong>à acheter</strong> et <strong>acheté</strong>. Votre budget <N n={2} /> additionne ce qui est déjà dépensé et ce qui est encore prévu ; les envies sans prix sont signalées à part. Filtrez par événement et affichez tout <strong>par étape</strong> ou <strong>par personne</strong> <N n={3} />. Touchez <strong>C'est acheté</strong> une fois l'achat fait ; vous pouvez aussi changer la date ou annuler. Un rappel (notification et e-mail) arrive 7 jours puis 2 jours avant la remise s'il reste quelque chose à faire.</>,
+        text: <>La page <strong>À offrir</strong> fait le point <N n={1} /> : <strong>à choisir</strong> (les personnes tirées au sort pour vous ou vos enfants, les cadeaux communs qui attendent votre réponse), <strong>à acheter</strong> et <strong>acheté</strong>. Votre budget <N n={2} /> additionne ce qui est déjà dépensé et ce qui est encore prévu ; les envies sans prix sont signalées à part. Filtrez par événement et affichez tout <strong>par étape</strong> ou <strong>par personne</strong> <N n={3} />. Touchez <strong>C'est acheté</strong> une fois l'achat fait ; le crayon change la date de remise et, une fois l'achat fait, le prix payé ; vous pouvez aussi annuler. Un rappel (notification et e-mail) arrive 7 jours puis 2 jours avant la remise s'il reste quelque chose à faire.</>,
         shots: [{ src: 'offrir-3-a-offrir', alt: 'Page « Mes cadeaux à offrir » : à choisir, à acheter, acheté, budget' }],
       },
     ],

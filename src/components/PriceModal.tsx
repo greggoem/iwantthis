@@ -9,7 +9,7 @@ export default function PriceModal({ title, onDone, onClose }: { title: string; 
   return (
     <Modal title="C'est acheté !" onClose={onClose}>
       <form className="stack" onSubmit={e => { e.preventDefault(); if (ok) onDone(v.trim() ? Math.round(n * 100) / 100 : null) }}>
-        <p className="muted" style={{ margin: 0 }}>« {title} » n'a pas de prix. Combien l'avez-vous payé ? C'est facultatif : ça sert seulement à votre budget, personne d'autre ne le voit.</p>
+        <p className="muted" style={{ margin: 0 }}>« {title} » n'a pas de prix. Combien l'avez-vous payé ? C'est facultatif : ça sert à calculer votre budget.</p>
         <label>Prix payé (facultatif)
           <span className="price-in"><input inputMode="decimal" autoFocus value={v} onChange={e => setV(e.target.value)} placeholder="Ex. 24,90" aria-label="Prix payé en euros" /> €</span>
         </label>

@@ -219,7 +219,7 @@ export default function ListView() {
             eventId: events.find(e => e.event_date >= todayISO())?.id ?? null, giveOn: events.find(e => e.event_date >= todayISO())?.event_date ?? null,
           })} />}
           {gg && c?.claimed_by === me && <Link to={`/commun/${gg}`} className="btn btn-sm">Suivi</Link>}
-          {mine && <IconButton icon="pencil" label="Modifier la date de remise" onClick={() => setEditClaim(it)} />}
+          {mine && <IconButton icon="pencil" label={c?.bought === false ? 'Modifier la date de remise' : 'Modifier le prix ou la date'} onClick={() => setEditClaim(it)} />}
           {mine && <IconButton icon="x" label="Annuler mon achat" danger onClick={() => unclaim(it.id)} />}
           {!obsolete && <IconButton icon={copied.has(it.id) ? 'check' : 'copy'} label={copied.has(it.id) ? 'Ajouté à votre liste' : 'Copier cette idée dans ma liste'} onClick={() => copyIdea(it)} />}
         </>}
@@ -231,7 +231,7 @@ export default function ListView() {
               <button type="button" role="radio" aria-checked={stage === 'done'} className={stage === 'done' ? 'on' : ''} onClick={() => setStage('done')}>Déjà acheté</button>
             </div>
             {stage === 'done' && it.price === null && (
-              <label className="small">Prix payé (facultatif, vous seul le voyez)
+              <label className="small">Prix payé (facultatif, pour votre budget)
                 <span className="price-in"><input inputMode="decimal" value={paid} onChange={e => setPaid(e.target.value)} placeholder="Ex. 24,90" aria-label="Prix payé en euros" /> €</span>
               </label>
             )}
@@ -306,6 +306,7 @@ export default function ListView() {
       {editClaim && claims[editClaim.id] && (
         <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}
           eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on} discreet={claims[editClaim.id].discreet}
+          price={claims[editClaim.id].bought === false ? undefined : { paid: claims[editClaim.id].paid_price == null ? null : Number(claims[editClaim.id].paid_price), list: editClaim.price === null ? null : Number(editClaim.price) }}
           onClose={() => setEditClaim(null)} onSaved={() => { setEditClaim(null); load() }} />
       )}
 

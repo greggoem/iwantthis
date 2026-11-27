@@ -235,7 +235,7 @@ export default function ListView() {
                 <span className="price-in"><input inputMode="decimal" value={paid} onChange={e => setPaid(e.target.value)} placeholder="Ex. 24,90" aria-label="Prix payé en euros" /> €</span>
               </label>
             )}
-            {stage === 'later' && <p className="small muted" style={{ margin: 0 }}>L'envie est réservée pour vous dès maintenant. Elle reste dans « À offrir », à acheter, avec un rappel avant la remise.</p>}
+            {stage === 'later' && <p className="small muted" style={{ margin: 0 }}>Personne d'autre ne pourra plus la prendre. Vous la retrouverez dans « À offrir », et on vous rappellera de l'acheter avant la date de remise.</p>}
             <strong className="small">Pour quelle occasion ?</strong>
             {events.map(e => (
               <label key={e.id} className="radio">

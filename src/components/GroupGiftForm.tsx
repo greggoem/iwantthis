@@ -161,9 +161,9 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
   const [split, setSplit] = useState<'equal' | 'free'>('equal')
   const [fixedOn, setFixedOn] = useState(false)
   const [fixed, setFixed] = useState('')
-  const [giveOn, setGiveOn] = useState(seed.giveOn ?? '')
+  const [giveOn, setGiveOn] = useState('')
   const [respondBy, setRespondBy] = useState('')
-  const [eventId, setEventId] = useState(seed.eventId ?? '')
+  const [eventId, setEventId] = useState('')   // aucun événement par défaut
   const [orgs, setOrgs] = useState<Set<string>>(new Set())
   const [invited, setInvited] = useState<Set<string>>(new Set())
   const [emails, setEmails] = useState<string[]>([])
@@ -213,7 +213,7 @@ export default function GroupGiftForm({ seed = {}, onClose }: { seed?: GGSeed; o
   const pickEvent = (id: string) => {
     setEventId(id)
     const e = events.find(x => x.id === id)
-    if (e && !giveOn) setGiveOn(e.event_date)
+    if (e) setGiveOn(e.event_date)   // la remise suit la date de l'événement choisi
   }
 
   const readLink = async (raw: string) => {

@@ -23,7 +23,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Vérifiez et complétez',
-        text: <>L'image <N n={1} />, le nom et le prix arrivent tout seuls. Précisez la taille ou la couleur dans <strong>Détails</strong> <N n={2} />, puis <strong>Ajouter à ma liste</strong> <N n={3} />. Pas de lien ? Remplissez simplement les champs à la main.</>,
+        text: <>L'image <N n={1} />, le nom et le prix arrivent tout seuls. Si le site propose plusieurs photos, elles s'affichent en vignettes : touchez celle que vous préférez (ou plus tard, <strong>Modifier › Voir les photos du site</strong>). Précisez la taille ou la couleur dans <strong>Détails</strong> <N n={2} />, puis <strong>Ajouter à ma liste</strong> <N n={3} />. Pas de lien ? Remplissez simplement les champs à la main.</>,
         shots: [{ src: 'liste-2-formulaire', alt: 'Formulaire prérempli avec image, nom et prix' }],
       },
       {
@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Favoris, tri et affichage',
-        text: <>Le groupe <N n={1} /> se déplie pour montrer ses éléments. Le menu <strong>⋯</strong> de chaque envie permet de la marquer comme <strong>favori</strong> (étoile) : vos favoris passent en tête. Triez la liste et passez de la vue liste à la galerie avec les boutons <N n={2} />.</>,
+        text: <>Le groupe <N n={1} /> se déplie pour montrer ses éléments. Le menu <strong>⋯</strong> de chaque envie permet de la marquer comme <strong>favori</strong> (étoile) : vos favoris passent en tête. Par défaut, les envies <strong>les plus récentes</strong> s'affichent en premier ; touchez la flèche à côté du tri (sur ordinateur, <strong>Les plus récentes d'abord</strong>) pour inverser l'ordre. Triez aussi par nom, prix, magasin ou statut, et passez de la vue liste à la galerie avec les boutons <N n={2} />.</>,
         shots: [{ src: 'orga-2-liste', alt: 'Liste avec un groupe et un favori' }],
       },
     ],
@@ -161,13 +161,13 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Créez un ou plusieurs tirages',
-        text: <>L'organisateur choisit <strong>Créer un tirage au sort</strong> dans le menu <strong>⋯</strong> de l'événement, lui donne un nom et coche les participants : des invités et aussi des listes d'enfants. Une même personne peut être dans plusieurs tirages. On peut exclure des paires (un couple, un frère et une sœur), puis lancer chaque tirage <N n={1} />.</>,
-        shots: [{ src: 'tirage-1', alt: 'Section « Tirage au sort »' }],
+        text: <>L'organisateur touche <strong>Créer un tirage</strong> (ou <strong>Ajouter un tirage</strong> s'il en existe déjà un), lui donne un nom et touche les personnes qui participent : des invités et aussi des listes d'enfants. Une même personne peut être dans plusieurs tirages. Pour éviter qu'un couple ou un frère et une sœur tombent l'un sur l'autre, touchez <strong>Ajouter une exception</strong> puis les deux personnes ; la flèche ⇄ passe à → pour une exception dans un seul sens. Il reste à toucher <strong>Lancer le tirage</strong> <N n={1} />. Ensuite, <strong>Modifier</strong> change les participants et <strong>Refaire</strong> relance le tirage, après confirmation, en prévenant chacun.</>,
+        shots: [{ src: 'tirage-1', alt: 'Tirage prêt, avec le bouton « Lancer le tirage »' }],
       },
       {
         title: 'Chacun découvre son résultat',
-        text: <>Chaque participant touche <strong>Découvrir à qui j'offre</strong> <N n={1} /> et accède à la liste de la personne tirée. Pour une liste d'enfant, c'est le parent qui voit le résultat. Le résultat est secret : même l'organisateur ne voit que le sien.</>,
-        shots: [{ src: 'tirage-2', alt: 'Bouton « Découvrir à qui j\'offre un cadeau »' }],
+        text: <>Chaque participant touche <strong>Ouvrir</strong> <N n={1} /> sur la carte « À qui allez-vous offrir ? » et accède à la liste de la personne tirée. Pour une liste d'enfant, c'est le parent qui voit le résultat. Le résultat est secret : même l'organisateur ne voit que le sien.</>,
+        shots: [{ src: 'tirage-2', alt: 'Carte « À qui allez-vous offrir ? » avec le bouton Ouvrir' }],
       },
     ],
   },
@@ -177,8 +177,8 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Ouvrez le menu de votre liste',
-        text: <>Dans <strong>Ma liste</strong>, touchez <strong>⋯</strong> <N n={1} />, puis <strong>Ajouter une liste d'enfant</strong> <N n={2} />.</>,
-        shots: [{ src: 'enfant-1-menu', alt: 'Menu ⋯ ouvert avec « Ajouter une liste d\'enfant »' }],
+        text: <>Dans <strong>Ma liste</strong>, touchez <strong>⋯</strong> <N n={1} />, puis <strong>Ajouter un enfant ou un proche sans compte</strong> <N n={2} />.</>,
+        shots: [{ src: 'enfant-1-menu', alt: 'Menu ⋯ ouvert avec « Ajouter un enfant ou un proche sans compte »' }],
       },
       {
         title: 'Son prénom, son âge, sa couleur',
@@ -194,6 +194,10 @@ const SECTIONS: Section[] = [
         title: '« Pour qui ? »',
         text: <>Quand vous ajoutez une envie, depuis le site, l'extension ou le bouton Partager d'une appli, choisissez la liste <N n={1} /> : la vôtre ou celle de votre enfant. Le site retient la dernière utilisée.</>,
         shots: [{ src: 'enfant-4-pour-qui', alt: 'Formulaire d\'ajout avec « Pour qui ? »' }],
+      },
+      {
+        title: 'À deux parents, puis à l\'enfant',
+        text: <>Sur la liste de votre enfant, le menu <strong>⋯</strong> propose <strong>Partager la gestion</strong> : l'autre parent la gère avec vous et la montre dans ses propres événements. Quand votre enfant a son adresse e-mail, <strong>Donner à … sa propre liste</strong> lui envoie une invitation : quand il l'accepte, la liste devient la sienne, avec ses envies, et ce qui a été acheté reste une surprise.</>,
       },
     ],
   },

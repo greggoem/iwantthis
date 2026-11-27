@@ -85,6 +85,13 @@ export function ViewBar({ prefs, onChange, left }: { prefs: ViewPrefs; onChange:
             </button>
           )}
         </label>
+        {!prefs.key && (
+          <button type="button" className="btn btn-sm sort-added" onClick={() => onChange({ added: prefs.added === 'desc' ? 'asc' : 'desc' })}
+            title="Inverser l'ordre d'ajout">
+            {prefs.added === 'desc' ? 'Les plus récentes d\'abord' : 'Les plus anciennes d\'abord'}
+            <span className={`sortarrow ${prefs.added}`}><Icon name="chevron" size={14} /></span>
+          </button>
+        )}
         <div className="seg-view" role="group" aria-label="Mode d'affichage">
           <button type="button" className={prefs.view === 'list' ? 'on' : ''} aria-pressed={prefs.view === 'list'} title="Liste" onClick={() => onChange({ view: 'list' })}><Icon name="list" size={17} /></button>
           <button type="button" className={prefs.view === 'gallery' ? 'on' : ''} aria-pressed={prefs.view === 'gallery'} title="Galerie" onClick={() => onChange({ view: 'gallery' })}><Icon name="grid" size={17} /></button>

@@ -88,7 +88,7 @@ async function shoot(name, url, steps, opts = {}, marks = []) {
   MARKS[name] = {}
   for (const [fmt, sz] of Object.entries(SIZES)) {
     const ctx = await (await browser).newContext({ viewport: { width: sz.w, height: sz.h }, deviceScaleFactor: sz.scale })
-    await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s)); localStorage.setItem('iwt.theme', 'classique') }, session)
+    await ctx.addInitScript((s) => { localStorage.setItem('sb-mock-auth-token', JSON.stringify(s)); localStorage.setItem('iwt.theme', 'classique'); localStorage.setItem('iwt.device.setup', '1') }, session)
     const page = await ctx.newPage()
     page.on('pageerror', (e) => console.log('ERREUR', name, e.message))
     await page.route('http://mock.local/**', (route) => mock(route, o))
@@ -115,6 +115,17 @@ async function mock(route, o) {
   if (p.endsWith('/rpc/ensure_my_list')) return ok(MINE)
   if (p.endsWith('/rpc/event_invite_info')) return ok({ id: null, name: EV.name, date: EV.event_date, time: '19:00:00', location: EV.location, image: null, by: 'Léa', members: 4 })
   if (p.endsWith('/rpc/is_admin')) return ok(false)
+  if (p.endsWith('/rpc/my_child_lists')) return ok(o.kids ? [TOM] : [])
+  if (p.endsWith('/rpc/list_managers_info')) return ok({ owner: { id: ME, name: 'Léa' }, managers: [], invites: [], transfer: null })
+  if (p.endsWith('/rpc/event_child_lists_info')) return ok(o.kids ? [{ ...TOM, managers: [ME], managed_kind: 'enfant', count: 3, mine: true, shown: true }] : [])
+  if (p.endsWith('/rpc/list_keepers')) return ok(o.kids ? [{ list_id: 'K1', user_id: ME, display_name: 'Léa' }] : [])
+  if (p.endsWith('/rpc/event_draws')) {
+    if (!o.drawOn && !o.draw) return ok([])
+    const P = (pid) => ({ pid, kind: 'user', name: NAMES[pid], color: null, owner_id: pid })
+    return ok([{ id: 'D1', name: 'Noël en famille', position: 0, done_at: o.draw ? '2026-11-10T10:00:00Z' : null, done_count: o.draw ? 4 : null,
+      participants: MEMBERS.map(P), blocks: [{ giver: MARC, receiver: JULIE }, { giver: JULIE, receiver: MARC }],
+      mine: o.draw ? [{ giver: ME, giver_kind: 'me', giver_name: 'Léa', receiver: JULIE, receiver_name: 'Julie', receiver_kind: 'user', receiver_color: null, receiver_list: 'L3' }] : [] }])
+  }
   if (p.includes('/rpc/')) return ok([])
   if (p.endsWith('/functions/v1/link-preview')) {
     await new Promise((r) => setTimeout(r, 400))
@@ -174,8 +185,8 @@ await shoot('liste-3-liste', '#/', [], { kids: false },
   [{ n: 1, sel: '.page-actions button:has-text("Partager")', at: 'tl' }, { n: 2, sel: '.page-actions .btn-primary', at: 'tl' }, { n: 3, sel: 'button[aria-label^="Actions pour"]', at: 'l' }])
 // 10 · Ajouter un enfant
 await shoot('enfant-1-menu', '#/', [click(MENU)], { kids: false },
-  [{ n: 1, sel: MENU, at: 'tr' }, { n: 2, sel: 'text=Ajouter une liste d\'enfant', at: 'l' }])
-await shoot('enfant-2-formulaire', '#/', [click(MENU), click('text=Ajouter une liste d\'enfant'), fill('.kid-fields input[required]', 'Tom'), fill('.kid-fields input:not([required])', '7'), click('button[aria-label="Bleu"]')], { kids: false },
+  [{ n: 1, sel: MENU, at: 'tr' }, { n: 2, sel: 'text=Ajouter un enfant ou un proche', at: 'l' }])
+await shoot('enfant-2-formulaire', '#/', [click(MENU), click('text=Ajouter un enfant ou un proche'), fill('.kid-fields input[required]', 'Tom'), fill('.kid-fields input:not([required])', '7'), click('button[aria-label="Bleu"]')], { kids: false },
   [{ n: 1, sel: '.kid-fields input[required]', at: 'tl' }, { n: 2, sel: '.kid-color', at: 'l' }, { n: 3, sel: 'button:has-text("Créer la liste")', at: 'tl' }])
 await shoot('enfant-3-liste', '#/?liste=K1', [], {},
   [{ n: 1, sel: '.lpill.on', at: 'tr' }, { n: 2, sel: '.title-sub a', at: 'r' }])
@@ -216,8 +227,8 @@ await shoot('event-2-detail', '#/evenements/E1', [], {}, [{ n: 1, sel: '.ev-btns
 await shoot('event-3-inviter', '#/evenements/E1', [click('.ev-btns .btn-primary')], {}, [{ n: 1, sel: '.modal button:has-text("Partager")', at: 'tl' }])
 await shoot('event-4-rejoindre', '#/e/noel24', [], {}, [{ n: 1, sel: 'button:has-text("Rejoindre")', at: 'tl' }])
 // 9 · Tirage
-await shoot('tirage-1', '#/evenements/E1', [scrollTo('#tirage')], { drawOn: true }, [{ n: 1, sel: '#tirage', at: 'l' }])
-await shoot('tirage-2', '#/evenements/E1', [], { draw: true }, [{ n: 1, sel: 'button:has-text("Découvrir")', at: 'tl' }])
+await shoot('tirage-1', '#/evenements/E1', [scrollTo('#tirage')], { drawOn: true }, [{ n: 1, sel: '.draw-launch', at: 'tl' }])
+await shoot('tirage-2', '#/evenements/E1', [], { draw: true }, [{ n: 1, sel: '.draw-mystery-cta', at: 'tl' }])
 // 11 · Réglages
 await shoot('reglages-1-menu', '#/', [click('button[aria-label="Menu du compte"]')], { kids: false }, [])
 await shoot('reglages-2-apparence', '#/reglages?s=apparence', [], { kids: false }, [])

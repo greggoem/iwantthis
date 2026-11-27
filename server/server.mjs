@@ -78,6 +78,14 @@ async function shareMeta(kind, code, pageUrl) {
       image: SITE + 'og.png', url: pageUrl,
     }
   }
+  if (kind === 'g' && data?.title) {
+    const d = data.date ? new Date(data.date + 'T12:00:00').toLocaleDateString('fr-BE', { day: 'numeric', month: 'long' }) : ''
+    return {
+      title: `🎁 Cadeau commun pour ${data.recipient}`,
+      desc: `${data.by ? `${data.by} propose` : 'On se cotise pour offrir'} « ${data.title} »${d ? `, à offrir le ${d}` : ''}. Tu participes ? Réponds en un clic, ${data.recipient} n'en saura rien.`,
+      image: /^https:\/\//.test(data.image || '') ? data.image : SITE + 'og.png', url: pageUrl,
+    }
+  }
   return null
 }
 
@@ -122,9 +130,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, SITE)
     let p = decodeURIComponent(url.pathname)
 
-    // Formes courtes /e/CODE et /l/TOKEN → ?e=… / ?l=… (le site s'en charge ensuite)
-    const short = p.match(/^\/(e|l)\/([A-Za-z0-9_-]{4,100})\/?$/)
-    const kind = short ? short[1] : url.searchParams.has('e') ? 'e' : url.searchParams.has('l') ? 'l' : null
+    // Formes courtes /e/CODE, /l/TOKEN et /g/TOKEN → ?e=… / ?l=… / ?g=… (le site s'en charge ensuite)
+    const short = p.match(/^\/(e|l|g)\/([A-Za-z0-9_-]{4,100})\/?$/)
+    const kind = short ? short[1] : url.searchParams.has('e') ? 'e' : url.searchParams.has('l') ? 'l' : url.searchParams.has('g') ? 'g' : null
     const code = short ? short[2] : kind ? url.searchParams.get(kind) : null
     if (short) p = '/'
 

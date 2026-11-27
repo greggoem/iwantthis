@@ -7,6 +7,7 @@ Sert le site construit (`dist/`) et personnalise l'aperçu des liens partagés
 |---|---|
 | `https://iwantthis.gift/?e=CODE` (ou `/e/CODE`) | 💌 Invitation : nom de l'événement, date, image de l'événement |
 | `https://iwantthis.gift/?l=TOKEN` (ou `/l/TOKEN`) | 🎁 La liste d'envies de <prénom> |
+| `https://iwantthis.gift/?g=TOKEN` (ou `/g/TOKEN`) | 🎁 Cadeau commun pour <prénom> : le cadeau, son image, la date |
 
 Les informations viennent de la fonction Supabase `share_preview` (nom, date et image
 de l'événement, ou prénom du propriétaire de la liste — rien d'autre), seulement pour

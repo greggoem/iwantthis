@@ -416,7 +416,7 @@ begin
     if not exists (select 1 from items i where i.id = p_extra_item and i.list_id = (select list_id from items where id = g.item_id)) then raise exception 'Envie introuvable'; end if;
     if exists (select 1 from item_claims where item_id = p_extra_item) then raise exception 'Cette envie est déjà réservée'; end if;
     insert into item_claims (item_id, claimed_by, claimed_by_name, reveal_on, group_gift_id)
-    values (p_extra_item, g.created_by, 'Cadeau commun', g.give_on, p_gift);
+    values (p_extra_item, coalesce(g.created_by, auth.uid()), 'Cadeau commun', g.give_on, p_gift);
   end if;
 
   update group_gifts set status = 'closed', closed_at = now(),
@@ -484,3 +484,10 @@ begin
 end $$;
 revoke all on function public.cancel_group_gift(uuid) from public, anon;
 grant execute on function public.cancel_group_gift(uuid) to authenticated;
+
+-- Outils internes : appelés seulement par les fonctions ci-dessus (Supabase donne l'exécution à « authenticated » par défaut)
+revoke execute on function public.gg_is_org(uuid) from authenticated;
+revoke execute on function public.gg_visible(uuid) from authenticated;
+revoke execute on function public.gg_share(uuid, uuid) from authenticated;
+revoke execute on function public.gg_notify(uuid[], uuid, text, text) from authenticated;
+revoke execute on function public.gg_known(uuid) from authenticated;

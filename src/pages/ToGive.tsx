@@ -209,7 +209,7 @@ export default function ToGive() {
     return (
       <li className={`purchase tg-row tg-${e.stage}`}>
         {e.kind === 'draw'
-          ? <span className="tg-ico"><PersonDot name={e.who} color={e.whoColor} size={44} /></span>
+          ? <span className="thumb tg-draw" aria-hidden="true"><Icon name="dice" size={22} /></span>
           : <ItemAnchor url={e.url} className="thumb-link"><Thumb src={e.image} alt={e.title} /></ItemAnchor>}
         <div className="purchase-main">
           <div className="row wrap gap" style={{ alignItems: 'center' }}>
@@ -288,7 +288,7 @@ export default function ToGive() {
           : byPerson(shown).map(p => (
             <section key={p.key} className="card tg-person">
               <div className="row gap" style={{ alignItems: 'center' }}>
-                <PersonDot name={p.who} color={p.color} size={40} />
+                {p.color && <PersonDot name={p.who} color={p.color} size={32} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <h2 className="tg-h2" style={{ margin: 0 }}>{p.who}</h2>
                   <p className="small muted" style={{ margin: 0 }}>{personLine(p.entries, amount)}</p>

@@ -1260,3 +1260,5 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
   .tg-actions { width: 100%; justify-content: flex-start; }
   .tg-budget strong { font-size: 1rem; }
 }
+.tg-draw { color: var(--accent); }
+.tg-person > .row { padding-bottom: .2rem; }

@@ -89,3 +89,21 @@ export function buildReminder(kind: ReminderKind, r: ReminderRow, site: string, 
 </div></body></html>`
   return { subject, html, text: text + `\nVous recevez ce message une seule fois, parce que vous avez créé un compte sur ${appName}.\n` }
 }
+
+export interface GiftReminderRow { email: string; display_name: string | null; title: string; body: string }
+
+/** Rappel 7 ou 2 jours avant une remise : ce qu'il reste à choisir, à acheter ou à répondre */
+export function buildGiftReminder(r: GiftReminderRow, site: string, appName: string): { subject: string; html: string; text: string } {
+  const base = site.replace(/#.*$/, '').replace(/\/?$/, '/')
+  const link = `${base}#/offrir`
+  const hello = r.display_name ? `Bonjour ${r.display_name},` : 'Bonjour,'
+  const subject = `⏰ ${r.title}`
+  const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#fffaf1;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:#2a2150">
+<div style="max-width:560px;margin:0 auto;padding:28px 20px">
+  <h1 style="font-size:22px;line-height:1.2;margin:0 0 16px">${esc(appName)}</h1>
+  ${P(esc(hello))}${P(`<strong>${esc(r.title)}</strong>. ${esc(r.body)}`)}${btn(link, 'Voir mes cadeaux à offrir')}
+  <p style="font-size:12px;color:#9a90bf;margin:22px 0 0">Vous recevez ce rappel 7 jours puis 2 jours avant une remise, seulement s'il reste quelque chose à faire.</p>
+</div></body></html>`
+  const text = `${hello}\n\n${r.title}. ${r.body}\n\nVoir mes cadeaux à offrir : ${link}\n`
+  return { subject, html, text }
+}

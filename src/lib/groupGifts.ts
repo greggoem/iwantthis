@@ -28,6 +28,7 @@ export interface GGCard {
   recipient_name: string; give_on: string; status: GGStatus; is_organizer: boolean
   answer: GGAnswer; share: number | null; paid: boolean; total: number; yes: number
   with: string[]; organizers: string[]
+  event_id: string | null; event_name: string | null; recipient_list: string | null
 }
 
 /** Ce qu'on sait déjà du cadeau quand on le lance depuis une envie */

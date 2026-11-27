@@ -49,6 +49,8 @@ export interface Claim {
   owner_seen_at?: string | null
   discreet?: boolean
   group_gift_id?: string | null
+  bought?: boolean            // false : « je vais l'acheter », pas encore acheté
+  paid_price?: number | null  // prix payé, facultatif (envie sans prix)
 }
 
 export interface EventRow {

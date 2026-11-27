@@ -1231,3 +1231,32 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 .gg-mode-head span { font-size: .84rem; color: var(--muted); }
 .gg-mode-box.on .gg-mode-head span { color: var(--ink-2); }
 .gg-mode-opts { padding: .1rem .9rem .9rem; border-top: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line)); margin: 0 .9rem; padding-left: 0; padding-right: 0; padding-top: .7rem; }
+
+/* ---------- « À offrir » ---------- */
+.chip-todo { background: #fff3d6; color: #8a5a00; }
+.price-in { display: flex; align-items: center; gap: .4rem; max-width: 12rem; }
+.price-in input { flex: 1; min-width: 0; }
+.tg-counts { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; }
+.tg-count { background: var(--surface); border: 1px solid var(--line-soft); border-radius: 14px; padding: .7rem .9rem; display: flex; flex-direction: column; gap: .1rem; }
+.tg-count strong { font-size: 1.6rem; line-height: 1.1; }
+.tg-count span { font-size: .85rem; color: var(--ink-2); font-weight: 600; }
+.tg-count.tg-choose strong, .tg-count.tg-buy strong { color: #8a5a00; }
+.tg-count.tg-bought strong { color: var(--ok); }
+.tg-budget { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem; padding: .9rem 1.1rem; }
+.tg-budget > div { display: flex; flex-direction: column; gap: .1rem; }
+.tg-budget strong { font-size: 1.15rem; }
+.tg-noprice { grid-column: 1 / -1; margin: 0; }
+.tg-filter { display: flex; flex-wrap: wrap; gap: .4rem; }
+.chip-btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font: inherit; font-size: .85rem; font-weight: 600; padding: .35rem .8rem; border-radius: 999px; cursor: pointer; min-height: 34px; }
+.chip-btn:hover { color: var(--ink); }
+.chip-btn.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.tg-h2 { font-size: 1.05rem; font-weight: 700; margin: .4rem 0 0; }
+.tg-person { padding: .9rem 1.1rem .3rem; display: flex; flex-direction: column; gap: .3rem; }
+.tg-person .purchase:first-child { border-top: 1px solid var(--line-soft); }
+.tg-ico { flex: none; width: 64px; display: grid; place-items: center; }
+.tg-actions { align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: .3rem; }
+@media (max-width: 560px) {
+  .tg-row { flex-wrap: wrap; }
+  .tg-actions { width: 100%; justify-content: flex-start; }
+  .tg-budget strong { font-size: 1rem; }
+}

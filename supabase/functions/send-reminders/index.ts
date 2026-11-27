@@ -1,8 +1,8 @@
-// Relances par e-mail : automatiquement chaque jour ({ auto: true }, appel de pg_cron), ou à la main depuis l'administration ({ kind }).
+// Relances par e-mail : automatiquement chaque jour ({ auto: true }, appel de pg_cron), ou à la main depuis l'administration ({ kind }). En automatique, aussi les rappels 7 et 2 jours avant une remise.
 // Chaque personne reçoit chaque relance une seule fois (table reminder_log) ; l'envoi automatique tourne au plus une fois par heure.
 // Secrets : BREVO_API_KEY ou RESEND_API_KEY, MAIL_FROM, SITE_URL (facultatif), APP_NAME (facultatif)
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { buildReminder, providerRequest, type ReminderKind, type ReminderRow, type Provider } from './mail.ts'
+import { buildReminder, buildGiftReminder, providerRequest, type ReminderKind, type ReminderRow, type GiftReminderRow, type Provider } from './mail.ts'
 
 const cors = {
   'access-control-allow-origin': '*',
@@ -57,6 +57,20 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('envoi impossible', e) }
     }
   }
-  if (auto) console.log('relances automatiques', sent, '/', total)
+  if (auto) {
+    // rappels 7 et 2 jours avant une remise (la notification est créée par la base, ici l'e-mail)
+    const { data, error } = await admin.rpc('request_gift_reminders')
+    if (error) console.error('rappels cadeaux', error.message)
+    for (const r of (data ?? []) as GiftReminderRow[]) {
+      total++
+      const mail = buildGiftReminder(r, site, app)
+      const { url: u, init } = providerRequest(provider, key, from, { email: r.email, name: r.display_name ?? '' }, mail)
+      try {
+        const resp = await fetch(u, init)
+        if (resp.ok) sent++; else console.error('envoi refusé', provider, resp.status, (await resp.text()).slice(0, 200))
+      } catch (e) { console.error('envoi impossible', e) }
+    }
+    console.log('relances automatiques', sent, '/', total)
+  }
   return json({ sent, total })
 })

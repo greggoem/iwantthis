@@ -66,7 +66,8 @@ const past = '2026-11-01'
 // achats : Paul a pris le pull de Julie ; Léa a pris le roman de Julie
 const CLAIMS = [
   { item_id: 'k1', claimed_by: PAUL, claimed_by_name: 'Paul', event_id: 'E1', reveal_on: '2026-12-24', owner_seen_at: null, discreet: false },
-  { item_id: 'k2', claimed_by: ME, claimed_by_name: 'Léa', event_id: 'E1', reveal_on: '2026-12-24', owner_seen_at: null, discreet: false },
+  { item_id: 'k2', claimed_by: ME, claimed_by_name: 'Léa', event_id: 'E1', reveal_on: '2026-12-24', owner_seen_at: null, discreet: false, bought: false, paid_price: null },
+  { item_id: 'j3', claimed_by: ME, claimed_by_name: 'Léa', event_id: 'E1', reveal_on: '2026-12-24', owner_seen_at: null, discreet: false, bought: true, paid_price: null },
 ]
 const REVEALED = [{ item_id: 'i2', claimed_by: MARC, claimed_by_name: 'Marc', event_id: null, reveal_on: past, owner_seen_at: null, discreet: false }]
 const SIZES = { phone: { w: 390, h: 844, scale: 2 }, desktop: { w: 1024, h: 680, scale: 1.5 } }
@@ -116,8 +117,9 @@ async function mock(route, o) {
   if (p.endsWith('/rpc/event_invite_info')) return ok({ id: null, name: EV.name, date: EV.event_date, time: '19:00:00', location: EV.location, image: null, by: 'Léa', members: 4 })
   if (p.endsWith('/rpc/is_admin')) return ok(false)
   if (p.endsWith('/rpc/my_people')) return ok([MARC, JULIE, PAUL].map((id) => ({ user_id: id, display_name: NAMES[id] })))
-  if (p.endsWith('/rpc/my_group_gifts')) return ok(o.gg ? [{ id: 'G1', title: 'Machine à espresso', image_url: null, url: null, price: 249, recipient_name: 'Mamy', give_on: '2026-12-24', status: 'open', is_organizer: true, answer: 'yes', share: 62.25, paid: true, total: 249, yes: 4, with: [], organizers: ['Léa', 'Julie'] },
-    { id: 'G2', title: 'Week-end spa', image_url: null, url: null, price: 300, recipient_name: 'Sophie', give_on: '2026-12-19', status: 'open', is_organizer: false, answer: 'pending', share: null, paid: false, total: 120, yes: 3, with: [], organizers: ['Paul'] }] : [])
+  if (p.endsWith('/rpc/my_group_gifts')) return ok(o.gg ? [{ id: 'G1', title: 'Machine à espresso', image_url: null, url: null, price: 249, recipient_name: 'Mamy', give_on: '2026-12-24', status: 'open', is_organizer: true, answer: 'yes', share: 62.25, paid: true, total: 249, yes: 4, with: [], organizers: ['Léa', 'Julie'], event_id: 'E1', event_name: 'Noël en famille', recipient_list: null },
+    { id: 'G2', title: 'Week-end spa', image_url: null, url: null, price: 300, recipient_name: 'Sophie', give_on: '2026-12-19', status: 'open', is_organizer: false, answer: 'pending', share: null, paid: false, total: 120, yes: 3, with: [], organizers: ['Paul'], event_id: null, event_name: null, recipient_list: null }] : [])
+  if (p.endsWith('/rpc/my_draw_targets')) return ok(o.todo ? [{ event_id: 'E1', event_name: 'Noël en famille', event_date: '2026-12-24', draw_name: 'Tirage au sort', giver_kid: null, receiver_name: 'Paul', receiver_kind: 'user', receiver_color: null, receiver_list: 'L4', chosen: false }] : [])
   if (p.endsWith('/rpc/group_gift')) {
     const m = (id, name, x = {}) => ({ id, name, organizer: false, answer: 'yes', me: false, amount: 62.25, paid: false, ...x })
     return ok({ id: 'G1', title: 'Machine à espresso', url: null, image_url: null, price: 249, split: o.ggFree ? 'free' : 'equal', recipient_name: 'Mamy', recipient_on_site: false, from_list: false, recipient_list: null,
@@ -167,7 +169,7 @@ async function mock(route, o) {
       const all = Object.values(ITEMS).flat()
       return ok(CLAIMS.filter((c) => c.claimed_by === ME).map((c) => {
         const i = all.find((x) => x.id === c.item_id)
-        return { ...c, items: { ...i, wishlists: { owner_id: LISTS.find((l) => l.id === i.list_id).owner_id, child_name: null } }, events: { name: EV.name } }
+        return { ...c, items: { ...i, list_id: i.list_id, wishlists: { owner_id: LISTS.find((l) => l.id === i.list_id).owner_id, child_name: null } }, events: { name: EV.name } }
       }))
     }
     return ok(o.revealed ? REVEALED : CLAIMS)
@@ -227,9 +229,10 @@ await shoot('partager-1', '#/', [click('.page-actions button:has-text("Partager"
 // 6 · Offrir
 await shoot('offrir-1-proches', '#/listes', [], {},
   [{ n: 1, sel: '.pcard', at: 'tl' }])
-await shoot('offrir-2-liste', '#/listes/L2', [click('button:has-text("Acheté")')], {},
-  [{ n: 1, sel: '.claimbox', at: 'tl' }, { n: 2, sel: '.claimbox .btn-primary', at: 'tl' }])
-await shoot('offrir-3-a-offrir', '#/offrir', [], {}, [])
+await shoot('offrir-2-liste', '#/listes/L2', [click('button:has-text("Je l\'offre")')], {},
+  [{ n: 1, sel: '.claimbox .seg', at: 'tl' }, { n: 2, sel: '.claimbox .btn-primary', at: 'tl' }])
+await shoot('offrir-3-a-offrir', '#/offrir', [], { gg: true, todo: true },
+  [{ n: 1, sel: '.tg-counts', at: 'tl' }, { n: 2, sel: '.tg-budget', at: 'tl' }, { n: 3, sel: '.seg-unit', at: 'tl' }])
 // 6 bis · Cadeau commun
 await shoot('commun-1-nouveau', '#/offrir', [click('text=Nouveau cadeau commun'), click(".gg-mode >> text=Quelqu'un d'autre"), fill('input[aria-label="Pour qui"]', 'Mamy'), fill('input[aria-label="Le cadeau"]', 'Machine à espresso'), fill('.gg-euro input', '249')], {}, [{ n: 1, sel: '.gg-mode >> nth=1', at: 'tl' }, { n: 2, sel: '.gg-form section:nth-of-type(3) .gg-mode', at: 'tl' }])
 await shoot('commun-2-suivi', '#/commun/G1', [], { gg: true }, [{ n: 1, sel: '.gg-actions .btn', at: 'tl' }, { n: 2, sel: '.gg-member input[type=checkbox]', at: 'l' }])

@@ -102,14 +102,14 @@ const SECTIONS: Section[] = [
         shots: [{ src: 'offrir-1-proches', alt: 'Listes de mes proches' }],
       },
       {
-        title: 'Marquez « Acheté »',
-        text: <>Sur la liste d'un proche, touchez <strong>Acheté</strong> après votre achat, choisissez l'occasion <N n={1} /> puis <strong>Confirmer</strong> <N n={2} />. Les autres invités le voient tout de suite ; la personne, elle, ne le découvre qu'après la date de remise.</>,
-        shots: [{ src: 'offrir-2-liste', alt: 'Choix de l\'occasion après « Acheté »' }],
+        title: 'Touchez « Je l\'offre »',
+        text: <>Sur la liste d'un proche, touchez <strong>Je l'offre</strong> à côté d'une envie. Dites si vous <strong>allez l'acheter</strong> ou si c'est <strong>déjà acheté</strong> <N n={1} /> (sans prix sur l'envie, vous pouvez noter ce que vous avez payé, pour votre budget), choisissez l'occasion puis <strong>Confirmer</strong> <N n={2} />. L'envie est réservée tout de suite : les autres invités le voient, la personne ne le découvre qu'après la date de remise.</>,
+        shots: [{ src: 'offrir-2-liste', alt: 'Je vais l\'acheter ou déjà acheté, puis l\'occasion' }],
       },
       {
         title: 'Vos cadeaux à offrir',
-        text: <>La page <strong>À offrir</strong> rassemble tout ce que vous avez acheté, pour qui et pour quelle date. Vous pouvez y changer la date ou annuler un achat.</>,
-        shots: [{ src: 'offrir-3-a-offrir', alt: 'Page « Mes cadeaux à offrir »' }],
+        text: <>La page <strong>À offrir</strong> fait le point <N n={1} /> : <strong>à choisir</strong> (les personnes tirées au sort pour vous ou vos enfants, les cadeaux communs qui attendent votre réponse), <strong>à acheter</strong> et <strong>acheté</strong>. Votre budget <N n={2} /> additionne ce qui est déjà dépensé et ce qui est encore prévu ; les envies sans prix sont signalées à part. Filtrez par événement et affichez tout <strong>par étape</strong> ou <strong>par personne</strong> <N n={3} />. Touchez <strong>C'est acheté</strong> une fois l'achat fait ; vous pouvez aussi changer la date ou annuler. Un rappel (notification et e-mail) arrive 7 jours puis 2 jours avant la remise s'il reste quelque chose à faire.</>,
+        shots: [{ src: 'offrir-3-a-offrir', alt: 'Page « Mes cadeaux à offrir » : à choisir, à acheter, acheté, budget' }],
       },
     ],
   },
@@ -119,7 +119,7 @@ const SECTIONS: Section[] = [
     steps: [
       {
         title: 'Lancez un cadeau commun',
-        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le parmi vos proches et leurs enfants) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche ou un enfant (le vôtre compris), choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Acheté » lance directement un cadeau commun pour cette envie.</>,
+        text: <>Dans <strong>À offrir</strong>, touchez <strong>Nouveau cadeau commun</strong>. Pour qui : <strong>Un proche</strong> (cherchez-le parmi vos proches et leurs enfants) ou <strong>Quelqu'un d'autre</strong> <N n={1} /> qui n'est pas sur le site. Pour un proche ou un enfant (le vôtre compris), choisissez une envie <strong>Dans sa liste</strong> (elle est alors réservée) ou <strong>Autre chose</strong> : un lien ou juste une idée et un objectif. Ensuite <strong>Même part pour tous</strong> <N n={2} /> — le prix divisé, ou un montant précis demandé à chacun — ou <strong>Chacun ce qu'il veut</strong>. Depuis la liste d'un proche, le bouton <Icon name="users" size={14} /> à côté de « Je l'offre » lance directement un cadeau commun pour cette envie.</>,
         shots: [{ src: 'commun-1-nouveau', alt: 'Formulaire « Nouveau cadeau commun »' }],
       },
       {
@@ -208,7 +208,7 @@ const SECTIONS: Section[] = [
       },
       {
         title: 'Passez d\'une liste à l\'autre',
-        text: <>Les pastilles <N n={1} /> en haut de la page passent de votre liste à celle de votre enfant. Ici, les achats sont <strong>toujours cachés</strong> : vous pouvez remplir sa liste à côté de lui. Pour voir ce qui a été acheté, ou marquer vous-même un cadeau <strong>Acheté</strong>, touchez <strong>voir les achats</strong> <N n={2} />.</>,
+        text: <>Les pastilles <N n={1} /> en haut de la page passent de votre liste à celle de votre enfant. Ici, les achats sont <strong>toujours cachés</strong> : vous pouvez remplir sa liste à côté de lui. Pour voir ce qui a été acheté, ou offrir vous-même un cadeau (<strong>Je l'offre</strong>), touchez <strong>voir les achats</strong> <N n={2} />.</>,
         shots: [{ src: 'enfant-3-liste', alt: 'La liste de Tom, avec les pastilles Moi et Tom' }],
       },
       {

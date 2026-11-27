@@ -94,14 +94,18 @@ test('partage : B voit la liste de A, achète, et A ne voit pas l\'achat (surpri
   await pageB.goto(`./?l=${wl.share_token}`)
   await expect(pageB.getByRole('heading', { level: 1 })).toHaveText(/La liste d'envies de Testeur A/)
   const row = pageB.locator('.gtable-row, .gcard').filter({ hasText: title })
-  await row.getByRole('button', { name: 'Acheté' }).click()
+  await row.getByRole('button', { name: "Je l'offre" }).click()
+  await expect(pageB.getByRole('radio', { name: "Je vais l'acheter" })).toHaveAttribute('aria-checked', 'true')
   await capture(pageB, info, 'achat-choix-date')
   await pageB.getByRole('button', { name: 'Confirmer' }).click()
-  await expect(row.locator('.chip-ok, .claimed-ribbon').first()).toBeVisible()
+  await expect(row.getByText('Vous · à acheter')).toBeVisible()
   // Invitation à créer / partager sa propre liste après l'achat
   await expect(pageB.getByTestId('apres-achat')).toBeVisible()
   await expect(pageB.getByTestId('apres-achat').getByRole('link', { name: /Ajouter ma première envie|Partager ma liste/ })).toBeVisible()
   await capture(pageB, info, 'liste-du-proche-apres-achat')
+  // puis « C'est acheté » (l'envie a un prix : pas de question)
+  await row.getByRole('button', { name: "C'est acheté" }).click()
+  await expect(row.getByText('Vous · acheté')).toBeVisible()
   await ctxB.close()
 
   // A : à l'écran, « Surprise », jamais « Offert par Testeur B »
@@ -120,8 +124,9 @@ test('partage : B voit la liste de A, achète, et A ne voit pas l\'achat (surpri
 
   // B : l'achat est bien enregistré
   const b = await apiAs(USER_B.email)
-  const { data: mine } = await b.from('item_claims').select('item_id').eq('item_id', item!.id)
+  const { data: mine } = await b.from('item_claims').select('item_id,bought').eq('item_id', item!.id)
   expect(mine).toHaveLength(1)
+  expect(mine![0].bought).toBe(true)
   await b.from('item_claims').delete().eq('item_id', item!.id)
   await a.from('items').delete().eq('id', item!.id)
 })

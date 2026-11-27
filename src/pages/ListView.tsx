@@ -14,6 +14,7 @@ import GroupRow, { GroupSection } from '../components/GroupRow'
 import { sortItems, useViewPrefs } from '../lib/view'
 import { groupTree } from '../lib/groups'
 import ClaimDateModal from '../components/ClaimDateModal'
+import PriceModal from '../components/PriceModal'
 import GroupGiftForm from '../components/GroupGiftForm'
 import type { GGSeed } from '../lib/groupGifts'
 
@@ -37,6 +38,9 @@ export default function ListView() {
   const [choice, setChoice] = useState('custom')
   const [customDate, setCustomDate] = useState(todayISO())
   const discreet = false   // option « discret » mise en pause (la base la gère toujours)
+  const [stage, setStage] = useState<'later' | 'done'>('later')   // « Je vais l'acheter » ou « Déjà acheté »
+  const [paid, setPaid] = useState('')                             // prix payé, facultatif, si l'envie n'a pas de prix
+  const [pricing, setPricing] = useState<Item | null>(null)        // « C'est acheté » sur une envie sans prix
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState<Set<string>>(new Set())
   const [copyMsg, setCopyMsg] = useState('')
@@ -83,6 +87,7 @@ export default function ListView() {
     const upcoming = events.find(e => e.event_date >= todayISO())
     setChoice(upcoming ? upcoming.id : events[0]?.id ?? 'custom')
     setCustomDate(todayISO())
+    setStage('later'); setPaid('')
   }
 
   const confirmClaim = async () => {
@@ -96,6 +101,11 @@ export default function ListView() {
     setBusy(false)
     if (error) { setErr(errMsg(error)); load(); return }
     const claimed = items.find(i => i.id === claimingId)
+    const price = paid.trim() ? Number(paid.replace(',', '.')) : null
+    if (stage === 'later' || (price !== null && Number.isFinite(price) && price >= 0)) {
+      const { error: be } = await supabase.rpc('set_claim_bought', { p_item: claimingId, p_bought: stage === 'done', p_price: stage === 'done' ? price : null })
+      if (be) setErr(errMsg(be))
+    }
     setClaimingId(null)
     load()
     // Ma propre liste est-elle vide ? (la mienne, pas celles de mes enfants)
@@ -151,6 +161,12 @@ export default function ListView() {
     setCopyMsg(`Le groupe « ${g.title} » (${ks.length} élément${ks.length > 1 ? 's' : ''}) a été ajouté à votre liste.`)
   }
 
+  const markBought = async (itemId: string, price: number | null) => {
+    setPricing(null)
+    const { error } = await supabase.rpc('set_claim_bought', { p_item: itemId, p_bought: true, p_price: price })
+    if (error) setErr(errMsg(error)); else load()
+  }
+
   const unclaim = async (itemId: string) => {
     const { error } = await supabase.from('item_claims').delete().eq('item_id', itemId)
     if (error) setErr(errMsg(error)); else load()
@@ -188,11 +204,16 @@ export default function ListView() {
         highlight={Boolean(c)}
         status={gg
           ? <span className="chip chip-ok"><Icon name="users" size={13} /><span className="ell">Cadeau commun</span></span>
+          : mine && c.bought === false
+          ? <span className="chip chip-todo"><Icon name="clock" size={13} /><span className="ell">Vous · à acheter</span></span>
+          : mine
+          ? <span className="chip chip-ok"><Icon name="check" size={13} /><span className="ell">Vous · acheté</span></span>
           : c
-          ? <span className="chip chip-ok"><Icon name="check" size={13} /><span className="ell">Acheté</span></span>
+          ? <span className="chip chip-ok"><Icon name="check" size={13} /><span className="ell">{c.bought === false ? 'Réservé' : 'Acheté'}</span></span>
           : obsolete ? <span className="chip chip-quiet">Plus nécessaire</span> : <span className="chip">À offrir</span>}
         actions={<>
-          {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>Acheté</button>}
+          {!c && !obsolete && claimingId !== it.id && <button className="btn btn-sm" onClick={() => startClaim(it.id)}>Je l'offre</button>}
+          {mine && c.bought === false && <button className="btn btn-sm" onClick={() => (it.price === null ? setPricing(it) : markBought(it.id, null))}>C'est acheté</button>}
           {!c && !obsolete && !it.is_group && claimingId !== it.id && <IconButton icon="users" label="Offrir à plusieurs (cadeau commun)" onClick={() => setGgSeed({
             itemId: it.id, title: it.title, url: it.url, image: it.image_url, price: it.price === null ? null : Number(it.price), recipientName: owner, recipientId: list.child_name ? null : list.owner_id, recipientKid: list.child_name ? list.id : null,
             eventId: events.find(e => e.event_date >= todayISO())?.id ?? null, giveOn: events.find(e => e.event_date >= todayISO())?.event_date ?? null,
@@ -205,6 +226,16 @@ export default function ListView() {
       >
         {claimingId === it.id && (
           <div className="claimbox stack">
+            <div className="seg" role="radiogroup" aria-label="Où en êtes-vous ?" style={{ margin: 0 }}>
+              <button type="button" role="radio" aria-checked={stage === 'later'} className={stage === 'later' ? 'on' : ''} onClick={() => setStage('later')}>Je vais l'acheter</button>
+              <button type="button" role="radio" aria-checked={stage === 'done'} className={stage === 'done' ? 'on' : ''} onClick={() => setStage('done')}>Déjà acheté</button>
+            </div>
+            {stage === 'done' && it.price === null && (
+              <label className="small">Prix payé (facultatif, vous seul le voyez)
+                <span className="price-in"><input inputMode="decimal" value={paid} onChange={e => setPaid(e.target.value)} placeholder="Ex. 24,90" aria-label="Prix payé en euros" /> €</span>
+              </label>
+            )}
+            {stage === 'later' && <p className="small muted" style={{ margin: 0 }}>L'envie est réservée pour vous dès maintenant. Elle reste dans « À offrir », à acheter, avec un rappel avant la remise.</p>}
             <strong className="small">Pour quelle occasion ?</strong>
             {events.map(e => (
               <label key={e.id} className="radio">
@@ -232,6 +263,7 @@ export default function ListView() {
       </Row>
     )
   }
+  const pricingModal = pricing && <PriceModal title={pricing.title} onClose={() => setPricing(null)} onDone={p => markBought(pricing.id, p)} />
   const revealDate = choice === 'custom' ? customDate : events.find(e => e.id === choice)?.event_date
 
   return (
@@ -270,6 +302,7 @@ export default function ListView() {
       )}
       {items.length === 0 && <p className="muted">Cette liste est encore vide.</p>}
       {ggSeed && <GroupGiftForm seed={ggSeed} onClose={() => setGgSeed(null)} />}
+      {pricingModal}
       {editClaim && claims[editClaim.id] && (
         <ClaimDateModal itemId={editClaim.id} title={editClaim.title} ownerId={list.owner_id} ownerName={owner}
           eventId={claims[editClaim.id].event_id} revealOn={claims[editClaim.id].reveal_on} discreet={claims[editClaim.id].discreet}

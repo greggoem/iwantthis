@@ -186,6 +186,11 @@ const SECTIONS: Section[] = [
         shots: [{ src: 'tirage-1', alt: 'Tirage prêt, avec le bouton « Lancer le tirage »' }],
       },
       {
+        title: 'Exclure un groupe d\'un coup',
+        text: <>Des frères et sœurs ne doivent pas se tirer entre eux ? Dans le tirage, touchez <strong>Ajouter un groupe</strong>, touchez chacun d'eux <N n={1} /> puis <strong>Exclure entre eux</strong> <N n={2} />. Le groupe s'affiche sur une seule ligne (« Pas entre eux : … ») et la croix le retire. Un groupe doit compter au plus la moitié des participants, sinon le tirage est impossible.</>,
+        shots: [{ src: 'tirage-groupe', alt: 'Ajouter un groupe : choix des personnes puis « Exclure entre eux »' }],
+      },
+      {
         title: 'Chacun découvre son résultat',
         text: <>Chaque participant touche <strong>Ouvrir</strong> <N n={1} /> sur la carte « À qui allez-vous offrir ? » et accède à la liste de la personne tirée. Pour une liste d'enfant, c'est le parent qui voit le résultat. Le résultat est secret : même l'organisateur ne voit que le sien.</>,
         shots: [{ src: 'tirage-2', alt: 'Carte « À qui allez-vous offrir ? » avec le bouton Ouvrir' }],

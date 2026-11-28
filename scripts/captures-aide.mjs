@@ -247,6 +247,9 @@ await shoot('event-3-inviter', '#/evenements/E1', [click('.ev-btns .btn-primary'
 await shoot('event-4-rejoindre', '#/e/noel24', [], {}, [{ n: 1, sel: 'button:has-text("Rejoindre")', at: 'tl' }])
 // 9 · Tirage
 await shoot('tirage-1', '#/evenements/E1', [scrollTo('#tirage')], { drawOn: true }, [{ n: 1, sel: '.draw-launch', at: 'tl' }])
+await shoot('tirage-groupe', '#/evenements/E1', [scrollTo('#tirage'), click('.draw-org button:has-text("Modifier")'), click('button:has-text("Ajouter un groupe")'),
+  click('.draw-pairing .draw-chip:has-text("Marc")'), click('.draw-pairing .draw-chip:has-text("Paul")'), scrollTo('.draw-pairing .btn-primary')], { drawOn: true },
+  [{ n: 1, sel: '.draw-pairing .draw-chips', at: 'tl' }, { n: 2, sel: '.draw-pairing .btn-primary', at: 'tl' }])
 await shoot('tirage-2', '#/evenements/E1', [], { draw: true }, [{ n: 1, sel: '.draw-mystery-cta', at: 'tl' }])
 // 11 · Réglages
 await shoot('reglages-1-menu', '#/', [click('button[aria-label="Menu du compte"]')], { kids: false }, [])

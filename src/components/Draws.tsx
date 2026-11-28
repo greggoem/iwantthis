@@ -41,6 +41,25 @@ function groupBlocks(blocks: Block[], name: (pid: string) => string) {
   return out
 }
 
+/** Groupes : au moins 3 personnes qui ne se tirent pas entre elles (exclusions réciproques entre toutes) */
+function findGroups(blocks: Block[]) {
+  const has = (a: string, b: string) => blocks.some(x => x.giver === a && x.receiver === b)
+  const mutual = (a: string, b: string) => has(a, b) && has(b, a)
+  const ids = [...new Set(blocks.flatMap(x => [x.giver, x.receiver]))].sort()
+  const covered = new Set<string>()
+  const ek = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`)
+  const groups: string[][] = []
+  for (const a of ids) for (const b of ids) {
+    if (a >= b || !mutual(a, b) || covered.has(ek(a, b))) continue
+    const g = [a, b]
+    for (const c of ids) if (!g.includes(c) && g.every(x => mutual(x, c))) g.push(c)
+    if (g.length < 3) continue
+    groups.push(g)
+    for (const x of g) for (const y of g) if (x < y) covered.add(ek(x, y))
+  }
+  return { groups, covered: (a: string, b: string) => covered.has(ek(a, b)) }
+}
+
 export default function Draws({ eventId, isOrg, me, candidates, pendingInvites, openNew, onChanged }: {
   eventId: string; isOrg: boolean; me: string; candidates: DrawCandidate[]; pendingInvites: number
   openNew: number                // incrémenté par la page pour ouvrir « Nouveau tirage »
@@ -243,6 +262,7 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
   const [blocks, setBlocks] = useState<Block[]>(draw?.blocks ?? [])
   const [first, setFirst] = useState<string | null>(null)   // 1re personne choisie pour une exclusion
   const [pairing, setPairing] = useState(false)
+  const [grouping, setGrouping] = useState<Set<string> | null>(null)   // « Ajouter un groupe » : personnes choisies
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
 
   const cand = (pid: string) => candidates.find(c => c.pid === pid)
@@ -260,7 +280,21 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
   const sorted = [...candidates].sort((x, y) => x.name.localeCompare(y.name, 'fr', { sensitivity: 'base' }))
   const inDraw = sorted.filter(c => picked.has(c.pid))
   const allOn = candidates.every(c => picked.has(c.pid))
-  const pairs = groupBlocks(blocks, nm)
+  const { groups, covered } = findGroups(blocks)
+  const pairs = groupBlocks(blocks.filter(x => !covered(x.giver, x.receiver)), nm)
+  // une seule boucle : un groupe de plus de la moitié des participants ne peut pas être respecté
+  const tooBig = groups.find(g => g.length * 2 > picked.size)
+
+  const addGroup = () => {
+    const g = [...(grouping ?? [])]
+    setBlocks(bl => {
+      const n = [...bl]
+      for (const a of g) for (const b of g) if (a !== b && !n.some(x => x.giver === a && x.receiver === b)) n.push({ giver: a, receiver: b })
+      return n
+    })
+    setGrouping(null)
+  }
+  const removeGroup = (g: string[]) => setBlocks(bl => bl.filter(x => !(g.includes(x.giver) && g.includes(x.receiver))))
 
   // exclusion : on touche une personne, puis une autre → elles ne se tirent pas (dans les deux sens)
   const tapPair = (pid: string) => {
@@ -335,7 +369,18 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
             <strong>Qui ne doit pas tomber sur qui ?</strong>
             <span className="small muted">facultatif</span>
           </div>
-                    {pairs.length > 0 && (
+          {groups.length > 0 && (
+            <div className="draw-chips">
+              {groups.map(g => (
+                <span key={g.join()} className="draw-xchip draw-group">
+                  <span className="small muted">Pas entre eux :</span>
+                  {g.map((pid, i) => <span key={pid} className="draw-gname">{dot(pid, 22)}<span className="draw-xname">{pid === me ? 'Vous' : nm(pid)}{i < g.length - 1 ? ',' : ''}</span></span>)}
+                  <button type="button" className="draw-pair-x" onClick={() => removeGroup(g)} aria-label={`Retirer le groupe ${g.map(nm).join(', ')}`}><Icon name="x" size={14} /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          {pairs.length > 0 && (
             <div className="draw-chips">
               {pairs.map(g => (
                 <span key={g.label} className="draw-xchip">
@@ -349,7 +394,26 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
               ))}
             </div>
           )}
-          {pairing ? (
+          {grouping ? (
+            <div className="draw-pairing">
+              <p className="small" style={{ margin: 0 }}>Touchez les personnes qui ne doivent pas tomber les unes sur les autres (par exemple des frères et sœurs).</p>
+              <div className="draw-chips">
+                {inDraw.map(c => {
+                  const on = grouping.has(c.pid)
+                  return (
+                    <button key={c.pid} type="button" className={`draw-chip${on ? ' on first' : ''}`} aria-pressed={on}
+                      onClick={() => setGrouping(s => { const n = new Set(s); if (n.has(c.pid)) n.delete(c.pid); else n.add(c.pid); return n })}>
+                      {dot(c.pid, 26)}<span>{c.pid === me ? 'Vous' : c.name}</span>{on && <Icon name="check" size={14} />}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="row gap">
+                <button type="button" className="btn btn-primary btn-sm" disabled={grouping.size < 2} onClick={addGroup}>Exclure entre eux{grouping.size >= 2 ? ` (${grouping.size})` : ''}</button>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => setGrouping(null)}>Fermer</button>
+              </div>
+            </div>
+          ) : pairing ? (
             <div className="draw-pairing">
               <p className="small" style={{ margin: 0 }}>{first ? (first === me ? <>Sur qui <strong>vous</strong> ne devez pas tomber ?</> : <>Avec qui <strong>{nm(first)}</strong> ne doit-il pas tomber ?</>) : 'Touchez la première personne'}</p>
               <div className="draw-chips">
@@ -362,8 +426,12 @@ function DrawEditor({ eventId, draw, draws, candidates, me, isFirst, onClose, on
               <div><button type="button" className="btn btn-ghost btn-sm" onClick={() => { setPairing(false); setFirst(null) }}>Fermer</button></div>
             </div>
           ) : (
-            <div><button type="button" className="btn btn-sm" disabled={inDraw.length < 2} onClick={() => setPairing(true)}><Icon name="plus" size={15} /> Ajouter une exception</button></div>
+            <div className="row gap wrap">
+              <button type="button" className="btn btn-sm" disabled={inDraw.length < 2} onClick={() => setPairing(true)}><Icon name="plus" size={15} /> Ajouter une exception</button>
+              <button type="button" className="btn btn-sm" disabled={inDraw.length < 3} onClick={() => setGrouping(new Set())}><Icon name="users" size={15} /> Ajouter un groupe</button>
+            </div>
           )}
+          {tooBig && <Notice kind="info">Le groupe {tooBig.map(nm).join(', ')} compte plus de la moitié des participants : le tirage sera impossible. Ajoutez des participants ou retirez quelqu'un du groupe.</Notice>}
         </div>
 
         {draw?.done_at && <Notice kind="info">Ce tirage a déjà eu lieu : après une modification, pensez à le refaire.</Notice>}

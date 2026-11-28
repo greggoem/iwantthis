@@ -1262,3 +1262,5 @@ button.ev-add:hover { color: var(--ink); border-color: var(--ink-3, #999); }
 }
 .tg-draw { color: var(--accent); }
 .tg-person > .row { padding-bottom: .2rem; }
+.draw-group { flex-wrap: wrap; row-gap: .3rem; }
+.draw-gname { display: inline-flex; align-items: center; gap: .3rem; }

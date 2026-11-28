@@ -48,10 +48,10 @@ export default function Landing() {
       <section className="land-hero">
         <div className="land-in land-hero-grid">
           <div>
-            <p className="land-kicker">Listes de cadeaux partagées</p>
+            <p className="land-kicker">La liste de cadeaux en ligne</p>
             <h1>Offrez ce qui fait vraiment plaisir.</h1>
             <p className="land-sub">
-              Chacun crée sa liste d'envies et la partage en un lien. Ses proches indiquent ce qu'ils achètent : pas de doublon, et le propriétaire garde la surprise.
+              Chacun crée sa liste de cadeaux et la partage en un lien. Ses proches indiquent ce qu'ils achètent : pas de doublon, et le propriétaire garde la surprise.
             </p>
             <div className="row wrap gap">
               <Link className="btn btn-primary btn-lg" to="/login?mode=up">Créer ma liste <Icon name="arrow" size={18} /></Link>
@@ -126,7 +126,7 @@ export default function Landing() {
 
       <footer className="footer">
         Certains liens vers des magasins sont des liens partenaires : le prix ne change pas pour vous, mais ils peuvent rapporter une petite commission au site.
-        <br /><a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/tirage-au-sort/">Tirage au sort</a> · <a href="/listes-enfants/">Listes d'enfants</a> · <a href="/presse.html">Presse</a> · <a href="/privacy.html">Confidentialité</a>
+        <br /><a href="/liste-de-noel/">Liste de Noël</a> · <a href="/liste-anniversaire/">Liste d'anniversaire</a> · <a href="/secret-santa-bureau/">Secret Santa au bureau</a> · <a href="/tirage-au-sort/">Tirage au sort</a> · <a href="/listes-enfants/">Listes d'enfants</a><br /><a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/presse.html">Presse</a> · <a href="/privacy.html">Confidentialité</a>
       </footer>
     </div>
   )

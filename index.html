@@ -13,35 +13,146 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="I Want This" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>I Want This</title>
-    <meta name="description" content="Partagez vos envies, offrez sans doublon, tirez au sort en famille." />
+    <title>Liste de cadeaux à partager, sans doublon · I Want This</title>
+    <meta name="description" content="Liste de cadeaux gratuite à partager en un lien : vos proches indiquent ce qu'ils achètent, sans doublon, et la surprise reste entière. Tirage au sort inclus." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="I Want This" />
-    <meta property="og:title" content="I Want This · Listes d'envies à partager" />
-    <meta property="og:description" content="Partagez vos envies, offrez sans doublon, tirez au sort en famille." />
+    <meta property="og:title" content="I Want This · La liste de cadeaux à partager, sans doublon" />
+    <meta property="og:locale" content="fr_BE" />
+    <meta property="og:description" content="Liste de cadeaux gratuite à partager en un lien : vos proches indiquent ce qu'ils achètent, sans doublon, et la surprise reste entière. Tirage au sort inclus." />
     <meta property="og:url" content="https://iwantthis.gift/" />
     <meta property="og:image" content="https://iwantthis.gift/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:image:alt" content="I Want This : la liste de cadeaux à partager en famille" />
     <link rel="canonical" href="https://iwantthis.gift/" />
     <!-- Propriété Google Search Console (compte de Greg) : ne pas supprimer -->
     <meta name="google-site-verification" content="RIgFIQjK_1wxW2Ankq3X-dgtlCN8ggl0HlKzdRun0f8" />
     <!-- Référencement : description de l'application lisible sans JavaScript (Google, Bing, robots des IA) -->
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "I Want This",
-        "url": "https://iwantthis.gift/",
-        "description": "Listes d'envies à partager en famille : chacun crée sa liste de cadeaux, ses proches indiquent ce qu'ils achètent (sans doublon, la surprise reste entière), avec événements, tirage au sort Secret Santa et listes d'enfants.",
-        "applicationCategory": "LifestyleApplication",
-        "operatingSystem": "Web, Android, iOS",
-        "inLanguage": "fr",
-        "isAccessibleForFree": true,
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-        "publisher": { "@type": "Organization", "name": "I Want This", "url": "https://iwantthis.gift/" }
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://iwantthis.gift/#org",
+      "name": "I Want This",
+      "url": "https://iwantthis.gift/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://iwantthis.gift/icon-512.png",
+        "width": 512,
+        "height": 512
+      },
+      "email": "greg@goemaere.com",
+      "founder": {
+        "@type": "Person",
+        "name": "Gregory Goemaere"
+      },
+      "areaServed": [
+        "BE",
+        "FR"
+      ],
+      "sameAs": [
+        "https://addons.mozilla.org/addon/i-want-this/",
+            "https://chromewebstore.google.com/detail/flieedooclbbhihafmimamgphhilgedb",
+            "https://microsoftedge.microsoft.com/addons/detail/i-want-this/ieimbhjicpkcgahghhdhjhafbnifdpmj"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://iwantthis.gift/#site",
+      "name": "I Want This",
+      "alternateName": "iwantthis.gift",
+      "url": "https://iwantthis.gift/",
+      "inLanguage": "fr",
+      "publisher": {
+        "@id": "https://iwantthis.gift/#org"
       }
+    },
+    {
+      "@type": "WebApplication",
+      "name": "I Want This",
+      "url": "https://iwantthis.gift/",
+      "description": "Liste de cadeaux en ligne à partager en famille : chacun crée sa liste d'envies, ses proches indiquent ce qu'ils achètent (sans doublon, la surprise reste entière), avec événements, tirage au sort Secret Santa et listes d'enfants.",
+      "applicationCategory": "LifestyleApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "inLanguage": "fr",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      },
+      "publisher": {
+        "@id": "https://iwantthis.gift/#org"
+      },
+      "screenshot": "https://iwantthis.gift/aide/offrir-2-liste-desktop.webp",
+      "featureList": [
+        "Liste d'envies à partager par un lien",
+        "Achats masqués au propriétaire jusqu'à la date de remise",
+        "Événements (Noël, anniversaire, Saint-Nicolas)",
+        "Tirage au sort Secret Santa avec exclusions",
+        "Listes d'enfants tenues par un parent",
+        "Extension pour Chrome, Edge et Firefox"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Est-ce gratuit ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Créer un compte, une liste, des événements et un tirage au sort ne coûte rien."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mes proches doivent-ils créer un compte ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, c'est rapide et gratuit. C'est ce qui permet de savoir qui a acheté quoi, tout en le cachant au propriétaire de la liste."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je savoir ce qu'on m'offre ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, volontairement. Les achats ne deviennent visibles pour vous que le lendemain de la date de remise du cadeau, choisie par la personne qui achète (par exemple la date de l'événement) : la fête a souvent lieu le soir, la surprise reste donc entière jusqu'au bout."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment fonctionne le tirage au sort ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'organisateur ajoute d'éventuelles exclusions, puis lance le tirage. Chacun découvre uniquement la personne à qui il doit offrir un cadeau, organisateur compris."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je me désinscrire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, à tout moment : dans Mon profil, « Supprimer mon compte » efface votre compte, votre liste et vos achats. Vos événements sont transmis à un autre invité."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Pourquoi des liens « partenaires » ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Certains liens vers des magasins peuvent rapporter une petite commission au site. Le prix pour vous ne change pas."
+          }
+        }
+      ]
+    }
+  ]
+}
     </script>
     <!-- Le contenu statique de l'accueil (dans #root) est destiné aux visiteurs non connectés et aux robots.
          Pour une personne connectée ou un lien direct (#/…, ?l=, ?e=, retour d'e-mail), on le masque
@@ -105,9 +216,9 @@
       <main>
         <section class="land-hero">
           <div class="land-in">
-            <p class="land-kicker">Listes de cadeaux partagées</p>
+            <p class="land-kicker">La liste de cadeaux en ligne</p>
             <h1>Offrez ce qui fait vraiment plaisir.</h1>
-            <p class="land-sub">Chacun crée sa liste d'envies et la partage en un lien. Ses proches indiquent ce qu'ils achètent : pas de doublon, et le propriétaire garde la surprise.</p>
+            <p class="land-sub">Chacun crée sa liste de cadeaux et la partage en un lien. Ses proches indiquent ce qu'ils achètent : pas de doublon, et le propriétaire garde la surprise.</p>
             <p><a class="btn btn-primary btn-lg" href="/#/login?mode=up">Créer ma liste</a> <a class="btn btn-lg" href="/#/login">J'ai déjà un compte</a></p>
             <p class="small muted land-note">Gratuit · sans application à installer</p>
           </div>
@@ -149,7 +260,7 @@
         </section>
       </main>
       <footer class="footer">
-        <a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/tirage-au-sort/">Tirage au sort</a> · <a href="/listes-enfants/">Listes d'enfants</a> · <a href="/presse.html">Presse</a> · <a href="/privacy.html">Confidentialité</a>
+        <a href="/liste-de-noel/">Liste de Noël</a> · <a href="/liste-anniversaire/">Liste d'anniversaire</a> · <a href="/secret-santa-bureau/">Secret Santa au bureau</a> · <a href="/tirage-au-sort/">Tirage au sort</a> · <a href="/listes-enfants/">Listes d'enfants</a><br /><a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/presse.html">Presse</a> · <a href="/privacy.html">Confidentialité</a>
       </footer>
     </div></div>
     <script type="module" src="/src/main.tsx"></script>

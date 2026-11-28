@@ -122,7 +122,7 @@ test.describe('Référencement', () => {
     expect(html).toContain('application/ld+json')
   })
 
-  for (const slug of ['comment-ca-marche', 'tirage-au-sort', 'listes-enfants']) {
+  for (const slug of ['comment-ca-marche', 'tirage-au-sort', 'listes-enfants', 'liste-de-noel', 'liste-anniversaire', 'secret-santa-bureau']) {
     test(`page publique /${slug}/`, async ({ page, problems }, info) => {
       const r = await page.goto(`${slug}/`)
       expect(r?.status()).toBe(200)

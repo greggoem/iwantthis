@@ -1,0 +1,25 @@
+# I Want This
+
+> I Want This (https://iwantthis.gift) est un site gratuit, en français, de listes de cadeaux à partager en famille ou entre amis. Chacun crée sa liste d'envies et la partage par un lien ; ses proches indiquent ce qu'ils achètent, ce qui évite les cadeaux en double, tandis que le propriétaire de la liste ne voit rien avant le lendemain de la date de remise. Créé en Belgique par Gregory Goemaere.
+
+Points clés :
+- Gratuit, sans publicité, sans application à installer (site web installable sur téléphone, extension pour Chrome, Edge, Firefox).
+- Ajout d'une envie en collant le lien du produit depuis n'importe quel magasin (nom, image et prix récupérés).
+- Événements (Noël, Saint-Nicolas, anniversaire…) avec invitations par lien ou e-mail.
+- Tirage au sort de type Secret Santa avec exclusions (couples, groupes de frères et sœurs), résultat secret même pour l'organisateur.
+- Listes d'enfants tenues depuis le compte d'un parent, sans e-mail pour l'enfant.
+- Les proches créent un compte gratuit pour indiquer leurs achats. Certains liens vers des magasins sont des liens partenaires (le prix ne change pas).
+
+## Pages
+
+- [Comment ça marche](https://iwantthis.gift/comment-ca-marche/) : créer, partager et offrir sans doublon
+- [Liste de Noël en ligne](https://iwantthis.gift/liste-de-noel/) : Noël et Saint-Nicolas en famille
+- [Liste d'anniversaire en ligne](https://iwantthis.gift/liste-anniversaire/)
+- [Tirage au sort de Noël (Secret Santa)](https://iwantthis.gift/tirage-au-sort/)
+- [Secret Santa au bureau](https://iwantthis.gift/secret-santa-bureau/)
+- [Listes d'enfants](https://iwantthis.gift/listes-enfants/)
+- [Espace presse](https://iwantthis.gift/presse.html)
+
+## Contact
+
+- greg@goemaere.com

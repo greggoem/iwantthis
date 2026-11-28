@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session) { setProfile(null); return }
+    // connecté : l'onglet affiche simplement le nom du site (le titre long de index.html sert au référencement)
+    document.title = 'I Want This'
     // crée la liste de la personne dès sa première connexion, puis charge son profil
     supabase.rpc('ensure_my_list').then(() => refreshProfile())
     // eslint-disable-next-line react-hooks/exhaustive-deps

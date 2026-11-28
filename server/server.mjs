@@ -106,6 +106,20 @@ function injectMeta(html, m) {
   return html
 }
 
+// Page 404 lisible (statut 404 conservé : Google ne l'indexe pas, le visiteur retrouve son chemin)
+const NOT_FOUND = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Page introuvable · I Want This</title><meta name="robots" content="noindex">
+<style>body{margin:0;font:17px/1.6 system-ui,sans-serif;color:#0f0f10;background:#fafaf9}main{max-width:560px;margin:12vh auto;padding:0 1.25rem}
+h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 .5rem}a{color:#0f0f10}.btn{display:inline-block;margin-top:1rem;padding:.7rem 1.2rem;border-radius:999px;background:#0f0f10;color:#fff;text-decoration:none;font-weight:600}</style></head>
+<body><main><h1>Page introuvable</h1><p>Cette adresse n'existe pas (ou plus). Un lien de liste ou d'invitation ? Vérifiez qu'il a été copié en entier.</p>
+<p><a href="/">Accueil</a> · <a href="/comment-ca-marche/">Comment ça marche</a> · <a href="/liste-de-noel/">Liste de Noël</a> · <a href="/tirage-au-sort/">Tirage au sort</a></p>
+<a class="btn" href="/">Retour à I Want This</a></main></body></html>`
+
+function redirect(res, location) {
+  res.writeHead(301, { Location: location, 'Cache-Control': 'public, max-age=3600' })
+  res.end()
+}
+
 let indexCache = null
 async function indexHtml() {
   if (!indexCache || process.env.NODE_ENV === 'development') indexCache = await readFile(path.join(ROOT, 'index.html'), 'utf8')
@@ -129,6 +143,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405, { Allow: 'GET, HEAD' }); return res.end() }
     const url = new URL(req.url, SITE)
     let p = decodeURIComponent(url.pathname)
+
+    // Une seule adresse par page (référencement) : www → domaine nu, /index.html → /
+    const host = String(req.headers.host || '')
+    if (/^www\./i.test(host)) return redirect(res, SITE.replace(/\/$/, '') + url.pathname + url.search)
+    if (p === '/index.html') return redirect(res, '/' + url.search)
 
     // Formes courtes /e/CODE, /l/TOKEN et /g/TOKEN → ?e=… / ?l=… / ?g=… (le site s'en charge ensuite)
     const short = p.match(/^\/(e|l|g)\/([A-Za-z0-9_-]{4,100})\/?$/)
@@ -154,10 +173,16 @@ const server = http.createServer(async (req, res) => {
     if (!file.startsWith(ROOT + path.sep)) { res.writeHead(403); return res.end() }
     let target = file
     const st = await stat(target).catch(() => null)
-    if (st?.isDirectory()) target = path.join(target, 'index.html')
+    if (st?.isDirectory()) {
+      // dossier sans « / » final (/tirage-au-sort) → /tirage-au-sort/ : une seule adresse indexée
+      if (!p.endsWith('/')) return redirect(res, url.pathname + '/' + url.search)
+      target = path.join(target, 'index.html')
+    }
     if (st && (st.isFile() || (await stat(target).catch(() => null))?.isFile())) return await sendFile(res, target, req.method)
 
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('Page introuvable')
+    const nf = Buffer.from(NOT_FOUND)
+    res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': nf.length, 'X-Content-Type-Options': 'nosniff' })
+    res.end(req.method === 'HEAD' ? undefined : nf)
   } catch (e) {
     console.error(e)
     if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })

@@ -16,8 +16,11 @@ import './theme-nuit.css'
 import { applyTheme, getTheme } from './lib/theme'
 import { consumeShareTarget } from './lib/shareTarget'
 
-// Le titre personnalisé (aperçu des liens partagés) ne sert qu'aux robots : l'onglet reprend le nom du site
-document.title = 'I Want This'
+// Le titre personnalisé (aperçu des liens partagés) ne sert qu'aux robots : l'onglet reprend le nom du site.
+// Sur l'accueil d'un visiteur non connecté, on garde le titre descriptif de index.html : c'est celui que
+// Google lit après exécution du JavaScript (référencement). « iwt-app » est posé par index.html
+// pour une session existante, une route #/… ou un lien partagé.
+if (document.documentElement.classList.contains('iwt-app')) document.title = 'I Want This'
 
 // Liens partagés « ?l=TOKEN » / « ?e=CODE » / « ?g=TOKEN » → routes internes #/l/TOKEN, #/e/CODE, #/g/TOKEN
 {
